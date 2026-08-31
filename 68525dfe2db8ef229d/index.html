@@ -63,23 +63,45 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 }
 
 /* ---- ホーム ---- */
-.head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px}
+/* 毎日見るのは4つだけ: 名前 / Day / 今日の問題数 / 開始ボタン。
+   それ以外は「その他」の中へ。毎日見る必要のない数字を常時出さない。 */
+.head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px}
 .brand{font-size:15px;font-weight:700;letter-spacing:.01em;color:var(--accent)}
 #day-label{font-size:13px;color:var(--dim);font-variant-numeric:tabular-nums}
+.icon-btn{min-height:40px;min-width:44px;padding:0 10px;font-size:13px;color:var(--dim);border-radius:10px}
+.icon-btn:active{background:var(--sunk)}
 .track{height:6px;background:var(--sunk);border-radius:99px;overflow:hidden;margin-bottom:18px}
 .track>i{display:block;height:100%;background:var(--accent);border-radius:99px}
 
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
-.stat{background:var(--raised);border:1px solid var(--line);border-radius:12px;padding:10px 8px;text-align:center}
-.stat b{display:block;font-size:20px;line-height:1.15;font-variant-numeric:tabular-nums}
-.stat span{font-size:10.5px;color:var(--dim)}
+.hero{display:flex;flex-direction:column;justify-content:center;text-align:center;
+  min-height:46vh;min-height:calc(var(--vh,1vh)*46);gap:6px}
+.hero-day{font-size:15px;color:var(--dim);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.hero-count{font-size:52px;font-weight:800;line-height:1.05;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums}
+.hero-count small{font-size:22px;font-weight:700;margin-left:4px}
+.hero-sub{font-size:16px;color:var(--dim);margin-top:4px;text-wrap:balance}
+.hero-note{font-size:13px;color:var(--faint);margin-top:10px;line-height:1.6;text-wrap:balance}
 
-#relearn-line{
-  background:var(--warn-soft);color:var(--warn);border-radius:10px;
-  padding:10px 13px;font-size:13.5px;margin-bottom:14px;
-}
+/* ---- その他 (毎日は見ない) ---- */
+.grp{margin-bottom:22px}
+.grp-h{font-size:12px;color:var(--faint);letter-spacing:.06em;margin-bottom:8px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.stat{background:var(--raised);border:1px solid var(--line);border-radius:12px;padding:12px 12px}
+.stat b{display:block;font-size:22px;line-height:1.15;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--dim)}
 
-.modes{display:grid;gap:8px;margin:14px 0 20px}
+.link-row{display:grid;gap:8px}
+.link-row button{min-height:52px;border-radius:12px;background:var(--raised);
+  border:1px solid var(--line);font-size:15px;text-align:left;padding:0 15px}
+.link-row button:active{background:var(--sunk)}
+
+.about{background:var(--sunk);border-radius:12px;padding:13px 15px;font-size:13px;
+  color:var(--dim);line-height:1.75}
+.about b{color:var(--ink)}
+.about p{margin:0 0 9px}
+.about p:last-child{margin:0}
+
+.modes{display:grid;gap:8px;margin:0}
 .mode{
   display:flex;align-items:center;justify-content:space-between;gap:12px;
   min-height:var(--tap);padding:12px 15px;text-align:left;
@@ -88,8 +110,6 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .mode:active{background:var(--sunk)}
 .mode-t{font-weight:700}
 .mode-d{font-size:12.5px;color:var(--dim);font-variant-numeric:tabular-nums}
-
-.section-label{font-size:11.5px;color:var(--faint);letter-spacing:.06em;margin:18px 0 6px}
 
 /* ---- 主要ボタンは画面下部固定。親指の到達範囲に置く ---- */
 .dock{
@@ -111,20 +131,19 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .sess-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
 #progress{font-size:13px;color:var(--dim);font-variant-numeric:tabular-nums}
 #quit-btn{font-size:13px;color:var(--dim);min-height:36px;padding:0 8px}
-.badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px}
-.badge-relearn{background:var(--warn-soft);color:var(--warn)}
-.badge-fresh{background:var(--accent-soft);color:var(--accent)}
-.badge-review{background:var(--sunk);color:var(--dim)}
 
 .card{
-  background:var(--raised);border:1px solid var(--line);border-radius:16px;
-  padding:22px 18px;margin-bottom:12px;min-height:190px;
-  display:flex;flex-direction:column;justify-content:center;
+  padding:8px 4px;margin-bottom:12px;
+  min-height:44vh;min-height:calc(var(--vh,1vh)*44);
+  display:flex;flex-direction:column;justify-content:center;text-align:center;
 }
-#prompt{font-size:26px;font-weight:700;line-height:1.4;text-wrap:balance}
-#answer-box{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
-#answer{font-size:27px;font-weight:700;line-height:1.35;word-break:break-word}
-#answer-note{font-size:12px;color:var(--faint);margin-top:6px}
+#prompt{font-size:30px;font-weight:700;line-height:1.4;text-wrap:balance}
+#answer-box{margin-top:26px;padding-top:22px;border-top:1px solid var(--line)}
+#answer{font-size:32px;font-weight:800;line-height:1.3;word-break:break-word;letter-spacing:-.01em}
+/* 実使用の記録は、押さない限り邪魔をしない小さなリンク */
+.field-open{margin-top:18px;font-size:13.5px;color:var(--dim);
+  min-height:44px;padding:0 12px;border-radius:10px;text-decoration:underline}
+.field-open:active{background:var(--sunk)}
 
 .judge{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .judge button{min-height:56px;border-radius:14px;font-size:16px;font-weight:700}
@@ -175,8 +194,8 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 
 /* ---- 実使用フィードバック ---- */
 /* 学習の判定 (言えた/言えなかった) と混ざらないよう、色も位置も分ける */
-.field{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)}
-.field-h{font-size:12px;color:var(--faint);margin-bottom:8px}
+.field{margin-top:18px;padding-top:16px;border-top:1px dashed var(--line);text-align:left}
+.field-h{font-size:13px;font-weight:700;margin-bottom:10px;line-height:1.5}
 .field-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .field-grid button{
   min-height:48px;border-radius:12px;font-size:13px;font-weight:600;line-height:1.25;
@@ -200,11 +219,16 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .fr-empty{color:var(--faint);font-size:14px;padding:20px 0}
 
 /* ---- まとめ ---- */
-.sum-row{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:15px}
-.sum-row:last-child{border-bottom:0}
-.sum-l{color:var(--dim)}
-.sum-v{font-weight:700;font-variant-numeric:tabular-nums}
-.sum-emph .sum-v{color:var(--accent)}
+.done{display:flex;flex-direction:column;justify-content:center;text-align:center;
+  min-height:52vh;min-height:calc(var(--vh,1vh)*52);gap:4px}
+.done-t{font-size:30px;font-weight:800;line-height:1.2}
+.done-n{font-size:17px;color:var(--dim);margin-top:6px;font-variant-numeric:tabular-nums}
+.done-split{display:flex;justify-content:center;gap:28px;margin-top:22px}
+.done-split div{text-align:center}
+.done-split b{display:block;font-size:36px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.done-split span{font-size:13px;color:var(--dim)}
+.done-ok b{color:var(--ok)}
+.done-ng b{color:var(--crit)}
 
 /* ---- オンボーディング ---- */
 .ob-step{font-size:12px;color:var(--faint);letter-spacing:.06em;margin-bottom:6px}
@@ -256,48 +280,16 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 <main id="home" class="wrap" hidden>
   <div class="head">
     <span class="brand">Mongolian 90</span>
-    <span id="day-label">—</span>
+    <button id="more-btn" class="icon-btn" type="button">その他</button>
   </div>
   <div class="track"><i id="day-bar" style="width:0%"></i></div>
 
-  <div class="stats">
-    <div class="stat"><b id="stat-due">0</b><span>復習待ち</span></div>
-    <div class="stat"><b id="stat-mastered">0</b><span>習得済み</span></div>
-    <div class="stat"><b id="stat-weak">—</b><span>弱点</span></div>
-    <div class="stat"><b id="stat-streak">0</b><span>連続日</span></div>
-  </div>
-
-  <div id="relearn-line" hidden></div>
-
-  <!-- 今日やること。カリキュラムから出す。開いてすぐ何をするか分かるようにする -->
-  <div class="today" id="today-plan" hidden>
-    <div class="today-h" id="today-theme">—</div>
-    <div class="today-g" id="today-grammar"></div>
-    <ul class="today-pts" id="today-points"></ul>
-    <div class="today-note" id="today-note" hidden></div>
-  </div>
-
-  <div class="section-label">学習モード</div>
-  <div id="mode-list" class="modes"></div>
-
-  <button id="fieldlog-btn" class="ghost" type="button" style="width:100%;margin-bottom:8px">実際に使った結果を記録する</button>
-  <button id="export-btn" class="ghost" type="button" style="width:100%">記録を書き出す</button>
-
-  <!-- 書き出しは、どの開き方でも動くようにテキストで出す。
-       置き場によってはファイルの保存が効かないため、リンクだけに頼らない -->
-  <div class="export" id="export-box" hidden>
-    <div class="export-h" id="export-h">実際に使った結果</div>
-    <div class="export-s">下の枠を長押しして全選択→コピーし、Claude に貼ってください。</div>
-    <div class="export-tabs">
-      <button id="export-field" class="ex-tab" type="button" aria-pressed="true">実使用の記録だけ</button>
-      <button id="export-all" class="ex-tab" type="button" aria-pressed="false">全部（バックアップ）</button>
-    </div>
-    <textarea id="export-text" readonly rows="8" spellcheck="false"></textarea>
-    <div class="export-row">
-      <button id="export-copy" class="primary" type="button">コピー</button>
-      <button id="export-close" class="ghost" type="button">閉じる</button>
-    </div>
-    <div class="export-done" id="export-done" hidden></div>
+  <!-- 毎日見るのはここだけ -->
+  <div class="hero">
+    <div class="hero-day" id="day-label">—</div>
+    <div class="hero-count"><span id="today-count">—</span><small>問</small></div>
+    <div class="hero-sub" id="today-sub"></div>
+    <div class="hero-note" id="today-note" hidden></div>
   </div>
   <div class="dock-pad"></div>
 </main>
@@ -308,11 +300,63 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
   </div>
 </div>
 
-<!-- セッション -->
+<!-- その他。毎日の学習動線には置かないものをここへ集める -->
+<main id="more" class="wrap" hidden>
+  <div class="head"><span class="brand">その他</span></div>
+
+  <div class="grp">
+    <div class="grp-h">学習の記録</div>
+    <div class="stats">
+      <div class="stat"><b id="stat-due">0</b><span>今日の復習</span></div>
+      <div class="stat"><b id="stat-mastered">0</b><span>覚えた語</span></div>
+      <div class="stat"><b id="stat-streak">0</b><span>続けた日数</span></div>
+      <div class="stat"><b id="stat-weak">—</b><span>苦手</span></div>
+    </div>
+  </div>
+
+  <div class="grp">
+    <div class="grp-h">学習の長さを選ぶ</div>
+    <div id="mode-list" class="modes"></div>
+  </div>
+
+  <div class="grp">
+    <div class="grp-h">記録</div>
+    <div class="link-row">
+      <button id="fieldlog-btn" type="button">実際に使った結果を記録する</button>
+      <button id="export-btn" type="button">記録を書き出す</button>
+    </div>
+    <div class="export" id="export-box" hidden>
+      <div class="export-h" id="export-h">実際に使った結果</div>
+      <div class="export-s">下の枠を長押しして全選択→コピーし、Claude に貼ってください。</div>
+      <div class="export-tabs">
+        <button id="export-field" class="ex-tab" type="button" aria-pressed="true">実使用の記録だけ</button>
+        <button id="export-all" class="ex-tab" type="button" aria-pressed="false">全部（バックアップ）</button>
+      </div>
+      <textarea id="export-text" readonly rows="8" spellcheck="false"></textarea>
+      <div class="export-row">
+        <button id="export-copy" class="primary" type="button">コピー</button>
+        <button id="export-close" class="ghost" type="button">閉じる</button>
+      </div>
+      <div class="export-done" id="export-done" hidden></div>
+    </div>
+  </div>
+
+  <div class="grp">
+    <div class="grp-h">このβ版について</div>
+    <div class="about" id="about-box"></div>
+  </div>
+  <div class="dock-pad"></div>
+</main>
+
+<div class="dock" id="more-dock" hidden>
+  <div class="dock-inner">
+    <button id="more-back" class="primary" type="button">もどる</button>
+  </div>
+</div>
+
 <main id="session" class="wrap" hidden>
   <div class="sess-top">
     <span id="progress">0 / 0</span>
-    <span id="src-badge" class="badge badge-review">復習</span>
     <button id="quit-btn" type="button">終了</button>
   </div>
   <div class="track"><i id="progress-bar" style="width:0%"></i></div>
@@ -321,12 +365,14 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
     <div id="prompt">—</div>
     <div id="answer-box" hidden>
       <div id="answer">—</div>
-      <div id="answer-note"></div>
+
+      <!-- 押さない限り、通常の学習の邪魔をしない -->
+      <button id="field-open" class="field-open" type="button">実際の会話で使った</button>
+
       <div class="field" id="field-row" hidden>
-        <div class="field-h">この表現を実際に使ったときの結果（任意・1タップ）</div>
+        <div class="field-h">実際の会話で、この表現はどうでしたか？</div>
         <div class="field-grid" id="field-buttons"></div>
 
-        <!-- 通じなかったときだけ出る。話し方の問題か、教材の問題かを分ける唯一の手がかり -->
         <div class="field-step2" id="field-step2" hidden>
           <div class="field-q">同じモンゴル語を、画面で相手に見せましたか？</div>
           <div class="field-grid" id="field-text-buttons"></div>
@@ -386,14 +432,20 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 
 <!-- まとめ -->
 <main id="summary" class="wrap" hidden>
-  <div class="head"><span class="brand">おつかれさまでした</span></div>
-  <div id="summary-body"></div>
+  <div class="done">
+    <div class="done-t">今日の学習 完了</div>
+    <div class="done-n" id="done-count">—</div>
+    <div class="done-split">
+      <div class="done-ok"><b id="done-ok">0</b><span>言えた</span></div>
+      <div class="done-ng"><b id="done-ng">0</b><span>言えなかった</span></div>
+    </div>
+  </div>
   <div class="dock-pad"></div>
 </main>
 
 <div class="dock" id="summary-dock" hidden>
   <div class="dock-inner">
-    <button id="back-home" class="primary" type="button">ホームへ戻る</button>
+    <button id="back-home" class="primary" type="button">ホームへ</button>
   </div>
 </div>
 
@@ -2482,8 +2534,8 @@ function $(id) { return document.getElementById(id); }
 
 /** 画面と、それに対応する下部固定ボタンを同時に切り替える。 */
 function showScreen(name) {
-  for (const s of ['onboarding', 'home', 'session', 'summary', 'checkpoint', 'fieldlog']) $(s).hidden = (s !== name);
-  for (const d of ['home-dock', 'session-dock', 'summary-dock', 'checkpoint-dock', 'fieldlog-dock']) {
+  for (const s of ['onboarding', 'home', 'more', 'session', 'summary', 'checkpoint', 'fieldlog']) $(s).hidden = (s !== name);
+  for (const d of ['home-dock', 'more-dock', 'session-dock', 'summary-dock', 'checkpoint-dock', 'fieldlog-dock']) {
     const node = $(d);
     if (node) node.hidden = (d !== name + '-dock');
   }
@@ -2608,36 +2660,70 @@ function finishOnboarding() {
 }
 
 // ---------- ホーム (T7) ----------
+/**
+ * ホーム。**毎日見るのは4つだけ** — 名前 / Day / 今日の問題数 / 開始ボタン。
+ *
+ * 復習数・習得数・弱点・連続日数・モード一覧・注意書きは「その他」へ移した。
+ * 毎日見る必要のない数字を常時出すと、学習を始めるまでに読む物が増える。
+ */
 function renderHome() {
-  const cards = Object.values(state.cards);
-  const nowIso = new Date().toISOString();
   const dayIso = today.today;
-
-  const due = today.day == null ? [] : scheduler.dueCards(cards, dayIso);
-  const relearn = scheduler.relearnCards(cards, nowIso, dayIso);
-  const pending = scheduler.pendingRelearnCount(cards, nowIso, dayIso);
-  const mastered = cards.filter(c => c.mastery >= 0.8).length;
-  const weak = topWeakness();
 
   $('day-label').textContent =
     today.state === 'before_start' ? '開始前' :
-    today.state === 'completed' ? '90日完了' : `Day ${today.day} / ${TOTAL_DAYS}`;
+    today.state === 'completed' ? '90日 完了' : `Day ${today.day} / ${TOTAL_DAYS}`;
 
   const bar = $('day-bar');
   bar.style.width = today.day ? `${Math.min(100, (today.day / TOTAL_DAYS) * 100)}%` : '0%';
 
+  // 途中で閉じていたら、残りの問題数を出して「続きから」にする
+  const resume = resumableSession();
+  const planned = resume ? resume.cardIds.length - resume.index : plannedCount();
+  $('today-count').textContent = today.state === 'before_start' ? '—' : String(planned);
+
+  const cd = curriculumDay(today.day);
+  $('today-sub').textContent = resume ? '続きから'
+    : (cd && cd.theme) ? cd.theme : '';
+
+  // 短い一言だけ。長い説明は「その他 → このβ版について」へ
+  const note = $('today-note');
+  if (cd && cd.vocab && cd.vocab.newCount === 0 && !cd.milestone) {
+    note.textContent = '今日は本来キリル文字の練習日です。文字は手元の資料で進めてください。';
+    note.hidden = false;
+  } else { note.hidden = true; }
+
+  const start = $('start-btn');
+  start.disabled = today.state === 'before_start';
+  start.textContent = today.state === 'before_start' ? `${state.settings.startDayIso} から開始`
+    : resume ? '続きから' : '今日の学習をはじめる';
+}
+
+/** 今日の問題数の見込み。ホームの数字と、実際の出題を合わせるために同じ経路で数える。 */
+function plannedCount() {
+  if (today.state === 'before_start') return 0;
+  const plan = planFor(defaultModeId());
+  return plan && plan.ok ? plan.queue.length : 0;
+}
+
+/** 既定の学習モード。プロファイルの先頭で、画面操作ができるもの。 */
+function defaultModeId() {
+  const ids = engine.profile.availableModes.filter(id => MODES[id].screenInteraction !== 'none');
+  return ids.includes('study20') ? 'study20' : ids[0];
+}
+
+/** 「その他」の画面。毎日の学習動線には出さないものをここで描く。 */
+function renderMore() {
+  const cards = Object.values(state.cards);
+  const nowIso = new Date().toISOString();
+  const dayIso = today.today;
+  const due = today.day == null ? [] : scheduler.dueCards(cards, dayIso);
+  const relearn = scheduler.relearnCards(cards, nowIso, dayIso);
+  const weak = topWeakness();
+
   setStat('stat-due', due.length + relearn.length);
-  setStat('stat-mastered', mastered);
+  setStat('stat-mastered', cards.filter(c => c.mastery >= 0.8).length);
   setStat('stat-weak', weak ? weak.tag : '—');
   setStat('stat-streak', engine.displayStreak(state.streak, dayIso).count);
-
-  const relearnLine = $('relearn-line');
-  if (relearn.length || pending) {
-    relearnLine.hidden = false;
-    relearnLine.textContent = pending && !relearn.length
-      ? `間違えた ${pending} 問は、少し時間をあけてから再挑戦します`
-      : `今すぐ復習できる間違い ${relearn.length} 問` + (pending ? ` / あとで ${pending} 問` : '');
-  } else { relearnLine.hidden = true; }
 
   const modes = $('mode-list');
   clear(modes);
@@ -2653,52 +2739,40 @@ function renderHome() {
       on: ready ? { click: () => startSession(id) } : {},
     }, [
       el('span', { class: 'mode-t', text: m.label5 }),
-      el('span', { class: 'mode-d', text: ready
-        ? `${m.quota.review + (m.quota.relearn || 0)}問 + 新規${Math.min(m.quota.fresh, p.newVocabPerDayMax)}`
-        : '準備中（音声が要ります）' }),
+      el('span', { class: 'mode-d', text: ready ? `約${m.minutes}分` : '準備中（音声が要ります）' }),
     ]));
   }
 
-  renderTodayPlan();
-
-  const start = $('start-btn');
-  start.disabled = today.state === 'before_start';
-  start.textContent = today.state === 'before_start' ? `${state.settings.startDayIso} から開始` : '今日の学習をはじめる';
+  renderAbout();
 }
 
 /**
- * 今日やること。開いてすぐ何をするか分かるようにする。
- *
- * この版に入っていない部分は隠さずに書く。特に Day1〜3 はカリキュラム上
- * キリル文字の練習期間だが、その教材はまだ無い。無いものを黙って飛ばすと、
- * カリキュラムどおりに進んでいると誤解させる。
+ * このβ版について。**入っていないものを隠さずに書く場所。**
+ * 毎日読ませないためにここへ移しただけで、内容は減らしていない。
  */
-function renderTodayPlan() {
-  const box = $('today-plan');
-  const cd = curriculumDay(today.day);
-  if (!cd) { box.hidden = true; return; }
-  box.hidden = false;
+const ABOUT = [
+  ['この版でできること', '日本語を見てモンゴル語を思い出す練習と、その復習の管理です。'
+    + '教材は Day1〜14 の140件が入っています。'],
+  ['まだ入っていないもの', '音声の再生（権利処理済みの音源待ち）、キリル文字の練習（Day1〜3の分）、'
+    + '運転中に聞くモード、シャドーイングやロールプレイ、Day15以降の教材。'],
+  ['発音の採点はしません', 'モンゴル語は資料の少ない言語で、AIの発音判定は当てになりません。'
+    + '誤った音を「正解」として覚えてしまうほうが有害なので、採点機能は作りません。'],
+  ['教材の品質について', 'この教材は、人のモンゴル語話者が確認したものではありません。'
+    + '複数のAIによる検査と規則検査を通しただけです。'
+    + '実際に通じるかどうかは、これから使って確かめます。'],
+  ['実際の会話で使ったら', '答えを見たあとの「実際の会話で使った」から記録してください。'
+    + '通じなかったときは、できるだけ画面を見せて、その結果も残してください。'
+    + 'それが、発音の問題と教材の問題を分ける唯一の手がかりです。'],
+  ['記録の保存先', 'この端末のブラウザにだけ残ります。他の端末とは共有されません。'
+    + 'URL を変えると読めなくなるので、同じ URL を使い続けてください。'],
+];
 
-  $('today-theme').textContent = cd.theme || `Day ${today.day}`;
-  $('today-grammar').textContent = cd.grammar ? cd.grammar.title : '';
-
-  const pts = $('today-points');
-  clear(pts);
-  for (const p of (cd.grammar && cd.grammar.points) || []) {
-    pts.appendChild(el('li', { text: p }));
+function renderAbout() {
+  const box = $('about-box');
+  if (box.childNodes.length) return;   // 一度だけ組み立てる
+  for (const [h, body] of ABOUT) {
+    box.appendChild(el('p', {}, [el('b', { text: h + ' ' }), el('span', { text: body })]));
   }
-
-  const note = $('today-note');
-  const notes = [];
-  if (cd.vocab && cd.vocab.newCount === 0 && !cd.milestone) {
-    notes.push('本来この日はキリル文字の練習期間で、新しい語彙の予定はありません。'
-      + 'その練習教材はこの版に入っていないため、文字は手元の資料で進めてください。'
-      + 'アプリでは、復習が無ければ語彙の学習を前倒しで始めます。');
-  }
-  notes.push('音声は準備中です。権利処理済みの音源が入るまで再生はできません。'
-    + '発音の採点も行いません。');
-  note.textContent = notes.join(' ');
-  note.hidden = false;
 }
 
 function setStat(id, v) { $(id).textContent = String(v); }
@@ -2721,23 +2795,18 @@ const LABELS = {
   fluency: '流暢さ', scenario: '場面', politeness: '丁寧さ', numbers: '数',
 };
 
-const BUDGET_NOTE = {
-  review_overload: '復習がたまっているので、今日は新しい語を入れません',
-  review_heavy: '復習が多いので、今日の新しい語を減らしました',
-  review_moderate: '復習がやや多いので、今日の新しい語を少し減らしました',
-  weakness_heavy: '苦手が増えているので、今日は立て直しを優先します',
-};
-
 // ---------- セッション ----------
-function startSession(modeId) {
-  if (today.state === 'before_start') return;
+/**
+ * その日の出題を組む。ホームの問題数表示と実際の出題で同じ経路を通す。
+ * **学習ロジックは engine が決める。**ここは呼び出すだけ。
+ */
+function planFor(modeId) {
   const cards = Object.values(state.cards);
   const fresh = engine.freshCandidates(cards);   // 何が「新規」かも engine が決める
   const cd = curriculumDay(today.day);
-  const nowIso = new Date().toISOString();
   const base = {
     modeId, cards, events: state.events || [], freshCards: fresh,
-    learningDayIso: today.today, nowIso, day: today.day,
+    learningDayIso: today.today, nowIso: new Date().toISOString(), day: today.day,
   };
   let plan = engine.planSession({ ...base, plannedNewVocab: cd ? cd.vocab.newCount : undefined });
 
@@ -2745,20 +2814,62 @@ function startSession(modeId) {
   // 新規語彙の予定が0語だが、**その文字の練習教材がこの版に入っていない**。
   // 予定を守ると初日に何もできず、学習が始まらない。
   // 試験日 (milestone) は別で、そこは意図的に新規を入れないので前倒ししない。
-  let advanced = false;
   if (plan.ok && plan.queue.length === 0 && cd && !cd.milestone) {
     const fallback = engine.planSession({ ...base, plannedNewVocab: undefined });
-    if (fallback.ok && fallback.queue.length > 0) { plan = fallback; advanced = true; }
+    if (fallback.ok && fallback.queue.length > 0) return { ...fallback, advanced: true };
   }
+  return plan;
+}
+
+/**
+ * 途中で閉じたセッションの続き。
+ *
+ * 保存するのは「その日にどのカードを、どこまで出したか」だけ。
+ * 学習の結果 (カードの状態・出題記録) は解答のたびに engine が保存済みなので、
+ * ここが消えても記録は失われない。**既存の保存形式は壊さない**ため、
+ * 無い場合は単に「続きは無い」として扱う。
+ */
+function resumableSession() {
+  const s = state.session;
+  if (!s || s.day !== today.today) return null;
+  if (!Array.isArray(s.cardIds) || s.index >= s.cardIds.length) return null;
+  if (!s.cardIds.every(id => state.cards[id])) return null;
+  return s;
+}
+
+function saveSession() {
+  state.session = queue.length ? {
+    day: today.today,
+    cardIds: queue.map(q => q.cardId),
+    sources: queue.map(q => q.source),
+    index: qIndex,
+    stats: sessionStats,
+  } : null;
+}
+
+function clearSession() { state.session = null; }
+
+function startSession(modeId) {
+  if (today.state === 'before_start') return;
+
+  // 続きがあれば、そこから再開する
+  const resume = !modeId ? resumableSession() : null;
+  if (resume) {
+    queue = resume.cardIds.map((id, i) => ({ cardId: id, source: (resume.sources || [])[i] || 'review' }));
+    qIndex = resume.index;
+    sessionStats = resume.stats || { answered: 0, correct: 0, wrong: 0, relearn: 0 };
+    showScreen('session');
+    return nextItem();
+  }
+
+  const plan = planFor(modeId || defaultModeId());
   if (!plan.ok) { showNotice('この学習時間の設定では使えないモードです'); return; }
-  if (advanced) showNotice('文字の練習はこの版に入っていないため、語彙の学習から始めます');
+  if (!plan.queue.length) { showNotice('今日の出題はありません'); return; }
+
   queue = plan.queue;
   qIndex = 0;
   sessionStats = { answered: 0, correct: 0, wrong: 0, relearn: 0 };
-  if (!queue.length) { showNotice('今日の出題はありません。独立チェックを通った語彙を追加してください'); return; }
-  if (plan.vocabBudget && plan.vocabBudget.reason !== 'planned') {
-    showNotice(BUDGET_NOTE[plan.vocabBudget.reason] || '今日は復習を優先します');
-  }
+  saveSession();
   showScreen('session');
   nextItem();
 }
@@ -2779,15 +2890,11 @@ function nextItem() {
   $('reveal-btn').hidden = false;
   $('judge-row').hidden = true;
   $('field-row').hidden = true;
+  $('field-open').hidden = false;
 
   // 教材文字列は textContent で入れる。連結もテンプレートも使わない
   $('prompt').textContent = card.promptKey;
   $('answer').textContent = card.answerKey;
-  $('answer-note').textContent = card.grammarTags.join(' / ');
-
-  const badge = $('src-badge');
-  badge.textContent = item.source === 'relearn' ? 'もう一度' : item.source === 'fresh' ? 'はじめて' : '復習';
-  badge.className = 'badge badge-' + item.source;
 
   $('progress').textContent = `${qIndex + 1} / ${queue.length}`;
   $('progress-bar').style.width = `${((qIndex) / queue.length) * 100}%`;
@@ -2802,8 +2909,7 @@ function reveal() {
   $('answer-box').hidden = false;
   $('reveal-btn').hidden = true;
   $('judge-row').hidden = false;
-  const card = currentCard();
-  if (card) renderFieldRow(card);
+  // 実使用の記録は自動で開かない。「実際の会話で使った」を押したときだけ。
 }
 
 function judge(correct) {
@@ -2830,10 +2936,11 @@ function judge(correct) {
   if (correct) sessionStats.correct += 1; else sessionStats.wrong += 1;
   if (r.outcome === 'relearn_correct') sessionStats.relearn += 1;
 
+  qIndex += 1;
+  saveSession();          // 途中で閉じても、同じ日の続きから戻れるようにする
   const saved = storage.save(state);
   if (!saved.ok) showNotice('保存できませんでした。端末の空き容量を確認してください');
 
-  qIndex += 1;
   nextItem();
 }
 
@@ -2922,7 +3029,16 @@ function fieldButtons(labels, order, cls, onPick) {
   });
 }
 
-/** セッション中の記録欄。答えを見たあとだけ出す。 */
+/** 「実際の会話で使った」を押したときだけ開く。通常の学習は邪魔しない。 */
+function openFieldRow() {
+  const card = currentCard();
+  if (!card) return;
+  renderFieldRow(card);
+  $('field-open').hidden = true;
+  $('field-row').scrollIntoView({ block: 'nearest' });
+}
+
+/** 記録欄の中身。開いたときだけ組み立てる。 */
 function renderFieldRow(card) {
   const row = $('field-row');
   const grid = $('field-buttons');
@@ -3027,31 +3143,24 @@ function renderFieldLog() {
   }
 }
 
+/**
+ * まとめ。**画面に出すのは3つだけ** — 問題数 / 言えた / 言えなかった。
+ * 復習予定や弱点などの内部の数字は「その他」で見られるので、ここには出さない。
+ */
 function endSession() {
   showScreen('summary');
-  const cards = Object.values(state.cards);
-  const nowIso = new Date().toISOString();
-  const pending = scheduler.pendingRelearnCount(cards, nowIso, today.today);
-  const tomorrow = cards.filter(c => c.dueAt && c.dueAt > today.today).length;
+  $('done-count').textContent = `${sessionStats.answered} 問`;
+  $('done-ok').textContent = String(sessionStats.correct);
+  $('done-ng').textContent = String(sessionStats.wrong);
 
-  const body = $('summary-body');
-  clear(body);
-  body.appendChild(summaryRow('解いた問題', `${sessionStats.answered} 問`));
-  body.appendChild(summaryRow('言えた', `${sessionStats.correct} 問`));
-  body.appendChild(summaryRow('言えなかった', `${sessionStats.wrong} 問`));
-  if (pending) body.appendChild(summaryRow('あとで再挑戦', `${pending} 問`));
-  body.appendChild(summaryRow('明日以降の復習', `${tomorrow} 問`, true));
-  const weak = topWeakness();
-  if (weak) body.appendChild(summaryRow('今の弱点', weak.tag));
-  const fr = (state.fieldReports || []).length;
-  if (fr) body.appendChild(summaryRow('実使用の記録', `${fr} 件`));
+  // 最後まで終わったら続きは無い。途中で終了した場合は残しておく
+  if (qIndex >= queue.length) clearSession(); else saveSession();
 
   // C1: 最低学習条件を満たした日だけ、1日1回加算する
   const st = engine.updateStreak(state.streak, {
     learningDayIso: today.today, answeredToday: answeredOnDay(today.today),
   });
   state.streak = st.streak;
-  if (st.changed) body.appendChild(summaryRow('連続学習日', `${st.streak.count} 日`));
   storage.save(state);
 }
 
@@ -3061,13 +3170,6 @@ function answeredOnDay(dayIso) {
 }
 function localDayOf(iso) {
   return clock.dayIso(new Date(iso), state.settings.timeZone || 'Asia/Tokyo');
-}
-
-function summaryRow(label, value, emphasise) {
-  return el('div', { class: 'sum-row' + (emphasise ? ' sum-emph' : '') }, [
-    el('span', { class: 'sum-l', text: label }),
-    el('span', { class: 'sum-v', text: value }),
-  ]);
 }
 
 // ---------- C2: 節目チェックポイント ----------
@@ -3129,31 +3231,33 @@ function renderCheckpoint(cp, saved) {
 }
 
 // ---------- 入力 ----------
+function goHome() { showScreen('home'); renderHome(); }
+
 function wire() {
-  $('start-btn').addEventListener('click', () => {
-    const first = engine.profile.availableModes[0];
-    startSession(engine.profile.availableModes.includes('focus60') ? 'focus60' : first);
-  });
+  // 押す場所を1つにする。モードの選択は「その他」へ
+  $('start-btn').addEventListener('click', () => startSession(null));
   $('reveal-btn').addEventListener('click', reveal);
   $('judge-wrong').addEventListener('click', () => judge(false));
   $('judge-ok').addEventListener('click', () => judge(true));
   $('quit-btn').addEventListener('click', endSession);
-  $('back-home').addEventListener('click', () => { showScreen('home'); renderHome(); });
+  $('field-open').addEventListener('click', openFieldRow);
+  $('back-home').addEventListener('click', goHome);
+  $('more-btn').addEventListener('click', () => { showScreen('more'); renderMore(); });
+  $('more-back').addEventListener('click', goHome);
   $('export-btn').addEventListener('click', doExport);
   $('export-field').addEventListener('click', () => { exportMode = 'field'; renderExport(); });
   $('export-all').addEventListener('click', () => { exportMode = 'all'; renderExport(); });
   $('export-copy').addEventListener('click', copyExport);
   $('export-close').addEventListener('click', () => { $('export-box').hidden = true; });
   $('fieldlog-btn').addEventListener('click', () => { showScreen('fieldlog'); renderFieldLog(); });
-  $('fieldlog-back').addEventListener('click', () => { showScreen('home'); renderHome(); });
+  $('fieldlog-back').addEventListener('click', goHome);
   $('cp-continue').addEventListener('click', () => {
     // 確認済みの印を残す。合否そのものは講師の判定が入るまで確定しない
     state.checkpoints = state.checkpoints || {};
     const d = today.day;
     state.checkpoints[d] = { ...(state.checkpoints[d] || {}), acknowledged: true, acknowledgedAt: new Date().toISOString() };
     storage.save(state);
-    showScreen('home');
-    renderHome();
+    goHome();
   });
 
   // T7: キーボード。Space = 答え表示 / ← = 失敗 / → = 正解
