@@ -11,12 +11,109 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
-      - name: mbspeech の出所を上流までたどる
+      - name: 学習に使える音声データを一次情報まで追う
         run: |
           mkdir -p out
-          python3 - <<'PY' 2>&1 | tail -160 | tee out/60-provenance.txt
+          python3 - <<'PY' 2>&1 | tail -220 | tee out/70-datasets.txt
+          import json, urllib.request, urllib.parse, time
+
+          def get(url, raw=False, timeout=45):
+              try:
+                  req = urllib.request.Request(url, headers={'User-Agent': 'mn90-poc'})
+                  with urllib.request.urlopen(req, timeout=timeout) as r:
+                      b = r.read()
+                      return b.decode('utf-8', 'replace') if raw else json.loads(b)
+              except Exception as e:
+                  return ("(ERR %s)" % e) if raw else None
+
+          # モンゴル語の音声データを、名前ではなく tag で全部あたる
+          ids = set([
+              "google/fleurs", "Blgn94/mongolian-stt-dataset",
+              "Otgonbaatar/Mongolian_number_1-10", "mozilla-foundation/common_voice_17_0",
+              "btsee/mbspeech_mn", "openslr/librispeech_asr",
+          ])
+          for f in [[("filter", "mn")], [("search", "mongolian")], [("search", "монгол")]]:
+              for extra in [[("filter", "text-to-speech")], [("filter", "audio")],
+                            [("filter", "automatic-speech-recognition")], []]:
+                  d = get("https://huggingface.co/api/datasets?" +
+                          urllib.parse.urlencode(f + extra + [("limit", 100)]))
+                  if isinstance(d, list):
+                      for m in d:
+                          if m.get("id"):
+                              ids.add(m["id"])
+
+          print("走査した音声データ:", len(ids))
+          print()
+          rows = []
+          for i in sorted(ids):
+              info = get("https://huggingface.co/api/datasets/" + i)
+              if not isinstance(info, dict):
+                  continue
+              cd = info.get("cardData") or {}
+              tags = " ".join(info.get("tags", [])).lower()
+              if not ("audio" in tags or "speech" in tags):
+                  continue
+              lic = cd.get("license")
+              if isinstance(lic, list):
+                  lic = ",".join(lic)
+              lic = str(lic or "")
+              rd = get("https://huggingface.co/datasets/%s/raw/main/README.md" % i, raw=True) or ""
+              low = rd.lower()
+              # 出所を示す手がかりが README にあるか
+              prov = [w for w in ("recorded", "speaker", "volunteer", "consent", "collected",
+                                  "commissioned", "crowdsourc", "bible", "broadcast", "youtube",
+                                  "scraped", "hour", "narrator", "professional")
+                      if w in low]
+              rows.append((i, lic or "(無)", ",".join(prov) or "(手がかり無し)", len(rd)))
+
+          print("%-46s %-14s %s" % ("DATASET", "LICENSE", "出所の手がかり"))
+          for r in sorted(rows, key=lambda x: (x[1] == "(無)", x[0])):
+              print("%-46s %-14s %s" % (r[0][:46], r[1][:14], r[2][:70]))
+          PY
+
+      - name: 有力候補の README を全文で読む
+        if: always()
+        run: |
+          python3 - <<'PY' 2>&1 | tail -180 | tee out/71-primary.txt
+          import urllib.request
+
+          def raw(url):
+              try:
+                  req = urllib.request.Request(url, headers={'User-Agent': 'mn90-poc'})
+                  with urllib.request.urlopen(req, timeout=45) as r:
+                      return r.read().decode('utf-8', 'replace')
+              except Exception as e:
+                  return "(ERR %s)" % e
+
+          # 一次情報: dataset card 本文と、その元になった公開資料
+          SRC = [
+              ("FLEURS card", "https://huggingface.co/datasets/google/fleurs/raw/main/README.md", 2500),
+              ("Blgn94 card", "https://huggingface.co/datasets/Blgn94/mongolian-stt-dataset/raw/main/README.md", 2500),
+              ("FLoRes repo", "https://raw.githubusercontent.com/facebookresearch/flores/main/README.md", 1800),
+              ("OpenSLR 一覧", "https://www.openslr.org/resources.php", 0),
+          ]
+          for name, url, cap in SRC:
+              print("\n" + "=" * 72)
+              print(name, "|", url)
+              t = raw(url)
+              if t.startswith("(ERR"):
+                  print("  ", t); continue
+              if name == "OpenSLR 一覧":
+                  import re
+                  hits = [ln for ln in re.split(r"<tr|\n", t) if "ongol" in ln]
+                  print("  モンゴル語を含む行:", len(hits))
+                  for h in hits[:12]:
+                      print("   ", re.sub(r"<[^>]+>", " ", h)[:200].strip())
+                  continue
+              print(t[:cap])
+          PY
+
+      - name: 学習の道具側の license を読む
+        if: always()
+        run: |
+          python3 - <<'PY' 2>&1 | tee out/72-tools.txt
           import json, urllib.request
 
           def get(url, raw=False):
@@ -28,42 +125,70 @@ jobs:
               except Exception as e:
                   return ("(ERR %s)" % e) if raw else None
 
-          print("=== 1. HF 側のファイル一覧 (READMEの外に出所が書かれていないか) ===")
-          for kind, i in [("datasets", "btsee/mbspeech_mn"), ("models", "btsee/oron-tts")]:
-              info = get("https://huggingface.co/api/%s/%s" % (kind, i))
-              if isinstance(info, dict):
-                  print(" ", i, "->", [s.get("rfilename") for s in (info.get("siblings") or [])])
+          print("=== PyPI に出ている license ===")
+          for pkg in ["coqui-tts", "piper-tts", "TTS", "espeakng-loader", "phonemizer"]:
+              d = get("https://pypi.org/pypi/%s/json" % pkg)
+              if isinstance(d, dict):
+                  info = d.get("info") or {}
+                  cls = [c for c in (info.get("classifiers") or []) if "License" in c]
+                  print("  %-16s license=%s  %s" % (pkg, str(info.get("license"))[:30], ";".join(cls)[:70]))
+              else:
+                  print("  %-16s (取得不可)" % pkg)
 
           print()
-          print("=== 2. データの付随情報 ===")
-          for f in ("dataset_infos.json", "README.md", ".gitattributes"):
-              txt = get("https://huggingface.co/datasets/btsee/mbspeech_mn/raw/main/" + f, raw=True) or ""
-              if txt and not txt.startswith("(ERR"):
-                  print("--- %s (600) ---" % f)
-                  print(txt[:600])
-
-          print()
-          print("=== 3. 上流の MBSpeech (GitHub) を読む ===")
-          for url in [
-              "https://raw.githubusercontent.com/tugstugi/mongolian-nlp/master/README.md",
-              "https://raw.githubusercontent.com/tugstugi/pytorch-dc-tts/master/README.md",
+          print("=== 実装リポジトリの LICENSE 先頭 ===")
+          for name, url in [
+              ("coqui-tts (idiap fork)", "https://raw.githubusercontent.com/idiap/coqui-ai-TTS/main/LICENSE.txt"),
+              ("VITS 原実装", "https://raw.githubusercontent.com/jaywalnut310/vits/main/LICENSE"),
+              ("piper", "https://raw.githubusercontent.com/rhasspy/piper/master/LICENSE.md"),
+              ("espeak-ng", "https://raw.githubusercontent.com/espeak-ng/espeak-ng/master/COPYING"),
           ]:
-              txt = get(url, raw=True) or ""
-              print("\n--- %s ---" % url.split("/")[4])
-              if txt.startswith("(ERR") or not txt:
-                  print("  (取得不可)"); continue
-              low = txt.lower()
-              # 出所と条件に関わる行だけを抜き出す (全文は長い)
-              keys = ("mbspeech", "bible", "license", "dataset", "speaker", "recorded",
-                      "copyright", "permission", "non-commercial", "commercial")
-              hits = [ln for ln in txt.split("\n") if any(k in ln.lower() for k in keys)]
-              for ln in hits[:40]:
-                  print("  " + ln.strip()[:200])
+              t = get(url, raw=True) or ""
+              first = [l for l in t.split("\n") if l.strip()][:3]
+              print("  %-24s %s" % (name, " / ".join(first)[:110]))
+          PY
 
+      - name: CPU だけで学習できるかを実測する
+        if: always()
+        run: |
+          nproc; free -g | head -2
+          python3 -c "import shutil;print('disk GB:', shutil.disk_usage('/').free//10**9)"
+          python3 -c "
+          try:
+              import torch; print('cuda:', torch.cuda.is_available())
+          except Exception as e:
+              print('torch 未導入')
+          " || true
+          pip install -q torch 2>&1 | tail -2 || true
+          python3 - <<'PY' 2>&1 | tee out/73-train-speed.txt
+          import time
+          import torch
+          print("cuda:", torch.cuda.is_available(), "| threads:", torch.get_num_threads())
+          # VITS 相当の規模 (約 3,000万パラメータ) を CPU で 1 step 回すのに何秒かかるか。
+          # これが分かれば「何日かかるか」が机上ではなく実測から言える
+          import torch.nn as nn
+          class Block(nn.Module):
+              def __init__(s, c=192):
+                  super().__init__()
+                  s.c1 = nn.Conv1d(c, c, 5, padding=2); s.c2 = nn.Conv1d(c, c, 5, padding=2)
+                  s.n1 = nn.GroupNorm(1, c); s.n2 = nn.GroupNorm(1, c)
+              def forward(s, x): return x + s.c2(torch.relu(s.n2(s.c1(torch.relu(s.n1(x))))))
+          model = nn.Sequential(*[Block() for _ in range(24)])
+          n = sum(p.numel() for p in model.parameters())
+          print("試した模型の大きさ: %.1fM パラメータ" % (n / 1e6))
+          opt = torch.optim.Adam(model.parameters(), 1e-4)
+          x = torch.randn(8, 192, 400)   # batch 8 / 約4秒ぶんの長さ
+          t0 = time.time(); steps = 5
+          for _ in range(steps):
+              opt.zero_grad(); y = model(x); loss = y.pow(2).mean(); loss.backward(); opt.step()
+          dt = (time.time() - t0) / steps
+          print("1 step: %.2f 秒 (batch 8)" % dt)
+          for total in (100000, 250000):
+              hours = dt * total / 3600
+              print("  %d step まで回すと %.0f 時間 (%.1f 日)" % (total, hours, hours / 24))
           print()
-          print("=== 4. まとめ ===")
-          print("  ここで『誰が録音し、どういう許諾か』が読み取れなければ、")
-          print("  ④声の元の録音 は unknown のまま。unknown は採用しない。")
+          print("GitHub の無料枠は 1 job あたり最大 6 時間。")
+          print("上の数字と突き合わせれば、CPU だけで学習しきれるかが分かる。")
           PY
 
       - uses: actions/upload-artifact@v4
