@@ -40,6 +40,35 @@ jobs:
           print("確認: CC BY-NC 4.0。非商用利用に限り、表示(attribution)を条件に利用できる")
           PY
 
+      - name: 速さと切り取りを見極める（少数で試す）
+        run: |
+          pip install -q "transformers>=4.44" torch numpy 2>&1 | tail -2
+          python3 - <<'PY' 2>&1 | tee rate-probe.txt
+          import numpy as np, torch, json
+          from transformers import VitsModel, AutoTokenizer
+          M = "facebook/mms-tts-mon"
+          tok = AutoTokenizer.from_pretrained(M); model = VitsModel.from_pretrained(M); model.eval()
+          sr = model.config.sampling_rate
+          # 1音節・3音節・長い文 を比べる。長いほうが長くなっていなければ何かがおかしい
+          T = [("p_i", "би"), ("n_today", "өнөөдөр"), ("g_thanks", "Баярлалаа"),
+               ("s_i_sell_cars", "Би хуучин автомашин зардаг")]
+          print("既定の speaking_rate:", getattr(model, "speaking_rate", None))
+          for rate in (1.0, 0.85, 0.7):
+              model.speaking_rate = rate
+              out = []
+              for cid, text in T:
+                  with torch.no_grad():
+                      w = model(**tok(text, return_tensors="pt")).waveform.squeeze().numpy()
+                  raw = len(w) / sr
+                  # 切り取りの影響を見る。しきい値を変えて比べる
+                  def trimmed(th):
+                      nz = np.where(np.abs(w) > th)[0]
+                      return (nz[-1] - nz[0]) / sr if len(nz) else 0.0
+                  out.append("%s 全%.2f 切0.01→%.2f 切0.003→%.2f"
+                             % (cid, raw, trimmed(0.01), trimmed(0.003)))
+              print("rate=%.2f | %s" % (rate, "  |  ".join(out)))
+          PY
+
       - name: 140件を合成する
         run: |
           sudo apt-get -qq update >/dev/null 2>&1 || true
