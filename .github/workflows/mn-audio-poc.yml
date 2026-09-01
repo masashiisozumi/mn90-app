@@ -11,138 +11,180 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
-      - name: 候補一覧とlicenseを1行ずつ
+      - name: 有望候補のREADME/LICENSE/datasetを実物で読む
         run: |
           mkdir -p out
-          python3 - <<'PY' 2>&1 | tee out/10-table.txt
-          import json, urllib.request, urllib.parse
+          python3 - <<'PY' 2>&1 | tee out/20-shortlist.txt
+          import json, urllib.request
 
           def get(url, raw=False):
               try:
                   req = urllib.request.Request(url, headers={'User-Agent': 'mn90-poc'})
-                  with urllib.request.urlopen(req, timeout=30) as r:
+                  with urllib.request.urlopen(req, timeout=40) as r:
                       b = r.read()
                       return b.decode('utf-8', 'replace') if raw else json.loads(b)
               except Exception as e:
                   return ("(ERR %s)" % e) if raw else None
 
-          ids = set(["Bokhbat/mongolian-vits-tts", "btseee/oron-tts", "facebook/mms-tts-mon"])
-          queries = [
-              [("search", "mongolian"), ("filter", "text-to-speech"), ("limit", 100)],
-              [("search", "khalkha"), ("limit", 50)],
-              [("search", "mongol tts"), ("limit", 50)],
-              [("filter", "mn"), ("filter", "text-to-speech"), ("limit", 100)],
-              [("filter", "mn"), ("filter", "text-to-audio"), ("limit", 100)],
+          SHORT = [
+              "antoniow12/speecht5_tts_mongolian",
+              "antoniow12/speecht5_tts_mongolian2",
+              "antoniow12/mongolian-tts2",
+              "mazalaai/TTS_Mongolian",
+              "mendeeb/F5-TTS-mongolian",
+              "Bokhbat/mongolian-vits-tts",
+              "Bokhbat/mongolian-vits-myvoice",
+              "bayartsogt/tts_transformer-mn-mbspeech",
+              "k2-fsa/OmniVoice",
           ]
-          for q in queries:
-              d = get("https://huggingface.co/api/models?" + urllib.parse.urlencode(q))
-              if isinstance(d, list):
-                  for m in d:
-                      if m.get("modelId"):
-                          ids.add(m["modelId"])
-
-          print("candidates:", len(ids))
-          rows = []
-          for i in sorted(ids):
-              info = get("https://huggingface.co/api/models/" + i)
-              if not isinstance(info, dict):
-                  rows.append((i, "(api-fail)", "", "", 0, False, ""))
-                  continue
-              tags = info.get("tags", [])
-              cd = info.get("cardData") or {}
-              lic = ",".join([t[8:] for t in tags if t.startswith("license:")]) or "-"
-              cdl = str(cd.get("license") or "-")
-              ds = ",".join(cd.get("datasets") or []) or "-"
-              gated = bool(info.get("gated"))
-              mn = "mn" in tags or "mon" in tags or "mongolian" in " ".join(tags).lower() \
-                   or "mongol" in i.lower() or "mms-tts-mon" in i
-              rows.append((i, lic, cdl, ds, info.get("downloads") or 0, gated, "MN" if mn else ""))
-
-          rows.sort(key=lambda r: (r[6] != "MN", -r[4]))
-          print("%-52s %-16s %-14s %-8s %-5s %s" % ("MODEL", "LICENSE-TAG", "CARD-LICENSE", "DL", "GATED", "MN?"))
-          for r in rows:
-              print("%-52s %-16s %-14s %-8s %-5s %s" % (r[0][:52], r[1][:16], r[2][:14], r[4], r[5], r[6]))
-          print()
-          print("=== datasets (MN候補のみ) ===")
-          for r in rows:
-              if r[6] == "MN":
-                  print(r[0], "->", r[3])
-          PY
-
-      - name: MN候補のREADME/LICENSEを実物で読む
-        run: |
-          python3 - <<'PY' 2>&1 | tee out/11-mn-license.txt
-          import json, urllib.request, re
-
-          def get(url, raw=False):
-              try:
-                  req = urllib.request.Request(url, headers={'User-Agent': 'mn90-poc'})
-                  with urllib.request.urlopen(req, timeout=30) as r:
-                      b = r.read()
-                      return b.decode('utf-8', 'replace') if raw else json.loads(b)
-              except Exception as e:
-                  return ("(ERR %s)" % e) if raw else None
-
-          for i in ["Bokhbat/mongolian-vits-tts", "btseee/oron-tts", "facebook/mms-tts-mon"]:
+          for i in SHORT:
               print("\n" + "=" * 70)
               print("MODEL:", i)
               info = get("https://huggingface.co/api/models/" + i)
               if not isinstance(info, dict):
-                  print("  (存在しない / 取得不可)")
-                  continue
+                  print("  (取得不可)"); continue
               cd = info.get("cardData") or {}
-              print("  license-tag:", [t for t in info.get("tags", []) if t.startswith("license:")])
-              print("  cardData.license:", cd.get("license"))
-              print("  cardData.datasets:", cd.get("datasets"))
-              print("  gated:", info.get("gated"), " downloads:", info.get("downloads"))
-              print("  files:", [s.get("rfilename") for s in (info.get("siblings") or [])][:30])
+              print("  license :", cd.get("license"), "|", [t for t in info.get("tags", []) if t.startswith("license:")])
+              print("  datasets:", cd.get("datasets"))
+              print("  gated   :", info.get("gated"), " dl:", info.get("downloads"))
+              print("  files   :", [s.get("rfilename") for s in (info.get("siblings") or [])][:20])
               rd = get("https://huggingface.co/%s/raw/main/README.md" % i, raw=True) or ""
-              print("  --- README (2000) ---")
-              print(rd[:2000])
-              for f in ("LICENSE", "LICENSE.md", "LICENSE.txt"):
-                  lic = get("https://huggingface.co/%s/raw/main/%s" % (i, f), raw=True) or ""
-                  if lic and not lic.startswith("(ERR"):
-                      print("  --- %s (800) ---" % f)
-                      print(lic[:800])
-                      break
+              print("  --- README (1600) ---")
+              print(rd[:1600])
           PY
 
-      - name: 実際に音を作る（MMS-TTS mon / 参考比較のみ）
+      - name: 学習dataのlicenseを実物で読む
         run: |
-          pip install -q "transformers>=4.44" torch --index-url https://pypi.org/simple 2>&1 | tail -3
-          python3 - <<'PY' 2>&1 | tee out/12-synth.txt
-          import time, os
+          python3 - <<'PY' 2>&1 | tee out/21-datasets.txt
+          import json, urllib.request
+
+          def get(url, raw=False):
+              try:
+                  req = urllib.request.Request(url, headers={'User-Agent': 'mn90-poc'})
+                  with urllib.request.urlopen(req, timeout=40) as r:
+                      b = r.read()
+                      return b.decode('utf-8', 'replace') if raw else json.loads(b)
+              except Exception as e:
+                  return ("(ERR %s)" % e) if raw else None
+
+          DS = [
+              "mozilla-foundation/common_voice_17_0",
+              "mozilla-foundation/common_voice_11_0",
+              "bayartsogt/mbspeech",
+              "mbspeech",
+          ]
+          for d in DS:
+              print("\n" + "=" * 70)
+              print("DATASET:", d)
+              info = get("https://huggingface.co/api/datasets/" + d)
+              if not isinstance(info, dict):
+                  print("  (取得不可)"); continue
+              cd = info.get("cardData") or {}
+              print("  license:", cd.get("license"), "|", [t for t in info.get("tags", []) if t.startswith("license:")])
+              print("  gated  :", info.get("gated"))
+              rd = get("https://huggingface.co/datasets/%s/raw/main/README.md" % d, raw=True) or ""
+              head = rd[:1200]
+              print("  --- README (1200) ---")
+              print(head)
+          PY
+
+      - name: 実際に音を作れるか（技術的可否のみ / 公開はしない）
+        run: |
+          pip install -q "transformers>=4.44" torch soundfile sentencepiece datasets 2>&1 | tail -3
+          python3 - <<'PY' 2>&1 | tee out/22-synth.txt
+          import time, os, wave
+          import numpy as np
           TEXT = "Баярлалаа"   # 既存 production_ready の g_thanks。新しいモンゴル語は作らない
-          t0 = time.time()
-          try:
-              from transformers import VitsModel, AutoTokenizer
-              import torch, wave, numpy as np
-              mid = "facebook/mms-tts-mon"
-              tok = AutoTokenizer.from_pretrained(mid)
-              model = VitsModel.from_pretrained(mid)
-              t1 = time.time()
-              inputs = tok(TEXT, return_tensors="pt")
-              with torch.no_grad():
-                  out = model(**inputs).waveform
-              t2 = time.time()
-              wav = out.squeeze().numpy()
-              sr = model.config.sampling_rate
-              os.makedirs("out", exist_ok=True)
-              p = "out/mms_mon_thanks.wav"
-              with wave.open(p, "w") as w:
+          os.makedirs("out", exist_ok=True)
+
+          def save(path, wav, sr):
+              with wave.open(path, "w") as w:
                   w.setnchannels(1); w.setsampwidth(2); w.setframerate(sr)
                   w.writeframes((np.clip(wav, -1, 1) * 32767).astype("<i2").tobytes())
-              print("OK synthesized")
-              print("  model      :", mid)
-              print("  load_sec   : %.1f" % (t1 - t0))
-              print("  synth_sec  : %.2f" % (t2 - t1))
-              print("  sample_rate:", sr)
-              print("  duration_s : %.2f" % (len(wav) / sr))
-              print("  bytes      :", os.path.getsize(p))
+              return os.path.getsize(path)
+
+          print("### A) SpeechT5 (antoniow12/speecht5_tts_mongolian, MIT) ###")
+          try:
+              from transformers import SpeechT5Processor, SpeechT5ForTextToSpeech, SpeechT5HifiGan
+              import torch
+              t0 = time.time()
+              mid = "antoniow12/speecht5_tts_mongolian"
+              proc = SpeechT5Processor.from_pretrained(mid)
+              model = SpeechT5ForTextToSpeech.from_pretrained(mid)
+              voc = SpeechT5HifiGan.from_pretrained("microsoft/speecht5_hifigan")
+              t1 = time.time()
+              spk = torch.zeros((1, 512))     # 話者ベクトルの出所を増やさないため零ベクトルで可否だけ見る
+              inp = proc(text=TEXT, return_tensors="pt")
+              with torch.no_grad():
+                  wav = model.generate_speech(inp["input_ids"], spk, vocoder=voc).numpy()
+              t2 = time.time()
+              n = save("out/speecht5_mn_thanks.wav", wav, 16000)
+              print("  OK load=%.1fs synth=%.2fs dur=%.2fs bytes=%d" % (t1 - t0, t2 - t1, len(wav) / 16000, n))
           except Exception as e:
-              print("NG:", type(e).__name__, e)
+              print("  NG:", type(e).__name__, str(e)[:400])
+
+          print()
+          print("### B) Coqui VITS (Bokhbat/mongolian-vits-tts, apache-2.0) ###")
+          try:
+              from huggingface_hub import hf_hub_download
+              t0 = time.time()
+              repo = "Bokhbat/mongolian-vits-tts"
+              mp = hf_hub_download(repo, "best_model.pth")
+              cp = hf_hub_download(repo, "config.json")
+              sp = hf_hub_download(repo, "speakers.pth")
+              print("  downloaded: %.1f MB (%.1fs)" % (os.path.getsize(mp) / 1e6, time.time() - t0))
+              import json as _j
+              cfg = _j.load(open(cp))
+              print("  config.model:", cfg.get("model"), " sr:", (cfg.get("audio") or {}).get("sample_rate"))
+              print("  config.datasets:", [d.get("name") for d in (cfg.get("datasets") or [])])
+              print("  config.phonemizer:", cfg.get("phonemizer"), " use_phonemes:", cfg.get("use_phonemes"))
+              try:
+                  from TTS.utils.synthesizer import Synthesizer
+                  t1 = time.time()
+                  syn = Synthesizer(mp, cp, sp, use_cuda=False)
+                  names = syn.tts_model.speaker_manager.speaker_names
+                  print("  speakers:", len(names))
+                  w = syn.tts(TEXT, speaker_name=names[0])
+                  t2 = time.time()
+                  n = save("out/coqui_vits_mn_thanks.wav", np.array(w), syn.output_sample_rate)
+                  print("  OK init=%.1fs synth=%.2fs bytes=%d" % (t1 - t0, t2 - t1, n))
+              except Exception as e:
+                  print("  synth NG:", type(e).__name__, str(e)[:400])
+          except Exception as e:
+              print("  NG:", type(e).__name__, str(e)[:400])
+          PY
+
+      - name: coqui-tts を入れて再挑戦
+        run: |
+          pip install -q coqui-tts 2>&1 | tail -5 || echo "(coqui-tts install failed)"
+          python3 - <<'PY' 2>&1 | tee out/23-coqui.txt
+          import os, time, wave
+          import numpy as np
+          TEXT = "Баярлалаа"
+          try:
+              from huggingface_hub import hf_hub_download
+              from TTS.utils.synthesizer import Synthesizer
+              repo = "Bokhbat/mongolian-vits-tts"
+              mp = hf_hub_download(repo, "best_model.pth")
+              cp = hf_hub_download(repo, "config.json")
+              sp = hf_hub_download(repo, "speakers.pth")
+              t1 = time.time()
+              syn = Synthesizer(mp, cp, sp, use_cuda=False)
+              names = list(syn.tts_model.speaker_manager.speaker_names)
+              print("speakers:", len(names), names[:5])
+              w = np.array(syn.tts(TEXT, speaker_name=names[0]))
+              t2 = time.time()
+              os.makedirs("out", exist_ok=True)
+              p = "out/coqui_vits_mn_thanks.wav"
+              with wave.open(p, "w") as f:
+                  f.setnchannels(1); f.setsampwidth(2); f.setframerate(syn.output_sample_rate)
+                  f.writeframes((np.clip(w, -1, 1) * 32767).astype("<i2").tobytes())
+              print("OK init+synth=%.1fs sr=%d dur=%.2fs bytes=%d"
+                    % (t2 - t1, syn.output_sample_rate, len(w) / syn.output_sample_rate, os.path.getsize(p)))
+          except Exception as e:
+              print("NG:", type(e).__name__, str(e)[:500])
           PY
 
       - uses: actions/upload-artifact@v4
