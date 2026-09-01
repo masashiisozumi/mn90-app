@@ -32,6 +32,21 @@
   --vh:1vh;
   --fs:1;                  /* 文字の倍率。表示設定で変える。押す場所の大きさは変えない */
   --tap:48px;              /* 44pt 以上。実測で余裕を持たせる */
+  --tap-main:56px;         /* 主操作。親指で外さない大きさ */
+  --tap-pair:60px;         /* 2つ並ぶもの。押し間違えないよう、さらに大きく */
+  --action-h:76px;         /* 学習中の押す場所。**答えの前後で変えない高さ** */
+
+  /* 余白。同じ意味の隙間に、画面ごとの独自の値を置かない */
+  --space-1:6px;
+  --space-2:10px;
+  --space-3:14px;
+  --space-4:18px;
+  --space-5:26px;
+
+  /* 角丸。3種類だけ。同じ意味のものに違う丸みを使わない */
+  --radius-card:16px;      /* 面 (箱・カード・行) */
+  --radius-btn:12px;       /* 押すもの */
+  --radius-pill:99px;      /* 帯・バー・丸い印 */
 
   /* 文字の大きさ。iPhone で読みやすい実寸から決める。
      ここを1か所にまとめておき、画面ごとに勝手な値を置かない */
@@ -83,10 +98,10 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .brand{font-size:.94rem;font-weight:700;letter-spacing:.01em;color:var(--accent)}
 #day-label{font-size:.82rem;color:var(--dim);font-variant-numeric:tabular-nums}
 .icon-btn{min-height:var(--tap);min-width:var(--tap);padding:0 12px;font-size:.82rem;
-  color:var(--dim);border-radius:10px;display:inline-flex;align-items:center;justify-content:center}
+  color:var(--dim);border-radius:var(--radius-btn);display:inline-flex;align-items:center;justify-content:center}
 .icon-btn:active{background:var(--sunk)}
-.track{height:6px;background:var(--sunk);border-radius:99px;overflow:hidden;margin-bottom:18px}
-.track>i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.track{height:6px;background:var(--sunk);border-radius:var(--radius-pill);overflow:hidden;margin-bottom:18px}
+.track>i{display:block;height:100%;background:var(--accent);border-radius:var(--radius-pill)}
 
 /* ---- ホーム上部。出すのは3つだけ ---- */
 /* 点数・順位・通貨・残機は作らない。増やすほど学習から目が離れる */
@@ -100,7 +115,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 /* ---- 今日のミッション ---- */
 /* 「カードを処理する」ではなく「これができるようになる」を先に見せる */
 /* 枠で囲まず、面の色だけで区切る。小さい箱を並べると業務アプリに見える */
-.mission{background:var(--accent-soft);border-radius:16px;
+.mission{background:var(--accent-soft);border-radius:var(--radius-card);
   padding:16px 18px;margin-bottom:14px}
 .mission-h{font-size:calc(var(--t-tiny) * var(--fs));color:var(--accent);
   letter-spacing:.08em;font-weight:700}
@@ -111,7 +126,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 /* ---- 今週の目当て ---- */
 .wk{display:grid;gap:7px}
 .wk-row{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:10px;
-  background:var(--raised);border:1px solid var(--line);border-radius:12px;
+  background:var(--raised);border:1px solid var(--line);border-radius:var(--radius-btn);
   padding:11px 14px;font-size:.9rem}
 .wk-row.met{background:var(--ok-soft);border-color:var(--ok-soft);color:var(--ok)}
 .wk-m{text-align:center}
@@ -120,14 +135,14 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 
 /* ---- できること ---- */
 .can{display:grid;gap:10px}
-.can-row{background:var(--raised);border-radius:14px;padding:14px 16px}
+.can-row{background:var(--raised);border-radius:var(--radius-card);padding:14px 16px}
 .can-head{display:flex;align-items:center;gap:8px}
 .can-m{color:var(--faint);font-weight:800}
 .can-row.on .can-m{color:var(--ok)}
 .can-t{font-size:calc(var(--t-body) * var(--fs));font-weight:700}
 .can-row.on .can-t{color:var(--ok)}
-.can-bar{height:8px;background:var(--sunk);border-radius:99px;overflow:hidden;margin:10px 0 8px}
-.can-bar>i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.can-bar{height:8px;background:var(--sunk);border-radius:var(--radius-pill);overflow:hidden;margin:10px 0 8px}
+.can-bar>i{display:block;height:100%;background:var(--accent);border-radius:var(--radius-pill)}
 .can-row.on .can-bar>i{background:var(--ok)}
 .can-foot{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .can-n{font-size:calc(var(--t-sub) * var(--fs));color:var(--dim);font-variant-numeric:tabular-nums}
@@ -135,16 +150,16 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 
 /* ---- 学習中の小さな案内 ---- */
 .step-hint{font-size:calc(var(--t-sub) * var(--fs));letter-spacing:.04em;
-  margin-bottom:8px;text-align:center;font-weight:700}
+  font-weight:700;margin-left:auto}
 .step-hint.near{color:var(--accent);font-weight:700}
 
 /* ---- 完了画面の飾り ---- */
 .perfect{display:inline-flex;align-items:center;gap:7px;align-self:center;margin-top:14px;
   font-size:.94rem;font-weight:800;color:var(--accent);
-  background:var(--accent-soft);border:1px solid var(--accent);border-radius:99px;padding:7px 18px}
-.cheer-bar{height:8px;background:var(--sunk);border-radius:99px;overflow:hidden;
+  background:var(--accent-soft);border:1px solid var(--accent);border-radius:var(--radius-pill);padding:7px 18px}
+.cheer-bar{height:8px;background:var(--sunk);border-radius:var(--radius-pill);overflow:hidden;
   margin:18px auto 0;max-width:240px;width:100%}
-.cheer-bar>i{display:block;height:100%;background:var(--accent);border-radius:99px;width:0}
+.cheer-bar>i{display:block;height:100%;background:var(--accent);border-radius:var(--radius-pill);width:0}
 @media (prefers-reduced-motion:no-preference){
   .cheer-bar>i{transition:width .55s cubic-bezier(.3,.9,.4,1)}
 }
@@ -154,7 +169,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .ask{margin-top:26px}
 .ask-q{font-size:.9rem;color:var(--dim);margin-bottom:10px}
 .ask-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.ask-row button{min-height:52px;border-radius:12px;font-size:.88rem;
+.ask-row button{min-height:var(--tap-main);border-radius:var(--radius-btn);font-size:.88rem;
   background:var(--raised);border:1px solid var(--line)}
 .ask-row button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);
   color:var(--accent);font-weight:700}
@@ -203,7 +218,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 /* ---- ミニレッスンの一覧 ---- */
 .lessons{display:grid;gap:2px;margin:6px 0 8px}
 .lesson{display:grid;grid-template-columns:26px 1fr auto;align-items:center;gap:12px;
-  min-height:48px;padding:6px 10px;border-radius:12px;text-align:left;
+  min-height:var(--tap);padding:6px 10px;border-radius:var(--radius-btn);text-align:left;
   background:transparent;font-size:calc(var(--t-sub) * var(--fs))}
 .lesson-mark{font-size:1rem;text-align:center;color:var(--faint)}
 .lesson-sub{font-size:.78rem;color:var(--faint);font-variant-numeric:tabular-nums}
@@ -213,12 +228,19 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .lesson-now{background:var(--accent-soft)}
 .lesson-now .lesson-mark,.lesson-now .lesson-t{color:var(--accent);font-weight:700}
 .lesson-todo{opacity:.72}
-.lesson-more{opacity:.55;border-style:dashed}
+/* 残りのレッスン。**破線の枠にしない。**
+   点線の箱は「まだ何か入る場所」に見えて、その1行に目が留まる */
+.lesson-more{opacity:.6}
+
+/* ホームの注記。**本文と同じ大きさにしない。**
+   毎日見る画面で説明が主役より大きいと、それが用件のように読める */
+.hero-note{font-size:calc(var(--t-sub) * var(--fs));color:var(--faint);
+  line-height:1.6;margin:var(--space-2) 0 var(--space-1)}
 
 /* ---- 練習 ---- */
 .practice{display:grid;gap:8px}
 .pr{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;
-  min-height:60px;padding:12px 15px;text-align:left;border-radius:12px;
+  min-height:var(--tap-pair);padding:12px 15px;text-align:left;border-radius:var(--radius-btn);
   background:var(--raised);border:1px solid var(--line)}
 .pr:active{background:var(--sunk)}
 /* 見出しと説明は縦に積む。span のままだと1行に続いてしまう */
@@ -226,14 +248,18 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .pr-t{display:block;font-size:.98rem;font-weight:600;line-height:1.4}
 .pr-d{display:block;font-size:.78rem;color:var(--faint);margin-top:3px;line-height:1.45}
 .pr-n{font-size:.85rem;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;
-  background:var(--accent-soft);border-radius:99px;padding:3px 10px;white-space:nowrap}
+  background:var(--accent-soft);border-radius:var(--radius-pill);padding:3px 10px;white-space:nowrap}
 .pr-wait .pr-n{color:var(--dim);background:var(--sunk)}
+/* いまできないものは、そう見えるようにする。
+   押せる見た目のまま反応しないと、壊れているのかどうかが分からない */
+.pr[disabled]{opacity:.5}
+.pr[disabled]:active{transform:none;background:var(--raised)}
 
 /* ---- 7日カレンダー ---- */
 .week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:10px}
 .wd{text-align:center}
 .wd-l{font-size:calc(var(--t-tiny) * var(--fs));color:var(--faint);margin-bottom:5px}
-.wd-m{height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+.wd-m{height:34px;border-radius:var(--radius-btn);display:flex;align-items:center;justify-content:center;
   font-size:.85rem;background:var(--sunk);color:var(--faint)}
 .wd-on .wd-m{background:var(--ok-soft);color:var(--ok);font-weight:700}
 .wd-today .wd-l{color:var(--accent);font-weight:700}
@@ -242,7 +268,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 /* ---- 組み合わせ練習 ---- */
 .match-lead{font-size:.85rem;color:var(--dim);line-height:1.7;margin:0 0 16px}
 .match{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.match button{min-height:60px;border-radius:12px;padding:8px 10px;font-size:.94rem;
+.match button{min-height:var(--tap-pair);border-radius:var(--radius-btn);padding:8px 10px;font-size:.94rem;
   background:var(--raised);border:1px solid var(--line);line-height:1.35;word-break:break-word}
 .match button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);
   color:var(--accent);font-weight:700}
@@ -256,7 +282,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .grp{margin-bottom:22px}
 .grp-h{font-size:.75rem;color:var(--faint);letter-spacing:.06em;margin-bottom:8px}
 .menu{display:grid;gap:8px}
-.menu button{min-height:56px;border-radius:12px;background:var(--raised);
+.menu button{min-height:var(--tap-main);border-radius:var(--radius-btn);background:var(--raised);
   border:1px solid var(--line);font-size:.94rem;text-align:left;padding:10px 15px;
   display:flex;align-items:center;justify-content:space-between;gap:12px}
 .menu button>span:first-child{min-width:0}
@@ -265,7 +291,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .menu .m-sub{font-size:.78rem;color:var(--faint);font-variant-numeric:tabular-nums}
 
 .stats{display:grid;gap:8px}
-.stat{background:var(--raised);border:1px solid var(--line);border-radius:12px;
+.stat{background:var(--raised);border:1px solid var(--line);border-radius:var(--radius-btn);
   padding:14px 15px;display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 .stat>div{min-width:0}
 .stat b{font-size:1.6rem;line-height:1.15;font-variant-numeric:tabular-nums;flex:none}
@@ -273,7 +299,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .stat i{display:block;font-style:normal;font-size:.75rem;color:var(--faint);
   margin-top:3px;line-height:1.45}
 
-.about{background:var(--sunk);border-radius:12px;padding:13px 15px;font-size:.82rem;
+.about{background:var(--sunk);border-radius:var(--radius-btn);padding:13px 15px;font-size:.82rem;
   color:var(--dim);line-height:1.75}
 .about b{color:var(--ink)}
 .about p{margin:0 0 9px}
@@ -282,15 +308,15 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 /* ---- 90日ロードマップ ---- */
 .road{display:grid;gap:8px}
 .road-row{display:flex;align-items:center;justify-content:space-between;gap:12px;
-  background:var(--raised);border:1px solid var(--line);border-radius:12px;padding:13px 15px}
+  background:var(--raised);border:1px solid var(--line);border-radius:var(--radius-btn);padding:13px 15px}
 .road-d{font-weight:700;font-variant-numeric:tabular-nums}
-.road-s{font-size:.8rem;padding:4px 10px;border-radius:99px;white-space:nowrap}
+.road-s{font-size:.8rem;padding:4px 10px;border-radius:var(--radius-pill);white-space:nowrap}
 .road-ready{background:var(--ok-soft);color:var(--ok)}
 .road-soon{background:var(--sunk);color:var(--dim)}
 
 /* ---- 表示設定 ---- */
 .opt-row{display:grid;gap:8px;margin-bottom:18px}
-.opt{min-height:56px;border-radius:12px;background:var(--raised);border:1px solid var(--line);
+.opt{min-height:var(--tap-main);border-radius:var(--radius-btn);background:var(--raised);border:1px solid var(--line);
   font-size:.94rem;text-align:left;padding:0 15px;display:flex;align-items:center;gap:10px}
 .opt[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:700}
 .opt-mark{width:1.2em;flex:none}
@@ -302,12 +328,15 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
   background:linear-gradient(to top, var(--paper) 72%, transparent);
 }
 .dock-inner{max-width:640px;margin:0 auto;display:grid;gap:8px}
+/* 「次の5問」の上の一行。**煽らない。**事実のときだけ出し、褒美は書かない */
+.next-why{font-size:calc(var(--t-sub) * var(--fs));color:var(--dim);text-align:center;
+  margin-bottom:2px}
 .primary{
-  min-height:56px;border-radius:14px;background:var(--accent);color:var(--on-accent);
+  min-height:var(--tap-main);border-radius:var(--radius-btn);background:var(--accent);color:var(--on-accent);
   font-size:calc(var(--t-btn) * var(--fs));font-weight:700;padding:8px 16px;
 }
 .primary:disabled{opacity:.45}
-.ghost{min-height:56px;border-radius:12px;background:var(--sunk);color:var(--dim);
+.ghost{min-height:var(--tap-main);border-radius:var(--radius-btn);background:var(--sunk);color:var(--dim);
   font-size:calc(var(--t-sub) * var(--fs));padding:8px 16px}
 
 /* 押した瞬間に必ず見た目が変わる。「押せたか分からない」を無くす。
@@ -331,15 +360,36 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 /* ---- セッション ---- */
 .sess-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
 #progress{font-size:.82rem;color:var(--dim);font-variant-numeric:tabular-nums}
-#quit-btn{font-size:.82rem;color:var(--dim);min-height:var(--tap);padding:0 10px;border-radius:10px}
+#quit-btn{font-size:.82rem;color:var(--dim);min-height:var(--tap);padding:0 10px;border-radius:var(--radius-btn)}
 #quit-btn:active{background:var(--sunk)}
 
+/* 学習画面は画面いっぱいを使う。
+   カードだけに高さを持たせると、問題文が上に寄って下が大きく空く */
+#session{min-height:100vh;min-height:calc(var(--vh,1vh)*100);
+  display:flex;flex-direction:column}
 .card{
   padding:8px 4px;margin-bottom:12px;
-  min-height:46vh;min-height:calc(var(--vh,1vh)*46);
+  flex:1 1 auto;
   display:flex;flex-direction:column;justify-content:center;text-align:center;
 }
-.step-lead{font-size:.85rem;color:var(--accent);font-weight:700;margin-bottom:14px}
+.prompt-slot{display:flex;flex-direction:column;justify-content:center}
+
+/**
+ * 答えの枠は、**出る前から同じ場所を取っておく。**
+ *
+ * 以前は答えを出した瞬間に枠が増え、上下中央に寄せているぶん
+ * 問題文が上へ動いていた。読み始めた位置が変わると視線をやり直すことになる。
+ * かといって場所を空けておくだけだと、問題文が画面の上のほうに寄って
+ * 下が大きく空く。**中身はそのままに、見えなくするだけ**にすれば、
+ * 高さは実際の答えの長さぴったりで、出ても1pxも動かない。
+ * visibility:hidden は読み上げの対象からも外れるので、
+ * 答えを先に読まれてしまうこともない。
+ */
+#answer-box.veiled{visibility:hidden}
+/* 手順とレッスンの位置。**毎問おなじ高さ**を取り、出ても出なくても動かさない */
+.sess-meta{display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);
+  min-height:26px;margin-bottom:var(--space-2)}
+.step-lead{font-size:calc(var(--t-sub) * var(--fs));color:var(--accent);font-weight:700}
 #prompt{font-size:calc(var(--t-prompt) * var(--fs));font-weight:700;line-height:1.45;
   text-wrap:balance;word-break:break-word}
 #answer-box{margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
@@ -354,15 +404,36 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
    片方だけボタンらしく見せると、そちらが答えと同じ強さで目に入る */
 .sub-actions{display:flex;align-items:center;justify-content:center;gap:4px;
   flex-wrap:wrap;margin-top:24px}
-.field-open,.fav{min-height:var(--tap);padding:0 12px;border-radius:10px;
+.field-open,.fav{min-height:var(--tap);padding:0 12px;border-radius:var(--radius-btn);
   font-size:calc(var(--t-sub) * var(--fs));color:var(--faint);
   background:none;border:0;text-decoration:underline}
 .field-open:active,.fav:active{background:var(--sunk)}
 .fav[aria-pressed="true"]{color:var(--warn);font-weight:700;text-decoration:none}
 
-.judge{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.judge button{min-height:56px;border-radius:14px;font-weight:700;padding:8px 6px;
+/* 片手で押し間違えないよう、2つの間を広くとる。
+   確認のひと手間を毎回入れるより、そもそも外れにくくするほうが速い */
+.judge{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)}
+
+/**
+ * 学習中の押す場所は、**答えを見る前と後で同じ高さ**にする。
+ *
+ * 文字を大きくした 320px 幅で「言えなかった」が2行になり、
+ * 「答えを見る」(1行) との差で主操作が 28px 跳ねていた。
+ * 親指を置く位置が問題ごとに変わると、それだけで押し間違いが増える。
+ * どの状態でも収まる高さを先に取っておく。
+ */
+#session-dock #reveal-btn,
+#session-dock #next-btn,
+#session-dock .judge{min-height:var(--action-h)}
+.judge button{min-height:var(--tap-pair);border-radius:var(--radius-btn);font-weight:700;padding:8px 6px;
   font-size:calc(var(--t-btn) * var(--fs))}
+/* 幅の狭い端末で文字を大きくすると「言えなかった」が2行になり、
+   高さを取っておいてもなお 8px はみ出していた。
+   ここだけ本文の大きさに落として1行に収める (それでも 16px は下回らない) */
+@media (max-width:360px){
+  .judge button{font-size:calc(var(--t-body) * var(--fs))}
+}
+
 #judge-wrong{background:var(--crit-soft);color:var(--crit)}
 #judge-ok{background:var(--ok-soft);color:var(--ok)}
 .keyhint{font-size:calc(var(--t-tiny) * var(--fs));color:var(--faint);text-align:center;margin-top:8px}
@@ -374,13 +445,15 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
   position:fixed;left:50%;bottom:calc(150px + env(safe-area-inset-bottom));
   transform:translateX(-50%);z-index:40;
   display:flex;align-items:center;gap:10px;
-  padding:16px 24px;border-radius:16px;font-size:1.06rem;font-weight:700;
+  padding:16px 24px;border-radius:var(--radius-card);font-size:1.06rem;font-weight:700;
   background:var(--raised);border:1px solid var(--line);
   box-shadow:0 6px 24px rgba(0,0,0,.16);
   pointer-events:none;
 }
 #tap-ack.ok{color:var(--ok);border-color:var(--ok)}
 #tap-ack.ng{color:var(--warn);border-color:var(--warn)}
+/* 「覚える」を進めたときの印。言葉を付けないので、その分だけ小さくする */
+#tap-ack.learn{color:var(--accent);border-color:var(--accent);padding:12px 20px}
 #tap-ack .ack-mark{font-size:1.3rem}
 @media (prefers-reduced-motion:no-preference){
   #tap-ack{animation:ackin .12s ease-out}
@@ -390,13 +463,13 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 /* ---- 参考音声（音声が入るまで、これらは画面に出ない）---- */
 .spk{
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
-  min-height:56px;min-width:56px;padding:0 18px;border-radius:16px;
+  min-height:var(--tap-main);min-width:56px;padding:0 18px;border-radius:var(--radius-card);
   background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent);
   font-size:.94rem;font-weight:700;
 }
 .spk:active{filter:brightness(.95)}
 .spk svg{width:1.35em;height:1.35em;flex:none}
-.spk-big{min-height:96px;min-width:180px;font-size:1.12rem;border-radius:22px}
+.spk-big{min-height:96px;min-width:180px;font-size:1.12rem;border-radius:var(--radius-card)}
 .spk-big svg{width:2em;height:2em}
 .spk-again{background:var(--sunk);color:var(--dim);border-color:var(--line);
   min-height:var(--tap);font-size:.84rem;font-weight:600}
@@ -405,49 +478,65 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 
 /* 保存(お気に入り)。学習の判定とは別物なので、色も位置も分ける */
 /* 一覧の中の ☆ はボタンとして見せる (押せることが分かる必要があるため) */
-.ph-item .fav{background:var(--sunk);color:var(--dim);border:1px solid var(--line);
-  border-radius:12px;text-decoration:none;padding:0 14px}
+/* 一覧の ☆ は、表現より目立たせない。囲むと同じ強さで目に入る */
+.ph-item .fav{background:none;color:var(--faint);border:0;
+  border-radius:var(--radius-btn);text-decoration:none;padding:0 14px}
 .ph-item .fav[aria-pressed="true"]{background:var(--warn-soft);color:var(--warn);border-color:var(--warn)}
 
 /* ---- 商談中に数秒で探すための見出しジャンプ ---- */
 /* 横に並べて上に貼り付ける。スクロールして探す時間を無くす */
-.jump{position:sticky;top:0;z-index:5;display:flex;gap:6px;overflow-x:auto;
+.jump{position:sticky;top:68px;z-index:5;display:flex;gap:6px;overflow-x:auto;
   padding:10px 0 12px;margin-bottom:6px;background:var(--paper);
   -webkit-overflow-scrolling:touch;scrollbar-width:none}
 .jump::-webkit-scrollbar{display:none}
-.jump button{flex:none;min-height:44px;padding:0 14px;border-radius:99px;
+.jump button{flex:none;min-height:44px;padding:0 14px;border-radius:var(--radius-pill);
   font-size:calc(var(--t-sub) * var(--fs));font-weight:600;white-space:nowrap;
   background:var(--sunk);color:var(--dim)}
 .jump button[aria-current="true"]{background:var(--accent);color:var(--on-accent)}
 
 /* ---- 保存したフレーズ / 商談の直前に見る ---- */
+/* 商談中に日本語で探す。既存教材の中だけを絞り込む */
+.ph-search{position:sticky;top:0;z-index:6;background:var(--paper);
+  padding:2px 0 var(--space-2)}
+.ph-q{width:100%;min-height:var(--tap-main);border-radius:var(--radius-btn);
+  border:1px solid var(--line);background:var(--raised);color:var(--ink);
+  padding:0 var(--space-3);font-size:calc(var(--t-body) * var(--fs))}
+.ph-q::placeholder{color:var(--faint)}
+.ph-count{font-size:calc(var(--t-sub) * var(--fs));color:var(--dim);
+  margin-bottom:var(--space-2);font-variant-numeric:tabular-nums}
+
 .ph-topic{font-size:1.06rem;font-weight:700;margin:26px 0 10px;padding-bottom:6px;
   border-bottom:2px solid var(--accent);color:var(--accent)}
 .ph-topic:first-child{margin-top:0}
-.ph-item{background:var(--raised);border:1px solid var(--line);border-radius:14px;
+.ph-item{background:var(--raised);border:1px solid var(--line);border-radius:var(--radius-card);
   padding:14px 15px;margin-bottom:9px;display:flex;align-items:center;gap:12px}
 .ph-txt{flex:1;min-width:0}
 .ph-ja{font-size:.94rem;color:var(--dim);line-height:1.45}
 .ph-mn{font-size:1.35rem;font-weight:700;line-height:1.35;word-break:break-word;margin-top:3px}
 .ph-lead{font-size:.85rem;color:var(--dim);line-height:1.7;margin:0 0 20px}
-.ph-del{min-height:var(--tap);min-width:var(--tap);border-radius:12px;font-size:.82rem;
+/* 一覧のあとに置く但し書き。読み終わったあとに目に入ればよい */
+.ph-lead-foot{font-size:calc(var(--t-sub) * var(--fs));color:var(--faint);
+  margin:var(--space-4) 0 0}
+.ph-del{min-height:var(--tap);min-width:var(--tap);border-radius:var(--radius-btn);font-size:.82rem;
   background:var(--sunk);color:var(--dim);border:1px solid var(--line);padding:0 12px}
 
 /* ---- 書き出し / 不具合報告 ---- */
-.copybox{background:var(--raised);border:1px solid var(--line);border-radius:14px;padding:15px}
+.copybox{background:var(--raised);border:1px solid var(--line);border-radius:var(--radius-card);padding:15px}
 .copy-lead{font-size:.85rem;color:var(--dim);line-height:1.7;margin:0 0 14px}
+/* この画面の用件。幅いっぱいにして、下の「もどる」より強く見せる */
+.copy-btn{width:100%}
 .copy-done{font-size:.85rem;color:var(--ok);margin-top:12px;font-weight:700}
 .copy-detail{margin-top:14px}
 .copy-detail summary{font-size:.82rem;color:var(--dim);min-height:var(--tap);
   display:flex;align-items:center;cursor:pointer}
 #export-text,#diag-text{
-  width:100%;border-radius:10px;border:1px solid var(--line);background:var(--sunk);
+  width:100%;border-radius:var(--radius-btn);border:1px solid var(--line);background:var(--sunk);
   color:inherit;padding:10px;font-size:.75rem;line-height:1.5;margin-top:10px;
   font-family:ui-monospace,SFMono-Regular,Menlo,monospace;resize:vertical;
 }
 .export-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 .ex-tab{
-  min-height:var(--tap);border-radius:10px;font-size:.82rem;font-weight:600;padding:6px 8px;
+  min-height:var(--tap);border-radius:var(--radius-btn);font-size:.82rem;font-weight:600;padding:6px 8px;
   background:var(--sunk);color:var(--dim);border:1px solid var(--line);
 }
 .ex-tab[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
@@ -458,7 +547,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .field-h{font-size:.85rem;font-weight:700;margin-bottom:10px;line-height:1.5}
 .field-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .field-grid button{
-  min-height:var(--tap);border-radius:12px;font-size:.82rem;font-weight:600;line-height:1.25;
+  min-height:var(--tap);border-radius:var(--radius-btn);font-size:.82rem;font-weight:600;line-height:1.25;
   background:var(--sunk);color:var(--dim);border:1px solid var(--line);padding:6px 4px;
 }
 .field-grid button.fr-wide{grid-column:span 3}
@@ -468,28 +557,33 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .field-corr{display:none;gap:8px;margin-top:10px}
 .field-corr.on{display:grid;grid-template-columns:1fr auto}
 .field-corr input{
-  min-height:var(--tap);border-radius:12px;border:1px solid var(--line);
+  min-height:var(--tap);border-radius:var(--radius-btn);border:1px solid var(--line);
   background:var(--raised);color:inherit;padding:0 12px;font-size:16px;
 }
-.field-corr button{min-height:var(--tap);border-radius:12px;padding:0 16px;font-weight:700}
+.field-corr button{min-height:var(--tap);border-radius:var(--radius-btn);padding:0 16px;font-weight:700}
 .field-done{font-size:.78rem;color:var(--ok);margin-top:8px}
-.fr-item{background:var(--raised);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
+.fr-item{background:var(--raised);border:1px solid var(--line);border-radius:var(--radius-card);padding:14px;margin-bottom:10px}
 .fr-item .fr-ja{font-size:.9rem;color:var(--dim)}
 .fr-item .fr-mn{font-size:1.2rem;font-weight:700;margin:2px 0 10px;word-break:break-word}
 .fr-empty{color:var(--faint);font-size:.9rem;padding:20px 0;line-height:1.7}
 
 /* ---- レッスン完了 / 1日の完了 ---- */
 /* 紙吹雪のような派手な演出は毎回出さない。1日の完了だけ少し強くする */
+/* 完了画面も画面いっぱいを使い、中身を上下の真ん中に置く。
+   高さを決め打ちすると、下に大きな空白が残って「途中で切れた」ように見える */
+#summary{min-height:100vh;min-height:calc(var(--vh,1vh)*100);
+  display:flex;flex-direction:column}
 .cheer{display:flex;flex-direction:column;justify-content:center;text-align:center;
-  min-height:52vh;min-height:calc(var(--vh,1vh)*52);gap:4px}
+  flex:1 1 auto;gap:4px}
 .cheer-mark{font-size:2.6rem;line-height:1;margin-bottom:10px}
 .cheer-t{font-size:1.6rem;font-weight:800;line-height:1.25}
-.cheer-n{font-size:2.4rem;font-weight:800;margin-top:16px;font-variant-numeric:tabular-nums}
+/* 数字より先に「終わった」が目に入るよう、印(2.6rem)より小さくする */
+.cheer-n{font-size:2rem;font-weight:800;margin-top:16px;font-variant-numeric:tabular-nums}
 .cheer-n small{font-size:1rem;font-weight:700;margin-left:3px}
 .cheer-note{font-size:.94rem;color:var(--dim);margin-top:18px;line-height:1.7;text-wrap:balance}
 .cheer-streak{display:inline-flex;align-items:center;gap:6px;margin-top:18px;
   font-size:1rem;font-weight:700;color:var(--warn);
-  background:var(--warn-soft);border-radius:99px;padding:8px 18px;align-self:center}
+  background:var(--warn-soft);border-radius:var(--radius-pill);padding:8px 18px;align-self:center}
 @media (prefers-reduced-motion:no-preference){
   .cheer-mark{animation:pop .5s cubic-bezier(.2,1.3,.4,1)}
   .cheer .cheer-n{animation:rise .45s ease-out}
@@ -518,32 +612,32 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .ob-options{display:grid;gap:8px}
 .ob-opt{
   display:flex;flex-direction:column;gap:2px;text-align:left;
-  min-height:56px;padding:13px 15px;
-  background:var(--raised);border:1px solid var(--line);border-radius:12px;
+  min-height:var(--tap-main);padding:13px 15px;
+  background:var(--raised);border:1px solid var(--line);border-radius:var(--radius-btn);
 }
 .ob-opt:active{background:var(--sunk)}
 .ob-opt-t{font-weight:700}
 .ob-opt-d{font-size:.78rem;color:var(--dim)}
 .ob-preset{
-  margin-top:16px;min-height:56px;width:100%;padding:12px;
-  background:var(--sunk);color:var(--dim);border-radius:12px;font-size:.85rem;
+  margin-top:16px;min-height:var(--tap-main);width:100%;padding:12px;
+  background:var(--sunk);color:var(--dim);border-radius:var(--radius-btn);font-size:.85rem;
 }
 
 /* ---- 節目チェックポイント ---- */
 .cp-list{display:grid;gap:8px;margin-bottom:16px}
 .cp-row{display:flex;align-items:center;justify-content:space-between;gap:12px;
-  background:var(--raised);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  background:var(--raised);border:1px solid var(--line);border-radius:var(--radius-btn);padding:12px 14px}
 .cp-txt{font-size:.9rem}
-.cp-judge{font-size:calc(var(--t-tiny) * var(--fs));font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap}
+.cp-judge{font-size:calc(var(--t-tiny) * var(--fs));font-weight:700;padding:3px 9px;border-radius:var(--radius-pill);white-space:nowrap}
 .cp-tutor{background:var(--warn-soft);color:var(--warn)}
 .cp-auto{background:var(--sunk);color:var(--dim)}
-.cp-verdict{border-radius:12px;padding:14px 16px;margin-bottom:14px}
+.cp-verdict{border-radius:var(--radius-btn);padding:14px 16px;margin-bottom:14px}
 .cp-verdict .cp-v-t{font-size:1.06rem;font-weight:700;margin-bottom:4px}
 .cp-verdict .cp-v-d{font-size:.85rem;line-height:1.6}
 .cp-pending{background:var(--warn-soft);color:var(--warn)}
 .cp-passed{background:var(--ok-soft);color:var(--ok)}
 .cp-failed{background:var(--crit-soft);color:var(--crit)}
-.cp-note{font-size:.8rem;color:var(--dim);background:var(--sunk);border-radius:10px;padding:11px 13px}
+.cp-note{font-size:.8rem;color:var(--dim);background:var(--sunk);border-radius:var(--radius-btn);padding:11px 13px}
 
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -552,7 +646,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 
 <div id="notice" hidden></div>
 <!-- 押したことが分かる短い合図。次の問題へは自動で進む -->
-<div id="tap-ack" hidden aria-live="polite"></div>
+<div id="tap-ack" hidden role="status" aria-live="polite"></div>
 
 <!-- オンボーディング -->
 <main id="onboarding" class="wrap" hidden>
@@ -655,20 +749,24 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
   </div>
   <div class="track"><i id="progress-bar" style="width:0%"></i></div>
 
-  <!-- 5問の中の位置。残りが少なくなったときだけ強める -->
-  <div class="step-hint" id="step-hint" hidden></div>
+  <!-- 手順と「あと何問」。**この行の高さは毎問おなじ。**
+       出たり消えたりで問題文の位置が動かないようにする -->
+  <div class="sess-meta">
+    <span class="step-lead" id="step-label" hidden>覚える</span>
+    <span class="step-hint" id="step-hint" aria-live="polite" hidden></span>
+  </div>
 
   <div class="card">
-    <!-- いま何をする問題か。「覚える」は毎回、「思い出す」はその回の1問目だけ -->
-    <div class="step-lead" id="step-label" hidden>覚える</div>
+    <!-- 問題文の枠。高さを先に取り、答えはこの下に出す -->
+    <div class="prompt-slot">
+      <!-- 聞き取りの問題。音声が入るまで、この一式は一度も表示されない -->
+      <div id="listen-prompt" hidden>
+        <div class="listen-lead">聞こえたモンゴル語の意味は？</div>
+        <button id="listen-big" class="spk spk-big" type="button"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 2.2v2.1a7.7 7.7 0 0 1 0 15.4v2.1a9.8 9.8 0 0 0 0-19.6z"/></svg><span>聞く</span></button>
+      </div>
 
-    <!-- 聞き取りの問題。音声が入るまで、この一式は一度も表示されない -->
-    <div id="listen-prompt" hidden>
-      <div class="listen-lead">聞こえたモンゴル語の意味は？</div>
-      <button id="listen-big" class="spk spk-big" type="button"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 2.2v2.1a7.7 7.7 0 0 1 0 15.4v2.1a9.8 9.8 0 0 0 0-19.6z"/></svg><span>聞く</span></button>
+      <div id="prompt">—</div>
     </div>
-
-    <div id="prompt">—</div>
 
     <div id="answer-box" hidden>
       <div class="answer-row">
@@ -754,13 +852,14 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 <!-- レッスン完了 / 今日の完了。どちらもここを使い、文言と演出だけ変える -->
 <main id="summary" class="wrap" hidden>
   <div class="cheer">
-    <div class="cheer-mark" id="done-mark">✓</div>
+    <div class="cheer-mark" id="done-mark" aria-hidden="true">✓</div>
     <div class="cheer-t" id="done-t">5問 完了</div>
     <div class="cheer-n"><span id="done-count">0</span><small>問</small></div>
+    <!-- 0のものは出さない。「0 もう一度」は読む価値が無く、見出しの数だけ増える -->
     <div class="done-split">
-      <div class="done-learn"><b id="done-learned">0</b><span>覚えた</span></div>
-      <div class="done-ok"><b id="done-ok">0</b><span>言えた</span></div>
-      <div class="done-ng"><b id="done-ng">0</b><span>もう一度</span></div>
+      <div class="done-learn" id="cell-learned"><b id="done-learned">0</b><span>覚えた</span></div>
+      <div class="done-ok" id="cell-ok"><b id="done-ok">0</b><span>言えた</span></div>
+      <div class="done-ng" id="cell-ng"><b id="done-ng">0</b><span>もう一度</span></div>
     </div>
     <div class="perfect" id="done-perfect" hidden></div>
     <div class="cheer-bar"><i id="done-bar"></i></div>
@@ -780,6 +879,8 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 
 <div class="dock" id="summary-dock" hidden>
   <div class="dock-inner">
+    <!-- 事実として正しいときだけ、次の5問で何が起きるかを一行だけ添える -->
+    <div class="next-why" id="next-why" hidden></div>
     <button id="next-lesson" class="primary" type="button" hidden>次の5問</button>
     <!-- その日の分を終えたあとだけ。押さなくても今日は成功 -->
     <button id="extra-btn" class="ghost" type="button" hidden>もう5問チャレンジ</button>
@@ -2709,7 +2810,7 @@ const MAX_DAYS = 60;          // 保持する日数。個人βの見直しに足
 const MAX_POSITIONS = 200;    // 途中で止めた位置の記録の上限
 
 function emptyAnalytics() {
-  return { version: 1, days: {}, quitAt: [], durations: [] };
+  return { version: 1, days: {}, quitAt: [], durations: [], answers: [], startMs: [] };
 }
 
 /**
@@ -2744,6 +2845,41 @@ function recordDuration(a, seconds) {
   return s;
 }
 
+/**
+ * 1回の学習で答えた問題数。**中身は入れない。**
+ * 「1回あたり何問やっているか」だけを見るための数。
+ */
+function recordAnswers(a, n) {
+  const s = a && a.days ? a : emptyAnalytics();
+  if (!Array.isArray(s.answers)) s.answers = [];
+  if (Number.isFinite(n) && n > 0 && n < 500) {
+    s.answers.push(Math.round(n));
+    if (s.answers.length > MAX_POSITIONS) s.answers = s.answers.slice(-MAX_POSITIONS);
+  }
+  return s;
+}
+
+/**
+ * 「5問だけ進める」を押してから1問目が出るまでの実測ミリ秒。
+ *
+ * **速さの主張を自分の感想で書かないため**の数。
+ * 端末の性能も入るので、絶対値ではなく「明らかな待ちが無いか」を見る。
+ */
+function recordStart(a, ms) {
+  const s = a && a.days ? a : emptyAnalytics();
+  if (!Array.isArray(s.startMs)) s.startMs = [];
+  if (Number.isFinite(ms) && ms >= 0 && ms < 60000) {
+    s.startMs.push(Math.round(ms));
+    if (s.startMs.length > MAX_POSITIONS) s.startMs = s.startMs.slice(-MAX_POSITIONS);
+  }
+  return s;
+}
+
+function median(list) {
+  const v = (list || []).filter(Number.isFinite).slice().sort((x, y) => x - y);
+  return v.length ? v[Math.floor(v.length / 2)] : null;
+}
+
 function trim(s) {
   const keys = Object.keys(s.days).sort();
   while (keys.length > MAX_DAYS) delete s.days[keys.shift()];
@@ -2772,7 +2908,9 @@ function summary(a) {
     if (b1 - a1 === 86400000) returned += 1;
   }
 
-  const dur = s.durations.slice().sort((x, y) => x - y);
+  const answers = s.answers || [];
+  const avgAnswers = answers.length
+    ? Math.round((answers.reduce((n, v) => n + v, 0) / answers.length) * 10) / 10 : null;
   return {
     日数: days.length,
     開いた日: opens.length,
@@ -2794,7 +2932,9 @@ function summary(a) {
       商談の直前に見る: sum('practice_briefing'),
     },
     実使用の記録を開いた回数: sum('field_open'),
-    '1回の学習の秒数(中央値)': dur.length ? dur[Math.floor(dur.length / 2)] : null,
+    '1回の学習の秒数(中央値)': median(s.durations),
+    '1回あたりの問題数(平均)': avgAnswers,
+    '開始までのミリ秒(中央値)': median(s.startMs),
     途中でやめた位置: s.quitAt.slice(-20),
   };
 }
@@ -2802,7 +2942,7 @@ function summary(a) {
 function pct(a, b) { return b > 0 ? Math.round((a / b) * 100) + '%' : '—'; }
 
 
-__m["engine/analytics.js"] = { count, recordQuit, recordDuration, summary, emptyAnalytics, EVENTS, MAX_DAYS };
+__m["engine/analytics.js"] = { count, recordQuit, recordDuration, recordAnswers, recordStart, summary, emptyAnalytics, EVENTS, MAX_DAYS };
 })();
 
 // ===== engine/index.js =====
@@ -3026,6 +3166,8 @@ function createEngine(languagePack, profileInput) {
     countUse: analytics.count,
     recordQuit: analytics.recordQuit,
     recordDuration: analytics.recordDuration,
+    recordAnswers: analytics.recordAnswers,
+    recordStart: analytics.recordStart,
     useSummary: analytics.summary,
     useEvents: analytics.EVENTS,
 
@@ -4197,13 +4339,26 @@ function boot() {
   startApp();
 }
 
+/**
+ * 起動時の知らせ。**開発者向けの言葉は1つも出さない。**
+ *
+ * ただし**学習記録が失われた可能性がある場合はぼかさない。**
+ * 「読み込めませんでした」だけで済ませると、記録が残っていると思ったまま
+ * 使い続けることになる。何が起きたかを書き、報告の場所へ案内する。
+ */
 function noticeFor(loaded) {
   switch (loaded.status) {
-    case 'recovered_from_backup': return '保存データが壊れていたため、直前のバックアップから復旧しました。';
+    case 'recovered_from_backup':
+      return '学習記録が壊れていたため、直前の控えから戻しました。'
+        + '直近の数問ぶんが入っていないことがあります。';
     case 'corrupt_reset':
-    case 'invalid_reset': return '保存データを読み込めませんでした。新しく始めます。';
-    case 'migration_failed': return '保存データの形式を更新できませんでした。新しく始めます。';
-    case 'migrated': return `保存データの形式を更新しました (${loaded.migrated.join(', ')})。`;
+    case 'invalid_reset':
+    case 'migration_failed':
+      return 'これまでの学習記録を読み込めませんでした。記録は失われています。'
+        + '新しく始めますが、「その他」→「このアプリについて」から不具合を報告してください。';
+    // 形式の更新に成功した場合は、記録は1件も失われていない。
+    // 内部の版数を見せても社長にできることは無いので、何も出さない
+    case 'migrated': return null;
     default: return null;
   }
 }
@@ -4332,7 +4487,7 @@ function renderHome() {
   const cd = curriculumDay(today.day);
   const note = $('today-note');
   if (cd && cd.vocab && cd.vocab.newCount === 0 && !cd.milestone) {
-    note.textContent = '文字の練習はこの版に入っていません。手元の資料で進めてください。';
+    note.textContent = 'この日の文字の練習は、この版に入っていません。';
     note.hidden = false;
   } else { note.hidden = true; }
 
@@ -4350,7 +4505,8 @@ function renderTopBar() {
   clear(chip);
   if (st.count > 0) {
     chip.className = 'streak';
-    chip.appendChild(el('span', { class: 'streak-flame', text: '🔥' }));
+    // 炎は飾り。読み上げでは「連続◯日」だけが伝わればよい
+    chip.appendChild(el('span', { class: 'streak-flame', attrs: { 'aria-hidden': 'true' }, text: '🔥' }));
     chip.appendChild(el('span', { text: `連続 ${st.count}日` }));
     chip.hidden = false;
   } else { chip.hidden = true; }
@@ -4672,7 +4828,8 @@ const SHEETS = {
   favorites: { title: '保存したフレーズ', render: () => renderPhrases('favorites') },
   briefing: { title: '商談の直前に見る', render: () => renderPhrases('briefing') },
   // 3つに分かれていた書き出しを1つにまとめた (何を貼ればよいか迷わせない)
-  export: { title: '書き出す', render: renderExport },
+  // 用件はコピーなので、下の「もどる」は控えめにする
+  export: { title: '書き出す', render: renderExport, quietBack: true },
   display: { title: '表示設定', render: renderDisplay },
   about: { title: 'このアプリについて', render: renderAbout },
 };
@@ -4682,6 +4839,9 @@ function openSheet(id) {
   if (!sheet) return;
   $('sheet-title').textContent = sheet.title;
   clear($('sheet-body'));
+  // その画面の用件が別にあるときは、「もどる」を主役から降ろす。
+  // 同じ画面に強いボタンが2つあると、どちらを押すのか毎回考えることになる
+  $('sheet-back').className = sheet.quietBack ? 'ghost' : 'primary';
   showScreen('sheet');
   sheet.render($('sheet-body'));
 }
@@ -5026,8 +5186,9 @@ function renderExport(root) {
   const text = el('textarea', { attrs: { id: 'export-text', readonly: 'readonly', rows: '10', spellcheck: 'false' } });
   text.value = exportPayload();
 
+  // この画面の用件はコピー1つ。**下の「もどる」より強く見せる**
   box.appendChild(el('button', {
-    class: 'primary', attrs: { type: 'button' }, text: 'コピー',
+    class: 'primary copy-btn', attrs: { type: 'button' }, text: 'コピー',
     on: { click: async () => {
       const ok = await copyText(text);
       done.hidden = false;
@@ -5094,41 +5255,69 @@ function renderPractice(root) {
   root.appendChild(el('p', { class: 'ph-lead',
     text: '今日の学習とは別に、いつでもできる練習です。' }));
 
+  /**
+   * 並び順は**その時の状態で決まる。**
+   *
+   * 「おすすめ」と書いて順番を作らない。いま実際にできるものを上に出すだけで、
+   * できないものは下へ下げ、待機中ならそう書く。engine が「まだ出さない」と
+   * 言っているものを、画面の都合で先頭に置いて期待させない。
+   */
+  const rows = [
+    {
+      title: '間違えた表現',
+      desc: m.ready.length ? '前に言えなかったものを、もう一度'
+        : m.waiting.length ? '少し時間を空けてから出します' : 'まだありません',
+      badge: m.ready.length ? `${m.ready.length}` : (m.waiting.length ? '待機中' : ''),
+      ready: m.ready.length > 0,
+      // 復習待ちがあるときは、いつ出せるかを見に行けるので押せるままにする
+      enabled: m.ready.length > 0 || m.waiting.length > 0,
+      onClick: () => { track('practice_mistakes'); openSheet('mistakes'); },
+    },
+    {
+      title: '5分だけ復習', desc: '期日の来ているものだけ',
+      badge: dueNow ? `${dueNow}` : '', ready: dueNow > 0, enabled: dueNow > 0,
+      onClick: () => { track('practice_sprint'); startSession('sprint5'); },
+    },
+  ];
+  // いまできるほうを上へ。どちらもできないときは、この2つの順番は変えない
+  rows.sort((a, b) => (b.ready ? 1 : 0) - (a.ready ? 1 : 0));
+
+  // ここから下は「いつでも見るもの」。状態で順番を入れ替えない
+  rows.push(
+    {
+      title: '商談の直前に見る', desc: '場面ごとに並べた35表現。日本語で探せます',
+      badge: '5分', ready: true, enabled: true,
+      onClick: () => { track('practice_briefing'); openSheet('briefing'); },
+    },
+    {
+      title: '保存したフレーズ', desc: '☆ を付けたもの',
+      badge: favCount ? `${favCount}` : '', ready: favCount > 0, enabled: favCount > 0,
+      onClick: () => { track('practice_favorites'); openSheet('favorites'); },
+    },
+    {
+      title: '組み合わせ', desc: 'ウォームアップ。学習の記録には影響しません',
+      badge: '', ready: true, enabled: true,
+      onClick: () => { track('practice_match'); startMatch(); },
+    },
+  );
+
   const list = el('div', { class: 'practice' });
-  const row = (title, desc, badge, onClick, waiting) => {
+  for (const r of rows) {
+    // **押しても何も起きないボタンを置かない。**
+    // 見た目が同じまま反応しないと、壊れているのか自分の押し方が悪いのか分からない
+    const attrs = { type: 'button' };
+    if (!r.enabled) attrs.disabled = 'disabled';
     list.appendChild(el('button', {
-      class: waiting ? 'pr pr-wait' : 'pr',
-      attrs: { type: 'button' }, on: { click: onClick },
+      class: r.ready ? 'pr' : 'pr pr-wait',
+      attrs, on: r.enabled ? { click: r.onClick } : {},
     }, [
       el('span', {}, [
-        el('span', { class: 'pr-t', text: title }),
-        el('span', { class: 'pr-d', text: desc }),
+        el('span', { class: 'pr-t', text: r.title }),
+        el('span', { class: 'pr-d', text: r.desc }),
       ]),
-      badge ? el('span', { class: 'pr-n', text: badge }) : null,
+      r.badge ? el('span', { class: 'pr-n', text: r.badge }) : null,
     ]));
-  };
-
-  // 間違えた表現が最優先。ここが一番効く
-  row('間違えた表現',
-    m.ready.length ? '前に言えなかったものを、もう一度'
-      : m.waiting.length ? '少し時間を空けてから出します'
-      : 'まだありません',
-    m.ready.length ? `${m.ready.length}` : (m.waiting.length ? '待機中' : ''),
-    () => { track('practice_mistakes'); openSheet('mistakes'); }, m.ready.length === 0);
-
-  row('5分だけ復習', '期日の来ているものだけ',
-    dueNow ? `${dueNow}` : '',
-    () => { if (dueNow) { track('practice_sprint'); startSession('sprint5'); } }, dueNow === 0);
-
-  row('保存したフレーズ', '☆ を付けたもの', favCount ? `${favCount}` : '',
-    () => { track('practice_favorites'); openSheet('favorites'); }, favCount === 0);
-
-  row('商談の直前に見る', '場面ごとに並べた35表現', '5分',
-    () => { track('practice_briefing'); openSheet('briefing'); }, false);
-
-  row('組み合わせ', 'ウォームアップ。学習の記録には影響しません', '',
-    () => { track('practice_match'); startMatch(); }, false);
-
+  }
   root.appendChild(list);
 }
 
@@ -5395,8 +5584,8 @@ function startSession(modeId) {
   }
 
   const plan = planFor(modeId || defaultModeId());
-  if (!plan.ok) { showNotice('この学習時間の設定では使えないモードです'); return; }
-  if (!plan.steps.length) { showNotice('今日の出題はありません'); return; }
+  if (!plan.ok) { showNotice('いまの設定では、この練習を始められません'); return; }
+  if (!plan.steps.length) { showNotice('いま出せる問題がありません'); return; }
 
   // 出題形式まで engine が決めたものをそのまま使う
   queue = plan.steps;
@@ -5486,8 +5675,10 @@ function nextItem() {
 
   renderFav(card);
 
-  // introduce は最初から答えを見せる。判定はしない
-  $('answer-box').hidden = !introduce;
+  // introduce は最初から答えを見せる。判定はしない。
+  // **枠は常に置いたまま**にして、答えが出ても問題文が動かないようにする
+  $('answer-box').hidden = false;
+  $('answer-box').classList.toggle('veiled', !introduce);
   $('reveal-btn').hidden = introduce;
   $('next-btn').hidden = !introduce;
   $('judge-row').hidden = true;
@@ -5508,6 +5699,8 @@ function nextItem() {
 
   // T2: 表示時刻を実測する
   shownAt = performance.now();
+  // P1: ホームで押してから1問目が出るまでを1回だけ実測する
+  trackFirstPaint();
 }
 
 /**
@@ -5541,7 +5734,7 @@ function reveal() {
   if (revealed || busy) return;
   revealed = true;
   const card = currentCard();
-  $('answer-box').hidden = false;
+  $('answer-box').classList.remove('veiled');
   $('reveal-btn').hidden = true;
   $('judge-row').hidden = false;
   if (card && caps.audioFor(card.id)) audio.play(card.id);
@@ -5558,8 +5751,12 @@ function advanceIntroduce() {
   lessonStats.introduced += 1;
   bumpDailyProgress();
   qIndex += 1;
+  // 保存してから次へ。**画面より先に記録を確定させる**
   if (sessionKind === 'daily') { saveSession(); storage.save(state); }
-  nextItem();
+  // 押したことが分かる印だけ出して、短く次へ。連打はここで止める
+  busy = true;
+  showLearnAck();
+  ackTimer = setTimeout(() => { ackTimer = null; nextItem(); }, ACK_MS_LEARN);
 }
 
 /** スピーカー。押せば必ず鳴る。連打しても二重には鳴らない。 */
@@ -5577,14 +5774,30 @@ function playCurrent() {
  * 再出題の時刻は engine が決める。画面の都合で即座に出し直さない。
  */
 const ACK_MS = 420;
+// 「覚える」を進めたときは印だけ、短く。まだ見ただけなので言葉は付けない
+const ACK_MS_LEARN = 240;
 let ackTimer = null;
 
 function showAck(correct) {
   const box = $('tap-ack');
   clear(box);
   box.className = correct ? 'ok' : 'ng';
-  box.appendChild(el('span', { class: 'ack-mark', text: correct ? '✓' : '↻' }));
+  box.appendChild(el('span', { class: 'ack-mark', attrs: { 'aria-hidden': 'true' }, text: correct ? '✓' : '↻' }));
   box.appendChild(el('span', { text: correct ? '言えた' : 'あとでもう一度' }));
+  box.hidden = false;
+}
+
+/**
+ * 「覚える」を1つ進めたときの合図。**印だけ。**
+ *
+ * 「正解」「できた」とは書かない。まだ見ただけで、
+ * 言えるかどうかは何も確かめていない。押したことが分かればそれでよい。
+ */
+function showLearnAck() {
+  const box = $('tap-ack');
+  clear(box);
+  box.className = 'learn';
+  box.appendChild(el('span', { class: 'ack-mark', attrs: { 'aria-hidden': 'true' }, text: '✓' }));
   box.hidden = false;
 }
 function hideAck() {
@@ -5884,6 +6097,8 @@ function endSession() {
   if (finished) { track('lesson_complete'); if (sessionKind === 'daily') track('day_complete'); }
   else { track('quit_mid'); trackQuit(qIndex - lessonStart, lessonEnd - lessonStart); }
   trackDuration((Date.now() - sessionStartedAt) / 1000);
+  // 1回開いて何問やったか。中身は入れず、数だけ
+  trackAnswers(sessionStats.answered + introducedInSession());
 
   // 最後まで終わったら続きは無い。途中で終了した場合は残しておく
   if (sessionKind === 'daily') {
@@ -5982,14 +6197,16 @@ function showCheer(p) {
   $('done-mark').textContent = p.mark;
   $('done-t').textContent = p.title;
   $('done-count').textContent = String(p.count);
-  $('done-ok').textContent = String(p.ok);
-  $('done-ng').textContent = String(p.ng);
 
-  // 「覚えた」は新しく見せた語の数。判定していないので、言えた/言えなかった とは別に出す。
-  // 3つ足すと見出しの数になるようにして、数字が合わない画面にしない
-  const learned = $('done-learned');
-  learned.parentElement.hidden = !(p.learned > 0);
-  learned.textContent = String(p.learned || 0);
+  // **0のものは出さない。**「0 もう一度」は読む価値が無いのに1行ぶん場所を取り、
+  // 見出しの数字から目を逸らす。3つ足すと見出しの数になる関係はそのまま。
+  const cell = (id, value) => {
+    $(id).textContent = String(value || 0);
+    $('cell-' + id.replace('done-', '')).hidden = !(value > 0);
+  };
+  cell('done-learned', p.learned);
+  cell('done-ok', p.ok);
+  cell('done-ng', p.ng);
 
   const perfect = $('done-perfect');
   perfect.textContent = p.perfect || '';
@@ -6017,6 +6234,12 @@ function showCheer(p) {
   if (p.next) $('next-lesson').textContent = p.next;
   $('extra-btn').hidden = !p.extra;
 
+  // 「あと5問でどうなるか」。**本当にそうなるときだけ**出す
+  const why = $('next-why');
+  const line = p.next ? nextLessonNote(p.progress) : '';
+  why.textContent = line;
+  why.hidden = !line;
+
   // 続きがあるときは「次の5問」を主役にし、切り上げるほうは控えめにする。
   // 同じ見た目のボタンを2つ並べると、どちらを押すのか毎回考えることになる
   const back = $('back-home');
@@ -6025,6 +6248,25 @@ function showCheer(p) {
 
   renderAsk(!!p.ask);
   showScreen('summary');
+}
+
+/**
+ * 「次の5問」の上に出す一行。
+ *
+ * **事実として正しいときだけ出す。**「もう少し!」のような煽りは書かない
+ * (嘘でなくても、毎回出れば背景になり、当たっていなければ信用を失う)。
+ * 出るのは「あと1回で半分」「あと1回で今日の分が終わる」のどちらかだけ。
+ */
+function nextLessonNote(progress) {
+  const pr = progress || {};
+  const total = pr.total || 0;
+  const done = pr.done || 0;
+  if (!total || done >= total) return '';
+  const after = Math.min(total, done + engine.lessonSize);   // 次の1回を終えた時点
+  if (after >= total) return 'あと5問で今日の分が終わります';
+  const half = total / 2;
+  if (done < half && after >= half) return 'あと5問で今日の半分です';
+  return '';
 }
 
 /**
@@ -6133,12 +6375,14 @@ function localDayOf(iso) {
  */
 const PHRASE_VIEWS = {
   briefing: {
-    lead: '商談で話す順に並べてあります。読むだけなので、学習の記録には影響しません。'
-      + '声に出して1回言ってから会うと出やすくなります。',
+    // 商談の直前に開く画面なので、説明は最短にする。
+    // 毎回3行読ませると、それだけで探す時間が削られる
+    lead: '読むだけです。学習の記録には影響しません。',
     groups: () => (mnPack.briefing ? mnPack.briefing.topics : [])
       .map(t => ({ label: t.label, ids: t.items.filter(id => state.cards[id]) }))
       .filter(g => g.ids.length),
     deletable: false,
+    search: true,       // 商談中に日本語で探す。既存教材の中だけ
   },
   favorites: {
     lead: '学習中に「☆ 保存」を押したものが、新しい順に並びます。'
@@ -6158,10 +6402,10 @@ function renderPhrases(viewId) {
   const view = PHRASE_VIEWS[viewId];
   const body = $('sheet-body');
   clear(body);
-  body.appendChild(el('p', { class: 'ph-lead', text: view.lead }));
 
   const groups = view.groups();
   if (!groups.length) {
+    body.appendChild(el('p', { class: 'ph-lead', text: view.lead }));
     body.appendChild(el('p', { class: 'fr-empty',
       text: viewId === 'favorites'
         ? 'まだ保存したフレーズがありません。学習中に「☆ 保存」を押すと、ここに並びます。'
@@ -6169,19 +6413,59 @@ function renderPhrases(viewId) {
     return;
   }
 
+  const list = el('div', { class: 'ph-list' });
+
+  // 商談中に探すための入力。**説明より先に置く。**
+  // 開いた瞬間に探し始められないと、この画面を開く意味が薄い。
+  // **既にある教材の中を日本語で探すだけ**で、新しいモンゴル語は作らない
+  // (作れば誰も確かめていない文が混ざる)。覚え具合も出題の順番も動かさない。
+  if (view.search) {
+    const input = el('input', { class: 'ph-q', attrs: {
+      type: 'search', inputmode: 'search', autocomplete: 'off',
+      placeholder: '日本語で探す', 'aria-label': '日本語で探す',
+    } });
+    input.addEventListener('input', () => paintPhrases(list, groups, view, viewId, input.value));
+    body.appendChild(el('div', { class: 'ph-search' }, [input]));
+  }
+
+  body.appendChild(list);
+  body.appendChild(el('p', { class: 'ph-lead ph-lead-foot', text: view.lead }));
+  paintPhrases(list, groups, view, viewId, '');
+}
+
+/**
+ * 一覧の中身。探している最中は、見出しごとの並びをやめて該当だけを出す。
+ * 商談中に「見出しを開いてから探す」の一手間を挟ませないため。
+ */
+function paintPhrases(list, groups, view, viewId, query) {
+  clear(list);
+  const q = (query || '').trim();
+
+  if (q) {
+    // 日本語側だけで探す。モンゴル語での検索は、社長がキリル文字を
+    // 打てる前提になってしまうので今は作らない
+    const hits = [];
+    for (const g of groups) for (const id of g.ids) {
+      const card = state.cards[id];
+      if (card && card.promptKey.includes(q)) hits.push(id);
+    }
+    if (!hits.length) {
+      list.appendChild(el('p', { class: 'fr-empty', text: `「${q}」に当てはまる表現はありません。` }));
+      return;
+    }
+    list.appendChild(el('div', { class: 'ph-count', text: `${hits.length}件` }));
+    for (const id of hits) list.appendChild(phraseRow(id, view, viewId));
+    return;
+  }
+
   // 商談中は「探す時間」がいちばん惜しい。場面の見出しを上に貼り付けて、
   // 1タップでその場所へ飛べるようにする
+  const anchors = [];
   if (groups.length > 1) {
     const jump = el('div', { class: 'jump', attrs: { role: 'navigation', 'aria-label': '場面へ移動' } });
-    groups.forEach((g, i) => {
-      jump.appendChild(el('button', {
-        text: g.label, attrs: { type: 'button', 'aria-current': String(i === 0) },
-        on: (e) => {}, // 下でまとめて付ける
-      }));
+    groups.forEach((g) => {
+      jump.appendChild(el('button', { text: g.label, attrs: { type: 'button', 'aria-current': 'false' } }));
     });
-    body.appendChild(jump);
-    // 見出しの位置へ飛ぶ。要素は下で作るので、参照は後から解決する
-    const anchors = [];
     [...jump.children].forEach((btn, i) => {
       btn.addEventListener('click', () => {
         const target = anchors[i];
@@ -6191,47 +6475,49 @@ function renderPhrases(viewId) {
         btn.setAttribute('aria-current', 'true');
       });
     });
-    body._anchors = anchors;
+    list.appendChild(jump);
   }
 
   for (const g of groups) {
     if (g.label) {
       const h = el('div', { class: 'ph-topic', text: g.label });
-      body.appendChild(h);
-      if (body._anchors) body._anchors.push(h);
+      list.appendChild(h);
+      anchors.push(h);
     }
-    for (const id of g.ids) {
-      const card = state.cards[id];
-      const row = el('div', { class: 'ph-item' }, [
-        el('div', { class: 'ph-txt' }, [
-          el('div', { class: 'ph-ja', text: card.promptKey }),
-          el('div', { class: 'ph-mn', text: card.answerKey }),
-        ]),
-        // 音声が入れば、ここにスピーカーが並ぶ。無いあいだは出さない
-        caps.audioFor(id) ? el('button', {
-          class: 'spk', attrs: { type: 'button', 'aria-label': `${card.promptKey} を聞く` },
-          on: { click: () => audio.play(id) },
-        }, [speakerIcon()]) : null,
-        view.deletable
-          ? el('button', {
-            class: 'ph-del', attrs: { type: 'button', 'aria-label': `${card.promptKey} を保存から外す` },
-            text: '削除',
-            on: { click: () => { removeFav(id); renderPhrases(viewId); } },
-          })
-          : el('button', {
-            class: 'fav', attrs: { type: 'button', 'aria-pressed': String(isFav(id)),
-              'aria-label': `${card.promptKey} を保存` },
-            text: isFav(id) ? '★' : '☆',
-            on: { click: (e) => {
-              const on = toggleFav(id);
-              e.currentTarget.setAttribute('aria-pressed', String(on));
-              e.currentTarget.textContent = on ? '★' : '☆';
-            } },
-          }),
-      ]);
-      body.appendChild(row);
-    }
+    for (const id of g.ids) list.appendChild(phraseRow(id, view, viewId));
   }
+}
+
+/** 1件ぶんの行。読むだけ。判定ボタンは置かない。 */
+function phraseRow(id, view, viewId) {
+  const card = state.cards[id];
+  return el('div', { class: 'ph-item' }, [
+    el('div', { class: 'ph-txt' }, [
+      el('div', { class: 'ph-ja', text: card.promptKey }),
+      el('div', { class: 'ph-mn', text: card.answerKey }),
+    ]),
+    // 音声が入れば、ここにスピーカーが並ぶ。無いあいだは出さない
+    caps.audioFor(id) ? el('button', {
+      class: 'spk', attrs: { type: 'button', 'aria-label': `${card.promptKey} を聞く` },
+      on: { click: () => audio.play(id) },
+    }, [speakerIcon()]) : null,
+    view.deletable
+      ? el('button', {
+        class: 'ph-del', attrs: { type: 'button', 'aria-label': `${card.promptKey} を保存から外す` },
+        text: '削除',
+        on: { click: () => { removeFav(id); renderPhrases(viewId); } },
+      })
+      : el('button', {
+        class: 'fav', attrs: { type: 'button', 'aria-pressed': String(isFav(id)),
+          'aria-label': `${card.promptKey} を保存` },
+        text: isFav(id) ? '★' : '☆',
+        on: { click: (e) => {
+          const on = toggleFav(id);
+          e.currentTarget.setAttribute('aria-pressed', String(on));
+          e.currentTarget.textContent = on ? '★' : '☆';
+        } },
+      }),
+  ]);
 }
 
 /** スピーカーの絵。画像ファイルを読まないよう、その場で組み立てる。 */
@@ -6370,6 +6656,26 @@ function trackQuit(index, total) {
 function trackDuration(sec) {
   state.use = engine.recordDuration(state.use, sec);
 }
+function trackAnswers(n) {
+  state.use = engine.recordAnswers(state.use, n);
+}
+/**
+ * 「5問だけ進める」を押してから1問目が画面に出るまでの実測。
+ *
+ * **速さを自分の感想で語らないため**の数字。
+ * 1問目を描いた次の描画まで待ってから測る (描く前に測ると実際より短く出る)。
+ */
+let startTapAt = 0;
+function markStartTap() { startTapAt = performance.now(); }
+function trackFirstPaint() {
+  if (!startTapAt) return;
+  const t0 = startTapAt;
+  startTapAt = 0;
+  requestAnimationFrame(() => {
+    if (!today) return;
+    state.use = engine.recordStart(state.use, performance.now() - t0);
+  });
+}
 
 // ---------- 入力 ----------
 function goHome() {
@@ -6382,7 +6688,7 @@ function goHome() {
 
 function wire() {
   // 押す場所を1つにする。学習の長さを選ばせない
-  $('start-btn').addEventListener('click', () => startSession(null));
+  $('start-btn').addEventListener('click', () => { markStartTap(); startSession(null); });
   // 練習は「その他」からも、ホームの下からも1タップで開ける
   $('practice-btn').addEventListener('click', () => openSheet('practice'));
   $('next-lesson').addEventListener('click', continueLesson);
