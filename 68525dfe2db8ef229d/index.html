@@ -2,7 +2,7 @@
   Mongolian 90 — 社長個人β (1ファイル版)
   build-standalone.js が engine/ 言語パック/ UI / 教材を連結して生成する。
   手で編集しない。直すときは元のファイルを直して作り直す。
-  生成元: 教材 140件 / モジュール 26本 / 参考音声 0件
+  生成元: 教材 140件 / モジュール 32本 / 参考音声 0件 / 追加コンテンツ 1パック(会話 3本)
 -->
 <!doctype html>
 <html lang="ja">
@@ -532,6 +532,26 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 /* 1回押しただけでは消さない。押し直しを待っている間だけ色を変える */
 .ph-del.is-armed{background:var(--warn-soft);color:var(--warn);border-color:var(--warn);font-weight:700}
 
+/* ---- 会話練習 (試作) ---- */
+/* 相手と自分で左右を分ける。**どちらの番か考えさせない** */
+.talk-warn{font-size:calc(var(--t-sub) * var(--fs));color:var(--warn);
+  background:var(--warn-soft);border-radius:var(--radius-btn);
+  padding:10px 12px;margin:0 0 var(--space-3);line-height:1.6}
+.talk-log{display:flex;flex-direction:column;gap:12px}
+.turn{max-width:88%;border-radius:var(--radius-card);padding:12px 14px;
+  border:1px solid var(--line)}
+.turn-other{align-self:flex-start;background:var(--raised)}
+.turn-mine{align-self:flex-end;background:var(--accent-soft);border-color:var(--accent)}
+.turn-who{font-size:calc(var(--t-tiny) * var(--fs));color:var(--dim);
+  letter-spacing:.04em;margin-bottom:4px}
+.turn-mn{font-size:calc(1.25rem * var(--fs));font-weight:700;line-height:1.35;word-break:break-word}
+.turn-ja{font-size:calc(var(--t-sub) * var(--fs));color:var(--dim);line-height:1.5;margin-top:4px}
+/* 自分の番で、まだ答えを見ていないところ */
+.turn-ask{align-self:flex-end;background:var(--sunk);border-style:dashed}
+.turn-ask .turn-ja{color:var(--ink);font-size:calc(var(--t-body) * var(--fs));margin-top:0}
+.turn-row{display:flex;align-items:center;gap:10px;margin-top:8px}
+.turn .spk{min-height:var(--tap);min-width:var(--tap)}
+
 /* ---- 書き出し / 不具合報告 ---- */
 .copybox{background:var(--raised);border:1px solid var(--line);border-radius:var(--radius-card);padding:15px}
 .copy-lead{font-size:.85rem;color:var(--dim);line-height:1.7;margin:0 0 14px}
@@ -908,6 +928,24 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 </div>
 
 <!-- 組み合わせ練習。覚え具合もSRSも動かさない -->
+<!-- 会話練習 (試作)。**中身が production_ready になるまで通常の画面へ出ない。**
+     相手の番は「聞く/読む」、自分の番は「思い出してから答えを見る」。
+     ここでは覚え具合を1つも動かさない (通し稽古であって、判定ではない) -->
+<main id="talk" class="wrap" hidden>
+  <div class="head"><span class="brand" id="talk-title">会話練習</span></div>
+  <p class="talk-warn" id="talk-warn" hidden></p>
+  <div class="talk-log" id="talk-log"></div>
+  <div class="dock-pad"></div>
+</main>
+
+<div class="dock" id="talk-dock" hidden>
+  <div class="dock-inner">
+    <button id="talk-next" class="primary" type="button">次へ</button>
+    <button id="talk-reveal" class="primary" type="button" hidden>返し方を見る</button>
+    <button id="talk-back" class="ghost" type="button">練習へ戻る</button>
+  </div>
+</div>
+
 <main id="match" class="wrap" hidden>
   <div class="head"><span class="brand">組み合わせ</span></div>
   <p class="match-lead" id="match-lead"></p>
@@ -934,6 +972,8 @@ window.__MN90_VOCAB = {"meta":{"schema":"vocab.schema.md","pipeline":"CONTENT-PI
 window.__MN90_CURRICULUM = {"meta":{"version":1,"generatedBy":"mongolian-90/data/build-curriculum.js","startDate":"2026-09-01","totalDays":90,"newVocabPerDayMax":15,"timezone":"Asia/Tokyo","cefrTargets":{"day30":"A1","day60":"A2","day90":"A2+〜B1入口"},"vocabPolicy":"カリキュラムは語彙の枠のみを持つ。語そのものは vocab.json で status 管理し、unverified はSRSに入れない。"},"grammarUnits":{"cyrillic_a":{"title":"キリル文字 前半","ja":null,"points":["母音а/э/и/о/ө/у/ү と長母音の書き分け","見て即座に音になることを優先。書けることは後回し"]},"cyrillic_b":{"title":"キリル文字 後半","ja":null,"points":["子音全字","ц/ч/ж/з の区別","ь/ъ の役割"]},"spelling_1":{"title":"綴りと音のズレ 入門","ja":null,"points":["非初頭短母音は弱化・脱落する","байна≈バイン / Сайн байна уу≈サェンベーノー"]},"spelling_2":{"title":"綴りと音のズレ 本編","ja":null,"points":["第1音節以外の短母音の扱い","語末の弱化","速度を落とすと綴り読みが固定するので原音速度で"]},"dictation":{"title":"ディクテーションによる綴り固め","ja":null,"points":["聞いてキリル文字で書く","音韻ループの訓練を兼ねる"]},"copula":{"title":"байх と人称代名詞","ja":"〜です／〜がいる","points":["би/чи/та/тэр","байна の現在形"]},"qwords":{"title":"疑問詞6種","ja":"何・誰・どこ・いつ・どう・いくつ","points":["юу/хэн/хаана/хэзээ/яаж/хэдэн"]},"yesno":{"title":"yes-no疑問 уу/үү","ja":"〜ですか","points":["母音調和で уу/үү を選ぶ最初の実例"]},"numbers":{"title":"数詞と数詞修飾形","ja":"1〜100、金額","points":["名詞を修飾するとき形が変わる(дөрөв→дөрвөн)","商談で最も致命的な聞き取りミスは金額"]},"possession":{"title":"所有 -тай / -гүй","ja":"〜を持っている／持っていない","points":["モンゴル語で極めて高頻度","「車がある」を動詞ではなく形容詞的に言う"]},"case_acc":{"title":"対格 -ыг / -ийг","ja":"〜を","points":["定・不定で付け外しがある"]},"case_dat":{"title":"与位格 -д / -т","ja":"〜に／〜で(場所)","points":["語幹末子音で -д か -т が決まる"]},"case_abl":{"title":"奪格 -аас","ja":"〜から","points":["母音調和4形 -аас/-ээс/-оос/-өөс"]},"case_ins":{"title":"造格 -аар","ja":"〜で(手段)","points":["支払い手段・輸送手段で多用"]},"case_gen":{"title":"属格 -ын / -ийн","ja":"〜の","points":["連体修飾の土台"]},"case_com":{"title":"共同格 -тай","ja":"〜と(一緒に)","points":["所有の -тай と同形。文脈で判別"]},"case_mix":{"title":"格の総合運用","ja":null,"points":["1文に複数の格を入れる","母音調和を格ごとに切り替える"]},"v_present":{"title":"現在未来 -на / -нэ","ja":"〜する／〜するだろう","points":["未来も同形"]},"v_past_san":{"title":"過去 -сан","ja":"〜した(状態・経験)","points":["連体修飾にも使う重要形"]},"v_past_laa":{"title":"過去 -лаа / -в","ja":"〜した(直近／書き言葉)","points":["3つの過去形の使い分けがここで決まる"]},"v_volition":{"title":"意志 -ъя / -ье","ja":"〜しましょう","points":["商談の締めで多用"]},"v_request":{"title":"依頼 -аарай / өгнө үү","ja":"〜してください","points":["өгөөч はくだけた形。商談では өгнө үү"]},"v_need":{"title":"必要 хэрэгтэй","ja":"〜が必要だ","points":[]},"v_can":{"title":"可能 болох","ja":"〜できる／〜してもよい","points":["許可と可能の両方"]},"v_want":{"title":"願望 -маар байна","ja":"〜したい","points":[]},"conv_j":{"title":"副動詞 -ж / -ч","ja":"〜して(並列・継起)","points":["文が長くなるのは全部ここ","教材では扱いが遅すぎる項目。前倒しする"]},"conv_aad":{"title":"副動詞 -аад","ja":"〜してから","points":["-ж との違いを対比で覚える"]},"conv_val":{"title":"条件 -вал","ja":"〜すれば／〜なら","points":["交渉の中核構文"]},"conv_had":{"title":"時 -хад","ja":"〜する時","points":[]},"quote_gej":{"title":"引用 гэж","ja":"〜と(言う・思う)","points":["日本語の「と」とほぼ同じ。意見表明が一気に可能になる"]},"habit_dag":{"title":"習慣 -даг","ja":"〜している(習慣)","points":[]},"rel_clause":{"title":"連体修飾 -сан / -х + 名詞","ja":"〜した／〜する + 名詞","points":["日本語と同じ語順で作れる"]},"comparison":{"title":"比較","ja":"〜より〜だ","points":["価格・条件の比較で必須"]},"politeness":{"title":"丁寧形と敬称","ja":"です・ます／〜さん","points":["та と чи の使い分けを間違えると失礼になる"]},"indirect_req":{"title":"間接依頼とぼかし","ja":"〜していただけますか","points":["直接的な断りを避ける言い方"]},"discourse":{"title":"終助詞・談話標識","ja":"〜よ／〜ね","points":["шүү / л / даа","自然さがここで決まる"]},"negotiation":{"title":"商談レジスター","ja":null,"points":["条件提示・譲歩・保留","即決を避ける言い方"]},"consolidate":{"title":"既習事項の統合運用","ja":null,"points":["新規なし。速度と正確さだけを上げる"]},"exam":{"title":"節目試験","ja":null,"points":[]}},"days":[{"day":1,"phase":"foundation","week":1,"theme":"文字と最初の発話","cefrBand":"pre-A1→A1","grammar":{"unitId":"cyrillic_a","title":"キリル文字 前半","jaAnchor":null,"points":["母音а/э/и/о/ө/у/ү と長母音の書き分け","見て即座に音になることを優先。書けることは後回し"],"mode":"new"},"vocab":{"newCount":0,"themes":["greeting","self_intro"],"setId":"d001","requireStatus":["production_ready","ai_checked"]},"instantRecall":null,"substitution":null,"roleplay":null,"monologue":null,"review":{"replayErrorsFromDay":null,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":2,"phase":"foundation","week":1,"theme":"文字と最初の発話","cefrBand":"pre-A1→A1","grammar":{"unitId":"cyrillic_b","title":"キリル文字 後半","jaAnchor":null,"points":["子音全字","ц/ч/ж/з の区別","ь/ъ の役割"],"mode":"new"},"vocab":{"newCount":0,"themes":["greeting","self_intro"],"setId":"d002","requireStatus":["production_ready","ai_checked"]},"instantRecall":null,"substitution":null,"roleplay":null,"monologue":null,"review":{"replayErrorsFromDay":1,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":3,"phase":"foundation","week":1,"theme":"文字と最初の発話","cefrBand":"pre-A1→A1","grammar":{"unitId":"spelling_1","title":"綴りと音のズレ 入門","jaAnchor":null,"points":["非初頭短母音は弱化・脱落する","байна≈バイン / Сайн байна уу≈サェンベーノー"],"mode":"new"},"vocab":{"newCount":0,"themes":["greeting","self_intro"],"setId":"d003","requireStatus":["production_ready","ai_checked"]},"instantRecall":null,"substitution":null,"roleplay":null,"monologue":null,"review":{"replayErrorsFromDay":2,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":4,"phase":"foundation","week":1,"theme":"文字と最初の発話","cefrBand":"pre-A1→A1","grammar":{"unitId":"copula","title":"байх と人称代名詞","jaAnchor":"〜です／〜がいる","points":["би/чи/та/тэр","байна の現在形"],"mode":"new"},"vocab":{"newCount":15,"themes":["greeting","self_intro"],"setId":"d004","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":20,"targetSeconds":1.5,"mix":{"errorReplay":4,"srsDue":6,"fresh":10}},"substitution":null,"roleplay":null,"monologue":null,"review":{"replayErrorsFromDay":3,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":5,"phase":"foundation","week":1,"theme":"文字と最初の発話","cefrBand":"pre-A1→A1","grammar":{"unitId":"qwords","title":"疑問詞6種","jaAnchor":"何・誰・どこ・いつ・どう・いくつ","points":["юу/хэн/хаана/хэзээ/яаж/хэдэн"],"mode":"new"},"vocab":{"newCount":15,"themes":["greeting","self_intro"],"setId":"d005","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":20,"targetSeconds":1.5,"mix":{"errorReplay":4,"srsDue":6,"fresh":10}},"substitution":null,"roleplay":null,"monologue":null,"review":{"replayErrorsFromDay":4,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":6,"phase":"foundation","week":1,"theme":"文字と最初の発話","cefrBand":"pre-A1→A1","grammar":{"unitId":"yesno","title":"yes-no疑問 уу/үү","jaAnchor":"〜ですか","points":["母音調和で уу/үү を選ぶ最初の実例"],"mode":"new"},"vocab":{"newCount":15,"themes":["greeting","self_intro"],"setId":"d006","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":20,"targetSeconds":1.5,"mix":{"errorReplay":4,"srsDue":6,"fresh":10}},"substitution":null,"roleplay":null,"monologue":null,"review":{"replayErrorsFromDay":5,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":7,"phase":"foundation","week":1,"theme":"文字と最初の発話","cefrBand":"pre-A1→A1","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":15,"themes":["greeting","self_intro"],"setId":"d007","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":20,"targetSeconds":1.5,"mix":{"errorReplay":4,"srsDue":6,"fresh":10}},"substitution":null,"roleplay":null,"monologue":null,"review":{"replayErrorsFromDay":6,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":8,"phase":"foundation","week":2,"theme":"数と所有、綴りと音","cefrBand":"pre-A1→A1","grammar":{"unitId":"numbers","title":"数詞と数詞修飾形","jaAnchor":"1〜100、金額","points":["名詞を修飾するとき形が変わる(дөрөв→дөрвөн)","商談で最も致命的な聞き取りミスは金額"],"mode":"new"},"vocab":{"newCount":15,"themes":["numbers","money","shopping","cafe"],"setId":"d008","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":30,"targetSeconds":1.5,"mix":{"errorReplay":10,"srsDue":13,"fresh":7}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"cafe_shop","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"daily_routine","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":7,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":true},"milestone":null,"note":null},{"day":9,"phase":"foundation","week":2,"theme":"数と所有、綴りと音","cefrBand":"pre-A1→A1","grammar":{"unitId":"possession","title":"所有 -тай / -гүй","jaAnchor":"〜を持っている／持っていない","points":["モンゴル語で極めて高頻度","「車がある」を動詞ではなく形容詞的に言う"],"mode":"new"},"vocab":{"newCount":15,"themes":["numbers","money","shopping","cafe"],"setId":"d009","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":30,"targetSeconds":1.5,"mix":{"errorReplay":10,"srsDue":13,"fresh":7}},"substitution":{"paradigmId":"com","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"cafe_shop","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"daily_routine","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":8,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":10,"phase":"foundation","week":2,"theme":"数と所有、綴りと音","cefrBand":"pre-A1→A1","grammar":{"unitId":"spelling_2","title":"綴りと音のズレ 本編","jaAnchor":null,"points":["第1音節以外の短母音の扱い","語末の弱化","速度を落とすと綴り読みが固定するので原音速度で"],"mode":"new"},"vocab":{"newCount":10,"themes":["numbers","money","shopping","cafe"],"setId":"d010","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":30,"targetSeconds":1.5,"mix":{"errorReplay":10,"srsDue":13,"fresh":7}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"cafe_shop","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"daily_routine","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":9,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":"綴りと音のズレに半日を充てる"},{"day":11,"phase":"foundation","week":2,"theme":"数と所有、綴りと音","cefrBand":"pre-A1→A1","grammar":{"unitId":"case_acc","title":"対格 -ыг / -ийг","jaAnchor":"〜を","points":["定・不定で付け外しがある"],"mode":"new"},"vocab":{"newCount":15,"themes":["numbers","money","shopping","cafe"],"setId":"d011","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":30,"targetSeconds":1.5,"mix":{"errorReplay":10,"srsDue":13,"fresh":7}},"substitution":{"paradigmId":"acc","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"cafe_shop","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"daily_routine","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":10,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":12,"phase":"foundation","week":2,"theme":"数と所有、綴りと音","cefrBand":"pre-A1→A1","grammar":{"unitId":"case_acc","title":"対格 -ыг / -ийг","jaAnchor":"〜を","points":["定・不定で付け外しがある"],"mode":"new"},"vocab":{"newCount":15,"themes":["numbers","money","shopping","cafe"],"setId":"d012","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":30,"targetSeconds":1.5,"mix":{"errorReplay":10,"srsDue":13,"fresh":7}},"substitution":{"paradigmId":"acc","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"cafe_shop","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"daily_routine","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":11,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":13,"phase":"foundation","week":2,"theme":"数と所有、綴りと音","cefrBand":"pre-A1→A1","grammar":{"unitId":"case_dat","title":"与位格 -д / -т","jaAnchor":"〜に／〜で(場所)","points":["語幹末子音で -д か -т が決まる"],"mode":"new"},"vocab":{"newCount":15,"themes":["numbers","money","shopping","cafe"],"setId":"d013","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":30,"targetSeconds":1.5,"mix":{"errorReplay":10,"srsDue":13,"fresh":7}},"substitution":{"paradigmId":"dat","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"cafe_shop","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"daily_routine","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":12,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":14,"phase":"foundation","week":2,"theme":"数と所有、綴りと音","cefrBand":"pre-A1→A1","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":15,"themes":["numbers","money","shopping","cafe"],"setId":"d014","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":30,"targetSeconds":1.5,"mix":{"errorReplay":10,"srsDue":13,"fresh":7}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"cafe_shop","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"daily_routine","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":13,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":15,"phase":"foundation","week":3,"theme":"格の主要6種","cefrBand":"pre-A1→A1","grammar":{"unitId":"case_abl","title":"奪格 -аас","jaAnchor":"〜から","points":["母音調和4形 -аас/-ээс/-оос/-өөс"],"mode":"new"},"vocab":{"newCount":15,"themes":["place","transport","time"],"setId":"d015","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":40,"targetSeconds":1.5,"mix":{"errorReplay":13,"srsDue":17,"fresh":10}},"substitution":{"paradigmId":"abl","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"taxi_directions","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"my_town","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":14,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":true},"milestone":null,"note":null},{"day":16,"phase":"foundation","week":3,"theme":"格の主要6種","cefrBand":"pre-A1→A1","grammar":{"unitId":"case_ins","title":"造格 -аар","jaAnchor":"〜で(手段)","points":["支払い手段・輸送手段で多用"],"mode":"new"},"vocab":{"newCount":15,"themes":["place","transport","time"],"setId":"d016","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":40,"targetSeconds":1.5,"mix":{"errorReplay":13,"srsDue":17,"fresh":10}},"substitution":{"paradigmId":"ins","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"taxi_directions","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"my_town","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":15,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":17,"phase":"foundation","week":3,"theme":"格の主要6種","cefrBand":"pre-A1→A1","grammar":{"unitId":"case_gen","title":"属格 -ын / -ийн","jaAnchor":"〜の","points":["連体修飾の土台"],"mode":"new"},"vocab":{"newCount":15,"themes":["place","transport","time"],"setId":"d017","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":40,"targetSeconds":1.5,"mix":{"errorReplay":13,"srsDue":17,"fresh":10}},"substitution":{"paradigmId":"gen","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":true},"roleplay":{"categoryId":"taxi_directions","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"my_town","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":16,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":18,"phase":"foundation","week":3,"theme":"格の主要6種","cefrBand":"pre-A1→A1","grammar":{"unitId":"case_com","title":"共同格 -тай","jaAnchor":"〜と(一緒に)","points":["所有の -тай と同形。文脈で判別"],"mode":"new"},"vocab":{"newCount":15,"themes":["place","transport","time"],"setId":"d018","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":40,"targetSeconds":1.5,"mix":{"errorReplay":13,"srsDue":17,"fresh":10}},"substitution":{"paradigmId":"com","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"taxi_directions","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"my_town","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":17,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":19,"phase":"foundation","week":3,"theme":"格の主要6種","cefrBand":"pre-A1→A1","grammar":{"unitId":"case_mix","title":"格の総合運用","jaAnchor":null,"points":["1文に複数の格を入れる","母音調和を格ごとに切り替える"],"mode":"new"},"vocab":{"newCount":15,"themes":["place","transport","time"],"setId":"d019","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":40,"targetSeconds":1.5,"mix":{"errorReplay":13,"srsDue":17,"fresh":10}},"substitution":{"paradigmId":"case_all","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"taxi_directions","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"my_town","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":18,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":20,"phase":"foundation","week":3,"theme":"格の主要6種","cefrBand":"pre-A1→A1","grammar":{"unitId":"v_present","title":"現在未来 -на / -нэ","jaAnchor":"〜する／〜するだろう","points":["未来も同形"],"mode":"new"},"vocab":{"newCount":15,"themes":["place","transport","time"],"setId":"d020","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":40,"targetSeconds":1.5,"mix":{"errorReplay":13,"srsDue":17,"fresh":10}},"substitution":{"paradigmId":"v_present","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"taxi_directions","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"my_town","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":19,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":21,"phase":"foundation","week":3,"theme":"格の主要6種","cefrBand":"pre-A1→A1","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":15,"themes":["place","transport","time"],"setId":"d021","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":40,"targetSeconds":1.5,"mix":{"errorReplay":13,"srsDue":17,"fresh":10}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"taxi_directions","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"my_town","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":20,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":22,"phase":"foundation","week":4,"theme":"動詞の基本形","cefrBand":"pre-A1→A1","grammar":{"unitId":"v_past_san","title":"過去 -сан","jaAnchor":"〜した(状態・経験)","points":["連体修飾にも使う重要形"],"mode":"new"},"vocab":{"newCount":15,"themes":["family","verbs_core"],"setId":"d022","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":50,"targetSeconds":1.5,"mix":{"errorReplay":17,"srsDue":21,"fresh":12}},"substitution":{"paradigmId":"v_past","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"small_talk_family","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"my_family","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":21,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":true},"milestone":null,"note":null},{"day":23,"phase":"foundation","week":4,"theme":"動詞の基本形","cefrBand":"pre-A1→A1","grammar":{"unitId":"v_past_laa","title":"過去 -лаа / -в","jaAnchor":"〜した(直近／書き言葉)","points":["3つの過去形の使い分けがここで決まる"],"mode":"new"},"vocab":{"newCount":15,"themes":["family","verbs_core"],"setId":"d023","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":50,"targetSeconds":1.5,"mix":{"errorReplay":17,"srsDue":21,"fresh":12}},"substitution":{"paradigmId":"v_past","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"small_talk_family","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"my_family","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":22,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":24,"phase":"foundation","week":4,"theme":"動詞の基本形","cefrBand":"pre-A1→A1","grammar":{"unitId":"v_volition","title":"意志 -ъя / -ье","jaAnchor":"〜しましょう","points":["商談の締めで多用"],"mode":"new"},"vocab":{"newCount":15,"themes":["family","verbs_core"],"setId":"d024","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":50,"targetSeconds":1.5,"mix":{"errorReplay":17,"srsDue":21,"fresh":12}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"small_talk_family","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"my_family","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":23,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":25,"phase":"foundation","week":4,"theme":"動詞の基本形","cefrBand":"pre-A1→A1","grammar":{"unitId":"dictation","title":"ディクテーションによる綴り固め","jaAnchor":null,"points":["聞いてキリル文字で書く","音韻ループの訓練を兼ねる"],"mode":"new"},"vocab":{"newCount":10,"themes":["family","verbs_core"],"setId":"d025","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":50,"targetSeconds":1.5,"mix":{"errorReplay":17,"srsDue":21,"fresh":12}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"small_talk_family","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"my_family","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":24,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":"ディクテーションで綴りを固める半日"},{"day":26,"phase":"foundation","week":4,"theme":"動詞の基本形","cefrBand":"pre-A1→A1","grammar":{"unitId":"v_need","title":"必要 хэрэгтэй","jaAnchor":"〜が必要だ","points":[],"mode":"new"},"vocab":{"newCount":15,"themes":["family","verbs_core"],"setId":"d026","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":50,"targetSeconds":1.5,"mix":{"errorReplay":17,"srsDue":21,"fresh":12}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"small_talk_family","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"my_family","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":25,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":27,"phase":"foundation","week":4,"theme":"動詞の基本形","cefrBand":"pre-A1→A1","grammar":{"unitId":"v_can","title":"可能 болох","jaAnchor":"〜できる／〜してもよい","points":["許可と可能の両方"],"mode":"new"},"vocab":{"newCount":15,"themes":["family","verbs_core"],"setId":"d027","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":50,"targetSeconds":1.5,"mix":{"errorReplay":17,"srsDue":21,"fresh":12}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"small_talk_family","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"my_family","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":26,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":28,"phase":"foundation","week":4,"theme":"動詞の基本形","cefrBand":"pre-A1→A1","grammar":{"unitId":"v_want","title":"願望 -маар байна","jaAnchor":"〜したい","points":[],"mode":"new"},"vocab":{"newCount":15,"themes":["family","verbs_core"],"setId":"d028","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":50,"targetSeconds":1.5,"mix":{"errorReplay":17,"srsDue":21,"fresh":12}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"small_talk_family","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"my_family","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":27,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":29,"phase":"foundation","week":null,"theme":"30日試験前の総復習","cefrBand":"pre-A1→A1","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":0,"themes":[],"setId":"d029","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":50,"targetSeconds":1.5,"mix":{"errorReplay":17,"srsDue":21,"fresh":12}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"mixed","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"free_topic","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":28,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":true},"milestone":null,"note":"30日試験前の総復習"},{"day":30,"phase":"foundation","week":null,"theme":"節目","cefrBand":"pre-A1→A1","grammar":{"unitId":"exam","title":"節目試験","jaAnchor":null,"points":[],"mode":"exam"},"vocab":{"newCount":0,"themes":[],"setId":"d030","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":50,"targetSeconds":10,"mix":null,"examSection":"A","note":"節目試験の語彙即答50問。通常ドリルは行わない"},"substitution":null,"roleplay":null,"monologue":null,"review":{"replayErrorsFromDay":29,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":"exam30","note":null},{"day":31,"phase":"connection","week":5,"theme":"副動詞で文をつなぐ","cefrBand":"A1→A2","grammar":{"unitId":"conv_j","title":"副動詞 -ж / -ч","jaAnchor":"〜して(並列・継起)","points":["文が長くなるのは全部ここ","教材では扱いが遅すぎる項目。前倒しする"],"mode":"new"},"vocab":{"newCount":15,"themes":["food","restaurant","car_basic"],"setId":"d031","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"conv","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"restaurant","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"yesterday","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":30,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":32,"phase":"connection","week":5,"theme":"副動詞で文をつなぐ","cefrBand":"A1→A2","grammar":{"unitId":"conv_j","title":"副動詞 -ж / -ч","jaAnchor":"〜して(並列・継起)","points":["文が長くなるのは全部ここ","教材では扱いが遅すぎる項目。前倒しする"],"mode":"new"},"vocab":{"newCount":15,"themes":["food","restaurant","car_basic"],"setId":"d032","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"conv","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"restaurant","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"yesterday","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":31,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":33,"phase":"connection","week":5,"theme":"副動詞で文をつなぐ","cefrBand":"A1→A2","grammar":{"unitId":"conv_aad","title":"副動詞 -аад","jaAnchor":"〜してから","points":["-ж との違いを対比で覚える"],"mode":"new"},"vocab":{"newCount":15,"themes":["food","restaurant","car_basic"],"setId":"d033","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"conv","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"restaurant","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"yesterday","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":32,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":34,"phase":"connection","week":5,"theme":"副動詞で文をつなぐ","cefrBand":"A1→A2","grammar":{"unitId":"conv_aad","title":"副動詞 -аад","jaAnchor":"〜してから","points":["-ж との違いを対比で覚える"],"mode":"new"},"vocab":{"newCount":15,"themes":["food","restaurant","car_basic"],"setId":"d034","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"conv","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"restaurant","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"yesterday","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":33,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":35,"phase":"connection","week":5,"theme":"副動詞で文をつなぐ","cefrBand":"A1→A2","grammar":{"unitId":"conv_j","title":"副動詞 -ж / -ч","jaAnchor":"〜して(並列・継起)","points":["文が長くなるのは全部ここ","教材では扱いが遅すぎる項目。前倒しする"],"mode":"new"},"vocab":{"newCount":15,"themes":["food","restaurant","car_basic"],"setId":"d035","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"conv","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"restaurant","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"yesterday","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":34,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":36,"phase":"connection","week":5,"theme":"副動詞で文をつなぐ","cefrBand":"A1→A2","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":15,"themes":["food","restaurant","car_basic"],"setId":"d036","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"restaurant","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"yesterday","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":35,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":true},"milestone":null,"note":null},{"day":37,"phase":"connection","week":5,"theme":"副動詞で文をつなぐ","cefrBand":"A1→A2","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":15,"themes":["food","restaurant","car_basic"],"setId":"d037","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"restaurant","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"yesterday","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":36,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":38,"phase":"connection","week":6,"theme":"条件と時","cefrBand":"A1→A2","grammar":{"unitId":"conv_val","title":"条件 -вал","jaAnchor":"〜すれば／〜なら","points":["交渉の中核構文"],"mode":"new"},"vocab":{"newCount":15,"themes":["car_condition","phone_chat"],"setId":"d038","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"cond","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"phone_call","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"if_scenario","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":37,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":39,"phase":"connection","week":6,"theme":"条件と時","cefrBand":"A1→A2","grammar":{"unitId":"conv_val","title":"条件 -вал","jaAnchor":"〜すれば／〜なら","points":["交渉の中核構文"],"mode":"new"},"vocab":{"newCount":15,"themes":["car_condition","phone_chat"],"setId":"d039","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"cond","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"phone_call","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"if_scenario","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":38,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":40,"phase":"connection","week":6,"theme":"条件と時","cefrBand":"A1→A2","grammar":{"unitId":"conv_had","title":"時 -хад","jaAnchor":"〜する時","points":[],"mode":"new"},"vocab":{"newCount":15,"themes":["car_condition","phone_chat"],"setId":"d040","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"cond","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"phone_call","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"if_scenario","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":39,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":41,"phase":"connection","week":6,"theme":"条件と時","cefrBand":"A1→A2","grammar":{"unitId":"conv_had","title":"時 -хад","jaAnchor":"〜する時","points":[],"mode":"new"},"vocab":{"newCount":15,"themes":["car_condition","phone_chat"],"setId":"d041","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"cond","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"phone_call","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"if_scenario","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":40,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":42,"phase":"connection","week":6,"theme":"条件と時","cefrBand":"A1→A2","grammar":{"unitId":"conv_val","title":"条件 -вал","jaAnchor":"〜すれば／〜なら","points":["交渉の中核構文"],"mode":"new"},"vocab":{"newCount":15,"themes":["car_condition","phone_chat"],"setId":"d042","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"cond","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"phone_call","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"if_scenario","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":41,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":43,"phase":"connection","week":6,"theme":"条件と時","cefrBand":"A1→A2","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":15,"themes":["car_condition","phone_chat"],"setId":"d043","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"phone_call","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"if_scenario","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":42,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":true},"milestone":null,"note":null},{"day":44,"phase":"connection","week":6,"theme":"条件と時","cefrBand":"A1→A2","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":15,"themes":["car_condition","phone_chat"],"setId":"d044","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"phone_call","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"if_scenario","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":43,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":45,"phase":"connection","week":7,"theme":"引用と習慣、意見を言う","cefrBand":"A1→A2","grammar":{"unitId":"quote_gej","title":"引用 гэж","jaAnchor":"〜と(言う・思う)","points":["日本語の「と」とほぼ同じ。意見表明が一気に可能になる"],"mode":"new"},"vocab":{"newCount":15,"themes":["car_spec","opinion"],"setId":"d045","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"car_inspection","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"my_opinion","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":44,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":46,"phase":"connection","week":7,"theme":"引用と習慣、意見を言う","cefrBand":"A1→A2","grammar":{"unitId":"quote_gej","title":"引用 гэж","jaAnchor":"〜と(言う・思う)","points":["日本語の「と」とほぼ同じ。意見表明が一気に可能になる"],"mode":"new"},"vocab":{"newCount":15,"themes":["car_spec","opinion"],"setId":"d046","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"car_inspection","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"my_opinion","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":45,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":47,"phase":"connection","week":7,"theme":"引用と習慣、意見を言う","cefrBand":"A1→A2","grammar":{"unitId":"habit_dag","title":"習慣 -даг","jaAnchor":"〜している(習慣)","points":[],"mode":"new"},"vocab":{"newCount":15,"themes":["car_spec","opinion"],"setId":"d047","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"car_inspection","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"my_opinion","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":46,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":48,"phase":"connection","week":7,"theme":"引用と習慣、意見を言う","cefrBand":"A1→A2","grammar":{"unitId":"habit_dag","title":"習慣 -даг","jaAnchor":"〜している(習慣)","points":[],"mode":"new"},"vocab":{"newCount":15,"themes":["car_spec","opinion"],"setId":"d048","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"car_inspection","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"my_opinion","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":47,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":49,"phase":"connection","week":7,"theme":"引用と習慣、意見を言う","cefrBand":"A1→A2","grammar":{"unitId":"quote_gej","title":"引用 гэж","jaAnchor":"〜と(言う・思う)","points":["日本語の「と」とほぼ同じ。意見表明が一気に可能になる"],"mode":"new"},"vocab":{"newCount":15,"themes":["car_spec","opinion"],"setId":"d049","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"car_inspection","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"my_opinion","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":48,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":50,"phase":"connection","week":7,"theme":"引用と習慣、意見を言う","cefrBand":"A1→A2","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":15,"themes":["car_spec","opinion"],"setId":"d050","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"car_inspection","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"my_opinion","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":49,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":true},"milestone":null,"note":null},{"day":51,"phase":"connection","week":7,"theme":"引用と習慣、意見を言う","cefrBand":"A1→A2","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":15,"themes":["car_spec","opinion"],"setId":"d051","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"car_inspection","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"my_opinion","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":50,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":52,"phase":"connection","week":8,"theme":"連体修飾と比較","cefrBand":"A1→A2","grammar":{"unitId":"rel_clause","title":"連体修飾 -сан / -х + 名詞","jaAnchor":"〜した／〜する + 名詞","points":["日本語と同じ語順で作れる"],"mode":"new"},"vocab":{"newCount":15,"themes":["car_trade","price"],"setId":"d052","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"rel","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"price_negotiation","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"compare_two","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":51,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":53,"phase":"connection","week":8,"theme":"連体修飾と比較","cefrBand":"A1→A2","grammar":{"unitId":"rel_clause","title":"連体修飾 -сан / -х + 名詞","jaAnchor":"〜した／〜する + 名詞","points":["日本語と同じ語順で作れる"],"mode":"new"},"vocab":{"newCount":15,"themes":["car_trade","price"],"setId":"d053","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"rel","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"price_negotiation","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"compare_two","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":52,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":54,"phase":"connection","week":8,"theme":"連体修飾と比較","cefrBand":"A1→A2","grammar":{"unitId":"comparison","title":"比較","jaAnchor":"〜より〜だ","points":["価格・条件の比較で必須"],"mode":"new"},"vocab":{"newCount":15,"themes":["car_trade","price"],"setId":"d054","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"price_negotiation","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"compare_two","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":53,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":55,"phase":"connection","week":8,"theme":"連体修飾と比較","cefrBand":"A1→A2","grammar":{"unitId":"comparison","title":"比較","jaAnchor":"〜より〜だ","points":["価格・条件の比較で必須"],"mode":"new"},"vocab":{"newCount":15,"themes":["car_trade","price"],"setId":"d055","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"price_negotiation","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"compare_two","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":54,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":56,"phase":"connection","week":8,"theme":"連体修飾と比較","cefrBand":"A1→A2","grammar":{"unitId":"rel_clause","title":"連体修飾 -сан / -х + 名詞","jaAnchor":"〜した／〜する + 名詞","points":["日本語と同じ語順で作れる"],"mode":"new"},"vocab":{"newCount":15,"themes":["car_trade","price"],"setId":"d056","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"rel","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"price_negotiation","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"compare_two","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":55,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":57,"phase":"connection","week":8,"theme":"連体修飾と比較","cefrBand":"A1→A2","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":15,"themes":["car_trade","price"],"setId":"d057","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"price_negotiation","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"compare_two","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":56,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":true},"milestone":null,"note":null},{"day":58,"phase":"connection","week":8,"theme":"連体修飾と比較","cefrBand":"A1→A2","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":15,"themes":["car_trade","price"],"setId":"d058","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"price_negotiation","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"compare_two","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":57,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":59,"phase":"connection","week":null,"theme":"60日試験前の総復習","cefrBand":"A1→A2","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":0,"themes":[],"setId":"d059","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"mixed","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"free_topic","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":58,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":"60日試験前の総復習"},{"day":60,"phase":"connection","week":null,"theme":"節目","cefrBand":"A1→A2","grammar":{"unitId":"exam","title":"節目試験","jaAnchor":null,"points":[],"mode":"exam"},"vocab":{"newCount":0,"themes":[],"setId":"d060","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":50,"targetSeconds":10,"mix":null,"examSection":"A","note":"節目試験の語彙即答50問。通常ドリルは行わない"},"substitution":null,"roleplay":null,"monologue":null,"review":{"replayErrorsFromDay":59,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":"exam60","note":null},{"day":61,"phase":"field","week":9,"theme":"丁寧さと間接依頼","cefrBand":"A2→A2+","grammar":{"unitId":"politeness","title":"丁寧形と敬称","jaAnchor":"です・ます／〜さん","points":["та と чи の使い分けを間違えると失礼になる"],"mode":"new"},"vocab":{"newCount":15,"themes":["business_intro","honorific"],"setId":"d061","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"business_first_meeting","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"company_intro","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":60,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":62,"phase":"field","week":9,"theme":"丁寧さと間接依頼","cefrBand":"A2→A2+","grammar":{"unitId":"politeness","title":"丁寧形と敬称","jaAnchor":"です・ます／〜さん","points":["та と чи の使い分けを間違えると失礼になる"],"mode":"new"},"vocab":{"newCount":15,"themes":["business_intro","honorific"],"setId":"d062","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"business_first_meeting","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"company_intro","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":61,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":63,"phase":"field","week":9,"theme":"丁寧さと間接依頼","cefrBand":"A2→A2+","grammar":{"unitId":"indirect_req","title":"間接依頼とぼかし","jaAnchor":"〜していただけますか","points":["直接的な断りを避ける言い方"],"mode":"new"},"vocab":{"newCount":15,"themes":["business_intro","honorific"],"setId":"d063","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"business_first_meeting","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"company_intro","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":62,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":64,"phase":"field","week":9,"theme":"丁寧さと間接依頼","cefrBand":"A2→A2+","grammar":{"unitId":"indirect_req","title":"間接依頼とぼかし","jaAnchor":"〜していただけますか","points":["直接的な断りを避ける言い方"],"mode":"new"},"vocab":{"newCount":15,"themes":["business_intro","honorific"],"setId":"d064","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"business_first_meeting","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"company_intro","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":63,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":true},"milestone":null,"note":null},{"day":65,"phase":"field","week":9,"theme":"丁寧さと間接依頼","cefrBand":"A2→A2+","grammar":{"unitId":"discourse","title":"終助詞・談話標識","jaAnchor":"〜よ／〜ね","points":["шүү / л / даа","自然さがここで決まる"],"mode":"new"},"vocab":{"newCount":15,"themes":["business_intro","honorific"],"setId":"d065","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"business_first_meeting","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"company_intro","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":64,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":66,"phase":"field","week":9,"theme":"丁寧さと間接依頼","cefrBand":"A2→A2+","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":15,"themes":["business_intro","honorific"],"setId":"d066","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"business_first_meeting","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"company_intro","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":65,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":67,"phase":"field","week":9,"theme":"丁寧さと間接依頼","cefrBand":"A2→A2+","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":15,"themes":["business_intro","honorific"],"setId":"d067","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"business_first_meeting","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"company_intro","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":66,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":68,"phase":"field","week":10,"theme":"数量・条件・支払い","cefrBand":"A2→A2+","grammar":{"unitId":"negotiation","title":"商談レジスター","jaAnchor":null,"points":["条件提示・譲歩・保留","即決を避ける言い方"],"mode":"new"},"vocab":{"newCount":15,"themes":["payment","quantity","terms"],"setId":"d068","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"payment_terms","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"explain_price","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":67,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":69,"phase":"field","week":10,"theme":"数量・条件・支払い","cefrBand":"A2→A2+","grammar":{"unitId":"negotiation","title":"商談レジスター","jaAnchor":null,"points":["条件提示・譲歩・保留","即決を避ける言い方"],"mode":"new"},"vocab":{"newCount":15,"themes":["payment","quantity","terms"],"setId":"d069","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"payment_terms","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"explain_price","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":68,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":70,"phase":"field","week":10,"theme":"数量・条件・支払い","cefrBand":"A2→A2+","grammar":{"unitId":"comparison","title":"比較","jaAnchor":"〜より〜だ","points":["価格・条件の比較で必須"],"mode":"new"},"vocab":{"newCount":15,"themes":["payment","quantity","terms"],"setId":"d070","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"payment_terms","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"explain_price","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":69,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":71,"phase":"field","week":10,"theme":"数量・条件・支払い","cefrBand":"A2→A2+","grammar":{"unitId":"conv_val","title":"条件 -вал","jaAnchor":"〜すれば／〜なら","points":["交渉の中核構文"],"mode":"new"},"vocab":{"newCount":15,"themes":["payment","quantity","terms"],"setId":"d071","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"cond","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"payment_terms","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"explain_price","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":70,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":true},"milestone":null,"note":null},{"day":72,"phase":"field","week":10,"theme":"数量・条件・支払い","cefrBand":"A2→A2+","grammar":{"unitId":"discourse","title":"終助詞・談話標識","jaAnchor":"〜よ／〜ね","points":["шүү / л / даа","自然さがここで決まる"],"mode":"new"},"vocab":{"newCount":15,"themes":["payment","quantity","terms"],"setId":"d072","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"payment_terms","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"explain_price","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":71,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":73,"phase":"field","week":10,"theme":"数量・条件・支払い","cefrBand":"A2→A2+","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":15,"themes":["payment","quantity","terms"],"setId":"d073","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"payment_terms","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"explain_price","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":72,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":74,"phase":"field","week":10,"theme":"数量・条件・支払い","cefrBand":"A2→A2+","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":15,"themes":["payment","quantity","terms"],"setId":"d074","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"payment_terms","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"explain_price","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":73,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":75,"phase":"field","week":11,"theme":"物流・通関・トラブル","cefrBand":"A2→A2+","grammar":{"unitId":"negotiation","title":"商談レジスター","jaAnchor":null,"points":["条件提示・譲歩・保留","即決を避ける言い方"],"mode":"new"},"vocab":{"newCount":15,"themes":["logistics","customs","trouble"],"setId":"d075","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"logistics_customs","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"explain_process","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":74,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":76,"phase":"field","week":11,"theme":"物流・通関・トラブル","cefrBand":"A2→A2+","grammar":{"unitId":"indirect_req","title":"間接依頼とぼかし","jaAnchor":"〜していただけますか","points":["直接的な断りを避ける言い方"],"mode":"new"},"vocab":{"newCount":15,"themes":["logistics","customs","trouble"],"setId":"d076","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"logistics_customs","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"explain_process","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":75,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":77,"phase":"field","week":11,"theme":"物流・通関・トラブル","cefrBand":"A2→A2+","grammar":{"unitId":"conv_had","title":"時 -хад","jaAnchor":"〜する時","points":[],"mode":"new"},"vocab":{"newCount":15,"themes":["logistics","customs","trouble"],"setId":"d077","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"cond","items":20,"includeFocusSubs":true,"source":"current_grammar","nativePrepRequired":false},"roleplay":{"categoryId":"logistics_customs","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"explain_process","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":76,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":78,"phase":"field","week":11,"theme":"物流・通関・トラブル","cefrBand":"A2→A2+","grammar":{"unitId":"quote_gej","title":"引用 гэж","jaAnchor":"〜と(言う・思う)","points":["日本語の「と」とほぼ同じ。意見表明が一気に可能になる"],"mode":"new"},"vocab":{"newCount":15,"themes":["logistics","customs","trouble"],"setId":"d078","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"logistics_customs","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"explain_process","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":77,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":true},"milestone":null,"note":null},{"day":79,"phase":"field","week":11,"theme":"物流・通関・トラブル","cefrBand":"A2→A2+","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":15,"themes":["logistics","customs","trouble"],"setId":"d079","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"logistics_customs","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"explain_process","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":78,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":80,"phase":"field","week":11,"theme":"物流・通関・トラブル","cefrBand":"A2→A2+","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":15,"themes":["logistics","customs","trouble"],"setId":"d080","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"logistics_customs","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"explain_process","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":79,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":81,"phase":"field","week":11,"theme":"物流・通関・トラブル","cefrBand":"A2→A2+","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":15,"themes":["logistics","customs","trouble"],"setId":"d081","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"logistics_customs","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"explain_process","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":80,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":82,"phase":"field","week":12,"theme":"雑談と人間関係","cefrBand":"A2→A2+","grammar":{"unitId":"discourse","title":"終助詞・談話標識","jaAnchor":"〜よ／〜ね","points":["шүү / л / даа","自然さがここで決まる"],"mode":"new"},"vocab":{"newCount":15,"themes":["smalltalk","culture","compliment"],"setId":"d082","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"after_business_dinner","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"free_topic","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":81,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":83,"phase":"field","week":12,"theme":"雑談と人間関係","cefrBand":"A2→A2+","grammar":{"unitId":"discourse","title":"終助詞・談話標識","jaAnchor":"〜よ／〜ね","points":["шүү / л / даа","自然さがここで決まる"],"mode":"new"},"vocab":{"newCount":15,"themes":["smalltalk","culture","compliment"],"setId":"d083","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"after_business_dinner","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"free_topic","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":82,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":84,"phase":"field","week":12,"theme":"雑談と人間関係","cefrBand":"A2→A2+","grammar":{"unitId":"politeness","title":"丁寧形と敬称","jaAnchor":"です・ます／〜さん","points":["та と чи の使い分けを間違えると失礼になる"],"mode":"new"},"vocab":{"newCount":15,"themes":["smalltalk","culture","compliment"],"setId":"d084","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"after_business_dinner","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"free_topic","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":83,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":85,"phase":"field","week":12,"theme":"雑談と人間関係","cefrBand":"A2→A2+","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":15,"themes":["smalltalk","culture","compliment"],"setId":"d085","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"after_business_dinner","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"free_topic","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":84,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":true},"milestone":null,"note":null},{"day":86,"phase":"field","week":12,"theme":"雑談と人間関係","cefrBand":"A2→A2+","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":15,"themes":["smalltalk","culture","compliment"],"setId":"d086","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"after_business_dinner","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"free_topic","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":85,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":87,"phase":"field","week":12,"theme":"雑談と人間関係","cefrBand":"A2→A2+","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":15,"themes":["smalltalk","culture","compliment"],"setId":"d087","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"after_business_dinner","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"free_topic","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":86,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":88,"phase":"field","week":12,"theme":"雑談と人間関係","cefrBand":"A2→A2+","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":15,"themes":["smalltalk","culture","compliment"],"setId":"d088","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"after_business_dinner","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"free_topic","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":87,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":null},{"day":89,"phase":"field","week":null,"theme":"90日試験前の総復習","cefrBand":"A2→A2+","grammar":{"unitId":"consolidate","title":"既習事項の統合運用","jaAnchor":null,"points":["新規なし。速度と正確さだけを上げる"],"mode":"consolidate"},"vocab":{"newCount":0,"themes":[],"setId":"d089","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":60,"targetSeconds":1.5,"mix":{"errorReplay":20,"srsDue":25,"fresh":15}},"substitution":{"paradigmId":"review_mix","items":20,"includeFocusSubs":true,"source":"previously_learned","nativePrepRequired":false},"roleplay":{"categoryId":"mixed","minutes":15,"unexpectedEvery":3},"monologue":{"topicId":"free_topic","seconds":30,"reps":2,"unseenTopic":true},"review":{"replayErrorsFromDay":88,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":null,"note":"90日試験前の総復習"},{"day":90,"phase":"field","week":null,"theme":"節目","cefrBand":"A2→A2+","grammar":{"unitId":"exam","title":"節目試験","jaAnchor":null,"points":[],"mode":"exam"},"vocab":{"newCount":0,"themes":[],"setId":"d090","requireStatus":["production_ready","ai_checked"]},"instantRecall":{"count":50,"targetSeconds":10,"mix":null,"examSection":"A","note":"節目試験の語彙即答50問。通常ドリルは行わない"},"substitution":null,"roleplay":null,"monologue":null,"review":{"replayErrorsFromDay":89,"srsIntervals":[1,3,7,14,30],"weeklyFocusFromLastWeek":false},"milestone":"exam90","note":null}]};
 // 参考音声の目録。mp3 は隣の audio/ に置く (埋め込むと1枚が数MBになるため)
 window.__MN90_AUDIO = {"version":1,"languageCode":"mn","assetId":"azure-tts-mn","provider":"azure-speech","voice":"mn-MN-BataaNeural","locale":"mn-MN","format":"mp3","syntheticVoice":true,"displayLabel":"参考音声（合成）","base":"audio/","generatedAt":null,"items":{}};
+// 追加コンテンツ (会話)。offline で開けるよう、これも埋め込む
+window.__MN90_PACKS = [{"id":"daily-travel-v1","meta":{"purpose":"日常・旅行の会話。Phase 17 の試作。","status":"draft","warning":"この中のモンゴル語は起草直後で、起草工程以外の確認を受けていない。通常の利用者へは出さない。","authoredBy":"claude:draft-v1","authoredAt":"2026-09-01","reusePolicy":"既にある140件で言えることは、新しいIDを作らず ref で指す。"},"scenarios":[{"id":"cafe","labelJa":"カフェ","skillId":"skill_cafe","roles":{"other":"店員","learner":"自分"}},{"id":"airport","labelJa":"空港","skillId":"skill_airport","roles":{"other":"係員","learner":"自分"}},{"id":"restaurant","labelJa":"レストラン","skillId":"skill_restaurant","roles":{"other":"店員","learner":"自分"}}],"items":[{"id":"d_cafe_what_have","ja":"何になさいますか","mn":"Юу авах вэ?","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"}},{"id":"d_cafe_one_coffee","ja":"コーヒーを1つください","mn":"Нэг кофе өгнө үү","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"}},{"id":"d_cafe_sugar","ja":"砂糖は入れますか","mn":"Чихэртэй юу?","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"}},{"id":"d_cafe_no_thanks","ja":"いいえ、要りません","mn":"Үгүй, хэрэггүй","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["cafe","restaurant"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"}},{"id":"d_cafe_takeaway","ja":"持ち帰りです","mn":"Авч явна","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"}},{"id":"d_air_passport","ja":"パスポートをお願いします","mn":"Паспортоо өгнө үү","contentRevision":1,"status":"draft","register":"polite","themes":["travel"],"scenarioTags":["airport"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"}},{"id":"d_air_here_it_is","ja":"こちらです","mn":"Энд байна","contentRevision":1,"status":"draft","register":"polite","themes":["travel"],"scenarioTags":["airport","hotel"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"}},{"id":"d_air_any_bags","ja":"預ける荷物はありますか","mn":"Тээш байгаа юу?","contentRevision":1,"status":"draft","register":"polite","themes":["travel"],"scenarioTags":["airport"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"}},{"id":"d_air_one_bag","ja":"はい、1つあります","mn":"Тийм, нэг ширхэг байна","contentRevision":1,"status":"draft","register":"polite","themes":["travel"],"scenarioTags":["airport"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"}},{"id":"d_air_gate_number","ja":"ゲートは12番です","mn":"Арван хоёрдугаар хаалга","contentRevision":1,"status":"draft","register":"polite","themes":["travel"],"scenarioTags":["airport"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"}},{"id":"d_res_how_many","ja":"何名様ですか","mn":"Хэдүүлээ вэ?","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["restaurant"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"}},{"id":"d_res_two_people","ja":"2人です","mn":"Хоёр хүн","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["restaurant"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"}},{"id":"d_res_order_what","ja":"ご注文は何になさいますか","mn":"Юу захиалах вэ?","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["restaurant"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"}},{"id":"d_res_this_one","ja":"これをお願いします","mn":"Үүнийг өгнө үү","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["restaurant","cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"}},{"id":"d_res_drink_what","ja":"お飲み物は何になさいますか","mn":"Юу уух вэ?","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["restaurant","cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"}},{"id":"d_res_water_please","ja":"水をお願いします","mn":"Ус өгнө үү","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["restaurant","cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"}}],"dialogues":[{"id":"cafe_order_basic","scenarioId":"cafe","labelJa":"コーヒーを1つ頼む","status":"draft","turns":[{"n":1,"speaker":"other","ref":"d_cafe_what_have","audioId":null},{"n":2,"speaker":"learner","ref":"d_cafe_one_coffee","audioId":null},{"n":3,"speaker":"other","ref":"d_cafe_sugar","audioId":null},{"n":4,"speaker":"learner","ref":"d_cafe_no_thanks","audioId":null},{"n":5,"speaker":"other","ref":"s_how_much","audioId":null},{"n":6,"speaker":"learner","ref":"g_thanks","audioId":null}]},{"id":"airport_checkin_basic","scenarioId":"airport","labelJa":"チェックインで荷物を預ける","status":"draft","turns":[{"n":1,"speaker":"other","ref":"d_air_passport","audioId":null},{"n":2,"speaker":"learner","ref":"d_air_here_it_is","audioId":null},{"n":3,"speaker":"other","ref":"d_air_any_bags","audioId":null},{"n":4,"speaker":"learner","ref":"d_air_one_bag","audioId":null},{"n":5,"speaker":"other","ref":"d_air_gate_number","audioId":null},{"n":6,"speaker":"learner","ref":"g_thanks","audioId":null}]},{"id":"restaurant_order_basic","scenarioId":"restaurant","labelJa":"席について注文する","status":"draft","turns":[{"n":1,"speaker":"other","ref":"d_res_how_many","audioId":null},{"n":2,"speaker":"learner","ref":"d_res_two_people","audioId":null},{"n":3,"speaker":"other","ref":"d_res_order_what","audioId":null},{"n":4,"speaker":"learner","ref":"d_res_this_one","audioId":null},{"n":5,"speaker":"other","ref":"d_res_drink_what","audioId":null},{"n":6,"speaker":"learner","ref":"d_res_water_please","audioId":null}]}]}];
 window.__MN90_STANDALONE = true;
 
 // ===== engine/field-report.js =====
@@ -2976,6 +3016,645 @@ function pct(a, b) { return b > 0 ? Math.round((a / b) * 100) + '%' : '—'; }
 __m["engine/analytics.js"] = { count, recordQuit, recordDuration, recordAnswers, recordStart, summary, emptyAnalytics, EVENTS, MAX_DAYS };
 })();
 
+// ===== engine/course.js =====
+(() => {
+/**
+ * コース。**製品全体を「90日」から切り離すための層。**
+ *
+ * これまで「90日」はアプリそのものの形だった (画面にも計算にも 90 が直接あった)。
+ * ここでコースを1つの物として持つことで、90日は
+ * **数あるコースのうちの1本**になる。既存の Day1〜Day90 は消さない。
+ *
+ *   Course { id, kind, totalDays?, newVocabPerDayMax? }
+ *
+ *   kind 'day_path' … 日付で進む。totalDays を持つ (既存の基礎90日)
+ *   kind 'open'     … 日付で進まない。いつ何をやってもよい (場面ごとの skill)
+ *
+ * 名前・説明は languages/<code>/ 側。ここには自然言語の文字列を置かない。
+ */
+
+const KINDS = ['day_path', 'open'];
+
+/** 既定のコース。**これが「基礎90日」の中身であり、唯一のコースではない。** */
+const DEFAULT_COURSE_ID = 'core90';
+
+function isPlainObject(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
+
+function validateCourse(c) {
+  const errs = [];
+  if (!isPlainObject(c)) return ['course がオブジェクトでない'];
+  if (typeof c.id !== 'string' || !c.id) errs.push('id が無い');
+  if (!KINDS.includes(c.kind)) errs.push(`kind が不正 (${c.kind})`);
+  if (c.kind === 'day_path') {
+    if (!Number.isInteger(c.totalDays) || c.totalDays < 1) errs.push('day_path なのに totalDays が無い');
+  } else if (c.totalDays != null) {
+    errs.push('open なのに totalDays を持っている');
+  }
+  return errs;
+}
+
+/**
+ * コースの決定。
+ *
+ * **画面や計算が 90 という数を直接持たないようにするための入口。**
+ * 言語パックが courses を持っていればそれを使い、無ければ
+ * curriculum の meta から組み立てる (既存データをそのまま読めるようにする)。
+ */
+function resolveCourse(languagePack, curriculumMeta, courseId) {
+  const listed = (languagePack && languagePack.courses) || null;
+  if (listed) {
+    const found = listed.find(c => c.id === (courseId || DEFAULT_COURSE_ID));
+    if (found) return { ...found };
+  }
+  const total = (curriculumMeta && curriculumMeta.totalDays) || null;
+  if (!total) throw new Error('コースの長さが分からない (curriculum の totalDays が無い)');
+  return {
+    id: DEFAULT_COURSE_ID,
+    kind: 'day_path',
+    totalDays: total,
+    newVocabPerDayMax: (curriculumMeta && curriculumMeta.newVocabPerDayMax) || null,
+  };
+}
+
+/** 日付で進むコースか。open なコースには「Day n」も「残り日数」も無い。 */
+function isDayPath(course) { return !!course && course.kind === 'day_path'; }
+
+
+__m["engine/course.js"] = { KINDS, DEFAULT_COURSE_ID, validateCourse, resolveCourse, isDayPath };
+})();
+
+// ===== engine/skill.js =====
+(() => {
+/**
+ * Skill Map。**「何日目か」ではなく「何ができるか」で製品を並べる。**
+ *
+ * これまでは Day1〜Day90 という1本の線しかなく、製品全体が90日で終わる形だった。
+ * ここでは skill を節、前提を辺とする図として持つ。90日コースはその中の
+ * 1つの skill (基礎) に閉じ込める。**完全な一本道にはしない。**
+ * 旅行だけ・商談だけ、という進み方を将来できるようにするため。
+ *
+ * このファイルには特定の自然言語の文字列を一切置かない。
+ * 名前や説明は languages/<code>/ 側が持つ。
+ *
+ *   Skill { id, kind, requires[], courseId?, scenarioIds[] }
+ *
+ *   kind:
+ *     'course'   … 日付で進む既存のコース (基礎90日)。courseId を持つ
+ *     'scenario' … 場面でできている skill (カフェ・空港…)。scenarioIds を持つ
+ */
+
+/** 開放の状態。**「鍵」「宝箱」のような作りにはしない。**事実だけを返す。 */
+const STATE = ['open', 'locked'];
+
+function isPlainObject(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
+
+function validateSkill(s) {
+  const errs = [];
+  if (!isPlainObject(s)) return ['skill がオブジェクトでない'];
+  if (typeof s.id !== 'string' || !s.id) errs.push('id が無い');
+  if (s.kind !== 'course' && s.kind !== 'scenario') errs.push(`kind が不正 (${s.kind})`);
+  if (!Array.isArray(s.requires)) errs.push('requires が配列でない');
+  if (s.kind === 'course' && typeof s.courseId !== 'string') errs.push('course なのに courseId が無い');
+  if (s.kind === 'scenario' && !Array.isArray(s.scenarioIds)) errs.push('scenario なのに scenarioIds が無い');
+  return errs;
+}
+
+/**
+ * 図全体を検証する。**輪になっていないこと**を必ず確かめる。
+ * 「AはBの後、BはAの後」を作ると、どちらも永久に開かない。
+ */
+function validateGraph(skills) {
+  const errs = [];
+  if (!Array.isArray(skills) || !skills.length) return ['skill が1つも無い'];
+  const ids = new Set();
+  for (const s of skills) {
+    errs.push(...validateSkill(s));
+    if (ids.has(s.id)) errs.push(`id が重複している: ${s.id}`);
+    ids.add(s.id);
+  }
+  for (const s of skills) {
+    for (const r of s.requires || []) {
+      if (!ids.has(r)) errs.push(`${s.id} の前提 ${r} が存在しない`);
+    }
+  }
+  // 輪の検出 (深さ優先で戻り辺を探す)
+  const byId = Object.create(null);
+  for (const s of skills) byId[s.id] = s;
+  const mark = Object.create(null);   // 0=未 1=途中 2=済
+  const walk = (id) => {
+    if (mark[id] === 1) { errs.push(`前提が輪になっている: ${id}`); return; }
+    if (mark[id] === 2) return;
+    mark[id] = 1;
+    for (const r of (byId[id] && byId[id].requires) || []) if (byId[r]) walk(r);
+    mark[id] = 2;
+  };
+  for (const s of skills) walk(s.id);
+  return errs;
+}
+
+/**
+ * いま開いている skill を返す。
+ *
+ * **前提を満たしたら開く。それだけ。**「連続日数が途切れたら閉じる」
+ * のような、罰として閉じる作りにはしない (一度できたことは取り上げない)。
+ *
+ * @param {object[]} skills
+ * @param {(id:string)=>boolean} isDone その skill を満たしたか
+ */
+function openSkills(skills, isDone) {
+  const done = new Set();
+  for (const s of skills) if (isDone(s.id)) done.add(s.id);
+  return skills.map(s => ({
+    id: s.id,
+    kind: s.kind,
+    done: done.has(s.id),
+    state: (s.requires || []).every(r => done.has(r)) ? 'open' : 'locked',
+    // 何が足りないかを必ず言えるようにする (押せない理由を画面が説明できる)
+    missing: (s.requires || []).filter(r => !done.has(r)),
+  }));
+}
+
+/**
+ * 次にやるとよい skill を1つだけ返す。**一覧を出して選ばせない。**
+ * 迷う時間を作らないのが目的で、選びたい人のために一覧も別に出せる。
+ */
+function suggestNext(skills, isDone) {
+  const list = openSkills(skills, isDone);
+  return list.find(s => s.state === 'open' && !s.done) || null;
+}
+
+
+__m["engine/skill.js"] = { STATE, validateSkill, validateGraph, openSkills, suggestNext };
+})();
+
+// ===== engine/dialogue.js =====
+(() => {
+/**
+ * 会話 (Dialogue) の型と検証。
+ *
+ * これまでの学習の最小単位は「カード1枚 = 1表現」だった。
+ * 実際の会話は**往復**でできているので、それを表せる型をここに置く。
+ *
+ * このファイルには特定の自然言語の文字列を一切置かない。
+ * 会話の中身 (日本語・モンゴル語) は languages/<code>/ 側が持つ。
+ *
+ * ## 型
+ *
+ *   Dialogue { id, scenarioId, turns[], status, ... }
+ *   Turn     { n, speaker, ref | line, audioId, status }
+ *
+ * speaker は 'other' (相手) と 'learner' (自分) の2つだけ。
+ * 「A / B」ではなく役割で持つ。**どちらが自分かを毎回考えさせないため。**
+ * 画面に出す名前 (店員・受付など) は言語パック側の roleLabel が持つ。
+ *
+ * turn は2通りの持ち方ができる:
+ *   ref  … 既にある教材のIDを指す。**同じ表現を別IDで複製しない。**
+ *   line … その会話にしか出てこない文。{ ja, mn, contentRevision }
+ *
+ * ## 状態
+ *
+ * 会話全体の状態は、**いちばん弱い turn に合わせる。**
+ * 1つでも draft が混じっていれば、その会話は draft。
+ * 「9割できているから出す」を作らない (未確認の文が本番に出る道になる)。
+ */
+
+/** 話し手。相手か、自分か。 */
+const SPEAKERS = ['other', 'learner'];
+
+/** 状態。教材カードと同じ語を使う (別の言葉を増やさない)。 */
+const STATUS = ['draft', 'ai_checked', 'production_ready'];
+const STATUS_RANK = { draft: 0, ai_checked: 1, production_ready: 2 };
+
+/** 通常の利用者へ出してよい状態。**draft は絶対に出さない。** */
+const PUBLIC_STATUS = ['production_ready'];
+
+function isPlainObject(v) {
+  return !!v && typeof v === 'object' && !Array.isArray(v);
+}
+
+/**
+ * turn 1つを検証する。
+ * @returns {string[]} 問題点。空なら妥当
+ */
+function validateTurn(turn, i) {
+  const at = `turns[${i}]`;
+  const errs = [];
+  if (!isPlainObject(turn)) return [`${at}: オブジェクトでない`];
+  if (turn.n !== i + 1) errs.push(`${at}: n が並び順と違う (${turn.n})`);
+  if (!SPEAKERS.includes(turn.speaker)) errs.push(`${at}: speaker が不正 (${turn.speaker})`);
+
+  const hasRef = typeof turn.ref === 'string' && turn.ref.length > 0;
+  const hasLine = isPlainObject(turn.line);
+  if (hasRef === hasLine) errs.push(`${at}: ref と line はどちらか一方だけ`);
+  if (hasLine) {
+    if (typeof turn.line.ja !== 'string' || !turn.line.ja) errs.push(`${at}: line.ja が無い`);
+    if (typeof turn.line.mn !== 'string' || !turn.line.mn) errs.push(`${at}: line.mn が無い`);
+    if (typeof turn.line.contentRevision !== 'number') errs.push(`${at}: line.contentRevision が無い`);
+    if (!STATUS.includes(turn.status)) errs.push(`${at}: status が不正 (${turn.status})`);
+  }
+  if (turn.audioId != null && typeof turn.audioId !== 'string') errs.push(`${at}: audioId が文字列でない`);
+  return errs;
+}
+
+/**
+ * 会話1本を検証する。
+ *
+ * **必ず相手から始まり、自分と交互になっているか**までは強制しない。
+ * 実際の会話は自分から始まることもある。ただし
+ * 「同じ話し手が3回続く」は聞き間違いなので弾く。
+ */
+function validateDialogue(d) {
+  const errs = [];
+  if (!isPlainObject(d)) return ['会話がオブジェクトでない'];
+  if (typeof d.id !== 'string' || !d.id) errs.push('id が無い');
+  if (typeof d.scenarioId !== 'string' || !d.scenarioId) errs.push('scenarioId が無い');
+  if (!STATUS.includes(d.status)) errs.push(`status が不正 (${d.status})`);
+  if (!Array.isArray(d.turns) || d.turns.length < 2) {
+    errs.push('turns が2つ未満 (往復になっていない)');
+    return errs;
+  }
+  if (d.turns.length > 12) errs.push('turns が多すぎる (1回を短く保つ)');
+  d.turns.forEach((t, i) => errs.push(...validateTurn(t, i)));
+
+  let run = 1;
+  for (let i = 1; i < d.turns.length; i++) {
+    run = d.turns[i].speaker === d.turns[i - 1].speaker ? run + 1 : 1;
+    if (run >= 3) { errs.push(`turns[${i}]: 同じ話し手が3回続いている`); break; }
+  }
+  if (!d.turns.some(t => t.speaker === 'learner')) errs.push('自分が一度も話していない');
+  return errs;
+}
+
+/**
+ * その会話を、いま実際に出せる状態。
+ *
+ * 会話そのものの status と、中の全 turn の status のうち**いちばん弱いもの**。
+ * ref の turn は、参照先カードの状態を渡してもらう (ここでは教材を読まない)。
+ *
+ * @param {object} d 会話
+ * @param {(id:string)=>string|null} statusOfRef 参照先の状態を返す関数
+ */
+function effectiveStatus(d, statusOfRef) {
+  let worst = STATUS_RANK[d.status] ?? 0;
+  for (const t of d.turns || []) {
+    let s;
+    if (t.ref) {
+      s = statusOfRef ? statusOfRef(t.ref) : null;
+      // 参照先が見つからない会話は出せない。**黙って飛ばさない。**
+      if (!s) return 'draft';
+    } else {
+      s = t.status;
+    }
+    worst = Math.min(worst, STATUS_RANK[s] ?? 0);
+  }
+  return STATUS[worst];
+}
+
+/** 通常の利用者へ出してよいか。 */
+function isPublic(status) { return PUBLIC_STATUS.includes(status); }
+
+/**
+ * 会話を1ターンずつの手順に開く。
+ *
+ * **相手の番と自分の番で、やることが違う。**
+ *   相手の番 (other)   … 聞く / 読む。答えを考えるものではない
+ *   自分の番 (learner)  … 何と返すかを自分で思い出してから、答えを見る
+ *
+ * ここでは覚え具合を1つも動かさない。会話練習は「通し稽古」であって、
+ * 1問ずつの判定とは別物 (判定を混ぜると同じ表現が二重に数えられる)。
+ *
+ * @param {object} d 会話
+ * @param {object} opt
+ * @param {boolean} opt.audioForOther 相手の発話を音だけで出せるか (正式音声があるときだけ true)
+ */
+function toSteps(d, opt = {}) {
+  const steps = [];
+  for (const t of d.turns || []) {
+    const mine = t.speaker === 'learner';
+    steps.push({
+      dialogueId: d.id,
+      n: t.n,
+      speaker: t.speaker,
+      ref: t.ref || null,
+      line: t.line || null,
+      audioId: t.audioId || null,
+      // 自分の番だけ「思い出してから答えを見る」。相手の番は見る/聞くだけ
+      kind: mine ? 'respond' : 'comprehend',
+      // 相手の発話を、先に音だけで出してよいか。
+      // **正式な音声が無いときは必ず false。**代用音声を聞き取りの正解にしない
+      audioFirst: !mine && !!opt.audioForOther && !!t.audioId,
+      graded: false,
+    });
+  }
+  return steps;
+}
+
+
+__m["engine/dialogue.js"] = { SPEAKERS, STATUS, STATUS_RANK, PUBLIC_STATUS, validateTurn, validateDialogue, effectiveStatus, isPublic, toSteps };
+})();
+
+// ===== engine/content-pack.js =====
+(() => {
+/**
+ * 追加コンテンツの取り込み。**既存の教材を絶対に書き換えない。**
+ *
+ * 新しい場面 (カフェ・空港・レストラン…) を足すたびに既存140件へ手を入れると、
+ * 社長の学習記録が指している本文が静かに変わる。それを構造で防ぐ。
+ *
+ * 規則は3つだけ:
+ *   1. 既にあるIDを、追加パックが上書きしようとしたら**取り込みを止める**
+ *      (黙って勝つ/負けるを作らない。どちらでも事故になる)
+ *   2. 同じ表現は、新しいIDを作らず既存IDを ref で指す
+ *   3. 通常の利用者へ出すのは production_ready だけ。**draft は出さない**
+ *
+ * このファイルには特定の自然言語の文字列を一切置かない。
+ */
+
+const dialogue = __m["engine/dialogue.js"];
+
+function isPlainObject(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
+
+/**
+ * パック1つを検証する。
+ * @param {object} pack { id, items[], dialogues[], scenarios[] }
+ * @param {Set<string>} existingIds 既にあるカードID
+ */
+function validatePack(pack, existingIds) {
+  const errs = [];
+  if (!isPlainObject(pack)) return ['パックがオブジェクトでない'];
+  if (typeof pack.id !== 'string' || !pack.id) errs.push('パックの id が無い');
+
+  const seen = new Set();
+  for (const it of pack.items || []) {
+    if (!isPlainObject(it) || !it.id) { errs.push('items に id の無いものがある'); continue; }
+    // 1. 既存を上書きしない
+    if (existingIds && existingIds.has(it.id)) {
+      errs.push(`既にある教材を上書きしようとしている: ${it.id}`);
+    }
+    if (seen.has(it.id)) errs.push(`パックの中でIDが重複している: ${it.id}`);
+    seen.add(it.id);
+    for (const k of ['ja', 'mn', 'contentRevision', 'status']) {
+      if (it[k] === undefined || it[k] === null || it[k] === '') errs.push(`${it.id}: ${k} が無い`);
+    }
+    if (!dialogue.STATUS.includes(it.status)) errs.push(`${it.id}: status が不正 (${it.status})`);
+  }
+
+  const scenarioIds = new Set((pack.scenarios || []).map(s => s && s.id));
+  const dialogueIds = new Set();
+  for (const d of pack.dialogues || []) {
+    const e = dialogue.validateDialogue(d);
+    for (const m of e) errs.push(`${(d && d.id) || '(id不明)'}: ${m}`);
+    if (d && d.id) {
+      if (dialogueIds.has(d.id)) errs.push(`会話のIDが重複している: ${d.id}`);
+      dialogueIds.add(d.id);
+      if (d.scenarioId && scenarioIds.size && !scenarioIds.has(d.scenarioId)) {
+        errs.push(`${d.id}: 場面 ${d.scenarioId} がこのパックに無い`);
+      }
+    }
+    // 2. ref の指す先が実在するか (既存 + このパック)
+    for (const t of (d && d.turns) || []) {
+      if (t && t.ref && !seen.has(t.ref) && !(existingIds && existingIds.has(t.ref))) {
+        errs.push(`${d.id}: turn ${t.n} が指す ${t.ref} が見つからない`);
+      }
+    }
+  }
+  return errs;
+}
+
+/**
+ * 既存の教材とパックを重ねる。**壊れていたら重ねずに throw する。**
+ * 「一部だけ取り込む」はしない (どこまで入ったか分からない状態を作らない)。
+ *
+ * @returns {{items:object[], dialogues:object[], scenarios:object[]}}
+ */
+function merge(baseItems, packs) {
+  const existing = new Set((baseItems || []).map(i => i.id));
+  const items = [...(baseItems || [])];
+  const dialogues = [];
+  const scenarios = [];
+
+  for (const pack of packs || []) {
+    const errs = validatePack(pack, existing);
+    if (errs.length) {
+      throw new Error(`追加コンテンツ ${(pack && pack.id) || '(id不明)'} を取り込めない:\n  ` + errs.join('\n  '));
+    }
+    for (const it of pack.items || []) { items.push(it); existing.add(it.id); }
+    for (const d of pack.dialogues || []) dialogues.push({ ...d, packId: pack.id });
+    for (const s of pack.scenarios || []) scenarios.push({ ...s, packId: pack.id });
+  }
+  return { items, dialogues, scenarios };
+}
+
+/**
+ * 通常の利用者へ出せる会話だけを残す。
+ *
+ * **ここが最後の関門。**画面側で status を見るのではなく、
+ * 見せる前にここで落とす (画面が1か所でも見落とせば未確認の文が世に出る)。
+ *
+ * @param {object[]} dialogues
+ * @param {(id:string)=>string|null} statusOfRef 参照先カードの状態
+ * @param {object} opt { includeDrafts } 開発時だけ true にできる
+ */
+function publicDialogues(dialogues, statusOfRef, opt = {}) {
+  return (dialogues || []).filter(d => {
+    const s = dialogue.effectiveStatus(d, statusOfRef);
+    return opt.includeDrafts ? true : dialogue.isPublic(s);
+  });
+}
+
+/** 会話の中身を、参照を解いた形にする。画面はこの形だけを見る。 */
+function resolveDialogue(d, cardById) {
+  return {
+    ...d,
+    turns: (d.turns || []).map(t => {
+      if (!t.ref) return { ...t, resolved: t.line, from: 'line' };
+      const c = cardById[t.ref] || null;
+      return {
+        ...t,
+        resolved: c ? { ja: c.ja ?? c.promptKey, mn: c.mn ?? c.answerKey, contentRevision: c.contentRevision } : null,
+        status: c ? (c.status || c.reviewStatus) : 'draft',
+        from: 'ref',
+      };
+    }),
+  };
+}
+
+
+__m["engine/content-pack.js"] = { validatePack, merge, publicDialogues, resolveDialogue };
+})();
+
+// ===== engine/audio-policy.js =====
+(() => {
+/**
+ * 音の使いどころの線引き。**「鳴らせる」と「聞き取りの正解に使える」は別。**
+ *
+ * 目標言語の声が端末に入っていないと、読み上げは同じ文字体系の別の言語の声で
+ * 代用される。それは**参考として聞くには構わないが、聞き取り問題の正解の音に
+ * してはいけない。**別の言語の読みで覚えると、現地で通じない音を練習することになる。
+ *
+ * この判断を1か所に集める。画面ごとに条件を書くと、
+ * 新しい画面 (会話練習など) を足したときに必ずどこかが緩む。
+ *
+ *   tier:
+ *     'native'    その言語の話者による録音
+ *     'tts'       その言語として正式に合成された音声
+ *     'device'    端末の読み上げで、その言語の声が実在する
+ *     'surrogate' 端末の読み上げだが、別の言語の声で代用している
+ *     'none'      音が無い
+ */
+
+/** 参考として鳴らしてよい層。 */
+const PLAYABLE = ['native', 'tts', 'device', 'surrogate'];
+
+/**
+ * 聞き取り問題の**正解の音**として使える層。
+ * **surrogate は入れない。**ここを緩めると、間違った音を正解として教える。
+ */
+const GRADED_LISTENING = ['native', 'tts', 'device'];
+
+const TIERS = ['native', 'tts', 'device', 'surrogate', 'none'];
+
+/** 鳴らしてよいか (参考音声として)。 */
+function canPlay(tier) { return PLAYABLE.includes(tier); }
+
+/** 聞き取り問題を作ってよいか。 */
+function canGradeListening(tier) { return GRADED_LISTENING.includes(tier); }
+
+/**
+ * 会話練習で、相手の発話を**音だけで先に出してよいか。**
+ * 聞き取り問題と同じ線引きにする (音だけで出す時点で聞き取りだから)。
+ */
+function canPlayFirst(tier) { return canGradeListening(tier); }
+
+/**
+ * 画面に出してよい呼び名の鍵。
+ *
+ * **どの層でも、この一覧の外の言葉を使わない。**
+ * 母語話者による録音だと読める言い方も、「正しい」「お手本」と読める言い方も
+ * 使わない (禁止語そのものは languages/<code>/ 側と PRODUCT-CLAIMS.md にある)。
+ * 実際の文字列は言語パックが持つ。ここは鍵だけ。
+ */
+const LABEL_KEYS = {
+  native: 'audio.recorded',
+  tts: 'audio.synth',
+  device: 'audio.synth',
+  surrogate: 'audio.synth',
+  none: null,
+};
+
+/**
+ * 端末の読み上げの状態から層を決める。
+ * app/speech.js の quality ('device_mn' | 'device_fallback' | 'none') を受ける。
+ */
+function tierFromSpeechQuality(quality) {
+  if (quality === 'device_mn') return 'device';
+  if (quality === 'device_fallback') return 'surrogate';
+  return 'none';
+}
+
+/**
+ * その表現に使える最良の層。焼いてある音声があればそれが最優先。
+ * @param {object} opt { hasStatic, staticTier, speechQuality }
+ */
+function tierFor(opt = {}) {
+  if (opt.hasStatic) return opt.staticTier || 'tts';
+  return tierFromSpeechQuality(opt.speechQuality);
+}
+
+
+__m["engine/audio-policy.js"] = { TIERS, PLAYABLE, GRADED_LISTENING, LABEL_KEYS, canPlay, canGradeListening, canPlayFirst, tierFromSpeechQuality, tierFor };
+})();
+
+// ===== engine/ability.js =====
+(() => {
+/**
+ * 3つの能力。**「1回覚えたから全部できる」とは扱わない。**
+ *
+ *   say     日本語 → モンゴル語 を自分で出せる   (これまでの中心)
+ *   grasp   モンゴル語を聞いて/読んで意味が分かる
+ *   reply   相手のモンゴル語に、モンゴル語で返せる
+ *
+ * 同じ表現でも、この3つは別々に育つ。言えるのに聞き取れない、
+ * 聞けば分かるのに自分からは出てこない、は実際に起きる。
+ * それを1つの数字にまとめてしまうと、**できていない方向が見えなくなる。**
+ *
+ * ## Phase 17 での扱い
+ *
+ * ここは**記録と集計だけ**を持つ。次にいつ出すかの計算 (SRS) には一切
+ * 触っていない。SRS の核心を変えずに、後から方向別の調整を足せる形に
+ * しておくのが目的。既存カードには say しか記録が無いので、
+ * **無い方向は「まだ測っていない」として扱う** (0点ではない)。
+ */
+
+const ABILITIES = ['say', 'grasp', 'reply'];
+
+/** 出題形式が、どの能力を測っているか。 */
+const BY_EXERCISE = {
+  introduce: null,     // 見ただけ。何も測っていない
+  recall: 'say',
+  listening: 'grasp',
+  reading: 'grasp',
+  respond: 'reply',
+};
+
+function abilityOf(exercise) {
+  return Object.prototype.hasOwnProperty.call(BY_EXERCISE, exercise) ? BY_EXERCISE[exercise] : null;
+}
+
+/**
+ * 記録に、方向別の結果を1件足す。
+ * **カード本体 (覚え具合・期日) には触らない。**別の入れ物に貯める。
+ *
+ * @param {object} store カードID → { say:{ok,ng}, grasp:{...}, reply:{...} }
+ */
+function record(store, cardId, exercise, correct) {
+  const ability = abilityOf(exercise);
+  if (!ability || !cardId) return store;
+  const next = { ...store };
+  const cur = next[cardId] ? { ...next[cardId] } : {};
+  const slot = cur[ability] ? { ...cur[ability] } : { ok: 0, ng: 0 };
+  if (correct) slot.ok += 1; else slot.ng += 1;
+  cur[ability] = slot;
+  next[cardId] = cur;
+  return next;
+}
+
+/**
+ * その方向をどれだけ測ったか。**測っていないものを「できない」と言わない。**
+ * @returns {{tried:number, ok:number, rate:number|null}} rate は未測定なら null
+ */
+function scoreOf(store, cardId, ability) {
+  const slot = store && store[cardId] && store[cardId][ability];
+  if (!slot) return { tried: 0, ok: 0, rate: null };
+  const tried = (slot.ok || 0) + (slot.ng || 0);
+  return { tried, ok: slot.ok || 0, rate: tried ? slot.ok / tried : null };
+}
+
+/**
+ * まだ一度も測っていない方向を挙げる。
+ * 「言えるようになった」と言い切る前に、何が確かめられていないかを出すため。
+ */
+function untested(store, cardId) {
+  return ABILITIES.filter(a => scoreOf(store, cardId, a).tried === 0);
+}
+
+/** 全体の集計。画面に「何をどれだけ確かめたか」を出すために使う。 */
+function summary(store, cardIds) {
+  const out = {};
+  for (const a of ABILITIES) out[a] = { cards: 0, tried: 0, ok: 0 };
+  for (const id of cardIds || Object.keys(store || {})) {
+    for (const a of ABILITIES) {
+      const s = scoreOf(store, id, a);
+      if (s.tried > 0) { out[a].cards += 1; out[a].tried += s.tried; out[a].ok += s.ok; }
+    }
+  }
+  return out;
+}
+
+
+__m["engine/ability.js"] = { ABILITIES, BY_EXERCISE, abilityOf, record, scoreOf, untested, summary };
+})();
+
 // ===== engine/index.js =====
 (() => {
 /**
@@ -2999,6 +3678,13 @@ const practice = __m["engine/practice.js"];
 const mission = __m["engine/mission.js"];
 const weekly = __m["engine/weekly.js"];
 const analytics = __m["engine/analytics.js"];
+// Phase 17: 90日という形から離すための層。ここも言語を知らない
+const course = __m["engine/course.js"];
+const skill = __m["engine/skill.js"];
+const dialogue = __m["engine/dialogue.js"];
+const contentPack = __m["engine/content-pack.js"];
+const audioPolicy = __m["engine/audio-policy.js"];
+const ability = __m["engine/ability.js"];
 
 /**
  * @param {object} languagePack languages/<code>/pack.js
@@ -3011,9 +3697,45 @@ function createEngine(languagePack, profileInput) {
     throw new Error(`プロファイルの言語 ${p.languageCode} と パック ${languagePack.code} が一致しない`);
   }
 
+  // コースは「90日」を製品から切り離すための層。
+  // 言語パックが courses を持たなければ、これまで通り curriculum の長さを使う
+  const activeCourse = (() => {
+    try { return course.resolveCourse(languagePack, (profileInput && profileInput.curriculumMeta) || null, profileInput && profileInput.courseId); }
+    catch (e) { return null; }
+  })();
+
   return {
     languageCode: languagePack.code,
     profile: p,
+
+    /** いま進んでいるコース。null なら日付で進まない使い方 */
+    course: activeCourse,
+    /** そのコースの長さ。**画面が 90 という数を直接持たないための入口** */
+    totalDays: course.isDayPath(activeCourse) ? activeCourse.totalDays : null,
+    isDayPath: () => course.isDayPath(activeCourse),
+
+    /** Skill Map。いま開いているものと、足りない前提を返す */
+    skills: (isDone) => skill.openSkills(languagePack.skills || [], isDone || (() => false)),
+    suggestSkill: (isDone) => skill.suggestNext(languagePack.skills || [], isDone || (() => false)),
+
+    /** 会話 */
+    dialogueSteps: dialogue.toSteps,
+    dialogueStatus: dialogue.effectiveStatus,
+    mergePacks: contentPack.merge,
+    publicDialogues: contentPack.publicDialogues,
+    resolveDialogue: contentPack.resolveDialogue,
+
+    /** 音の使いどころ。**鳴らせる = 聞き取りに使える、ではない** */
+    audioTierFor: audioPolicy.tierFor,
+    canPlayAudio: audioPolicy.canPlay,
+    canGradeListening: audioPolicy.canGradeListening,
+    canPlayFirst: audioPolicy.canPlayFirst,
+
+    /** 3方向の能力。記録と集計だけで、次にいつ出すかには影響しない */
+    recordAbility: ability.record,
+    abilityScore: ability.scoreOf,
+    untestedAbilities: ability.untested,
+    abilitySummary: ability.summary,
 
     /** 今日のセッションを組む。 */
     planSession({ modeId, cards, events, freshCards, learningDayIso, nowIso, day, plannedNewVocab, hasAudio, audioAvailable, dayOf }) {
@@ -3261,7 +3983,7 @@ function severityOf(grade, card) {
 }
 
 
-__m["engine/index.js"] = { createEngine, schema, scheduler, selector, session, profile, checkpoint, fieldReport, exercise, progress, lesson, practice, mission, weekly, analytics };
+__m["engine/index.js"] = { createEngine, schema, scheduler, selector, session, profile, checkpoint, fieldReport, exercise, progress, lesson, practice, mission, weekly, analytics, course, skill, dialogue, contentPack, audioPolicy, ability };
 })();
 
 // ===== engine/clock.js =====
@@ -3846,6 +4568,53 @@ const pack = {
         'g_thanks', 's_thanks_much', 's_thank_you_today', 's_thanks_time'] },
     ],
   },
+
+  /**
+   * コース。**「90日」は製品そのものではなく、コースの1本。**
+   *
+   * これまで 90 という数は画面と計算に直接埋まっていた。ここに出すことで、
+   * 別のコース (日付で進まないもの) を後から並べられるようにする。
+   * 既存の Day1〜Day90 は消さない。既定のコースのまま残す。
+   */
+  courses: [
+    {
+      id: 'core90',
+      kind: 'day_path',
+      totalDays: 90,
+      newVocabPerDayMax: 15,
+      labelJa: '基礎',
+      subtitleJa: '90日で商談まで',
+    },
+  ],
+
+  /**
+   * Skill Map。**何日目かではなく、何ができるかで並べる。**
+   *
+   * 完全な一本道にはしない。「旅行だけ」「商談だけ」と進めるようにするため、
+   * 場面の skill は基礎の完了を前提にしていない。
+   * requires を空にしてあるのは手抜きではなく、**そういう設計**。
+   *
+   * いま中身があるのは基礎だけで、場面側は試作 (prototype: true)。
+   * 試作の skill は、中の会話が production_ready になるまで
+   * 通常の利用者の画面には出ない (engine/content-pack.js が落とす)。
+   */
+  skills: [
+    { id: 'skill_core', kind: 'course', courseId: 'core90', requires: [],
+      labelJa: '基礎', descJa: '90日コース。あいさつから商談まで' },
+    { id: 'skill_cafe', kind: 'scenario', scenarioIds: ['cafe'], requires: [], prototype: true,
+      labelJa: 'カフェ', descJa: '注文して、支払って、受け取る' },
+    { id: 'skill_restaurant', kind: 'scenario', scenarioIds: ['restaurant'], requires: ['skill_cafe'], prototype: true,
+      labelJa: 'レストラン', descJa: '席・注文・会計。店員から聞かれることも' },
+    { id: 'skill_airport', kind: 'scenario', scenarioIds: ['airport'], requires: [], prototype: true,
+      labelJa: '空港', descJa: 'チェックイン・荷物・ゲート' },
+  ],
+
+  /**
+   * 追加コンテンツ。**既存140件には一切触らない。**
+   * ここに並べたパックを engine/content-pack.js が重ねる。
+   * 既にあるIDを上書きしようとしたパックは、取り込みそのものが止まる。
+   */
+  contentPacks: ['daily-travel-v1'],
 
   /**
    * 画面で探すための、日本語の別の言い方。**教材ではない。**
@@ -4778,6 +5547,9 @@ __m["app/diagnostics.js"] = { buildReport, looksSafe, BETA_VERSION };
 const { createEngine } = __m["engine/index.js"];
 const clock = __m["engine/clock.js"];
 const scheduler = __m["engine/scheduler.js"];
+const contentPack = __m["engine/content-pack.js"];
+const dialogueModel = __m["engine/dialogue.js"];
+const audioPolicy = __m["engine/audio-policy.js"];
 const { createStorage } = __m["engine/storage.js"];
 const { newCard, newProfile } = __m["engine/schema.js"];
 const { PRESET_PROFILES } = __m["engine/profile.js"];
@@ -4796,6 +5568,48 @@ const { buildReport, BETA_VERSION } = __m["app/diagnostics.js"];
  * データを HTML へ埋め込んである。埋め込みがあればそれを使い、
  * 無ければ従来どおり fetch する。学習ロジックは同じものを使う。
  */
+/**
+ * 追加コンテンツ (会話)。**既存140件には一切触らない。**
+ *
+ * 通信なしで開けるよう、配信物へ埋め込んである。取り込みは
+ * engine/content-pack.js が行い、既にあるIDを上書きしようとする
+ * パックは取り込みそのものが止まる (黙って勝つ/負けるを作らない)。
+ */
+let packs = [];
+let dialogues = [];
+let scenarios = [];
+let dialogueCards = Object.create(null);
+
+async function loadPacks() {
+  if (window.__MN90_PACKS) { packs = window.__MN90_PACKS; }
+  else {
+    packs = [];
+    for (const id of mnPack.contentPacks || []) {
+      try {
+        const res = await fetch(`../languages/mn/packs/${id}.json`);
+        packs.push(await res.json());
+      } catch (e) { /* 読めなくても学習は続けられる */ }
+    }
+  }
+  dialogues = [];
+  scenarios = [];
+  dialogueCards = Object.create(null);
+  if (!packs.length) return;
+  try {
+    // 既にあるIDは、いま読み込んである教材そのもの。
+    // ここと突き合わせるので、既存を上書きするパックは取り込みで止まる
+    const base = Object.keys(state.cards || {}).map(id => ({ id }));
+    const merged = contentPack.merge(base, packs);
+    dialogues = merged.dialogues;
+    scenarios = merged.scenarios;
+    for (const p of packs) for (const it of p.items || []) dialogueCards[it.id] = it;
+  } catch (e) {
+    // **一部だけ取り込まない。**壊れているなら会話は1本も出さない
+    dialogues = []; scenarios = []; dialogueCards = Object.create(null);
+    console.error('追加コンテンツを取り込めませんでした', e.message);
+  }
+}
+
 let curriculum = null;
 async function loadCurriculum() {
   if (window.__MN90_CURRICULUM) { curriculum = window.__MN90_CURRICULUM; return; }
@@ -4828,7 +5642,11 @@ const speech = createSpeech({ onEnded: () => markPlaying(false) });
  */
 function answerTextOf(id) {
   const c = state && state.cards ? state.cards[id] : null;
-  return c ? c.answerKey : null;
+  if (c) return c.answerKey;
+  // 会話の中にしか出てこない文。カードになっていないので、こちらから引く。
+  // **音声層はそのまま。**どこから本文を引くかを、この1か所で足すだけ
+  const it = dialogueCards ? dialogueCards[id] : null;
+  return it ? it.mn : null;
 }
 
 function makeAudio(manifest) {
@@ -4910,7 +5728,20 @@ function curriculumDay(n) {
   return curriculum.days.find(d => d.day === n) || null;
 }
 
-const TOTAL_DAYS = 90;
+/**
+ * いま進んでいるコースの長さ。
+ *
+ * **画面が 90 という数を持たない。**Phase 17 で「90日」は製品そのものではなく
+ * コースの1本になった。長さは言語パックのコース定義から来る
+ * (engine/course.js)。日付で進まないコースでは null になる。
+ * 起動前に読まれたときのために、既定は言語パックの値。
+ */
+let TOTAL_DAYS = courseTotalDays();
+
+function courseTotalDays() {
+  const c = (mnPack.courses || []).find(x => x.kind === 'day_path');
+  return c ? c.totalDays : null;
+}
 
 // ---------- DOM ヘルパ。innerHTML を使わない ----------
 function el(tag, opts = {}, children = []) {
@@ -4925,7 +5756,7 @@ function el(tag, opts = {}, children = []) {
 function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
 function $(id) { return document.getElementById(id); }
 
-const SCREENS = ['onboarding', 'home', 'more', 'sheet', 'session', 'summary', 'checkpoint', 'fieldlog', 'match'];
+const SCREENS = ['onboarding', 'home', 'more', 'sheet', 'session', 'summary', 'checkpoint', 'fieldlog', 'match', 'talk'];
 
 /** 画面と、それに対応する下部固定ボタンを同時に切り替える。 */
 let currentScreen = 'home';
@@ -5016,13 +5847,17 @@ async function startApp() {
   await loadCurriculum();
   await loadAudio();
   await syncVocab();
+  // 追加コンテンツは教材を取り込んだ後に読む (既存IDとの突き合わせに要る)
+  await loadPacks();
   const tz = state.settings.timeZone || 'Asia/Tokyo';
   if (!state.settings.startDayIso) {
     state.settings.startDayIso = clock.dayIso(new Date(), tz);
     storage.save(state);
   }
-  today = clock.programDay(new Date(), state.settings.startDayIso, tz, TOTAL_DAYS);
   engine = createEngine(mnPack, state.profile);
+  // コースの長さは engine が持つ。画面は聞くだけにする
+  if (engine.totalDays) TOTAL_DAYS = engine.totalDays;
+  today = clock.programDay(new Date(), state.settings.startDayIso, tz, TOTAL_DAYS);
   dropStaleSession();
   track('app_open');
   storage.save(state);
@@ -5143,7 +5978,7 @@ function renderHome() {
 function renderTopBar() {
   $('day-label').textContent =
     today.state === 'before_start' ? '開始前' :
-    today.state === 'completed' ? '90日 完了' : `Day ${today.day} / ${TOTAL_DAYS}`;
+    today.state === 'completed' ? `${TOTAL_DAYS}日 完了` : `Day ${today.day} / ${TOTAL_DAYS}`;
 
   const chip = $('streak-chip');
   const st = engine.displayStreak(state.streak, today.today);
@@ -5473,6 +6308,7 @@ const SHEETS = {
   // どちらも用件は「読むこと」。下の「もどる」を主役にすると、
   // 読みに来た画面で目立つのが出口になってしまう
   favorites: { title: '保存したフレーズ', render: () => renderPhrases('favorites'), quietBack: true },
+  talks: { title: '会話練習', render: renderTalks },
   briefing: { title: '商談の直前に見る', render: () => renderPhrases('briefing'), quietBack: true },
   // 3つに分かれていた書き出しを1つにまとめた (何を貼ればよいか迷わせない)
   // 用件はコピーなので、下の「もどる」は控えめにする
@@ -6002,6 +6838,17 @@ function renderPractice(root) {
       onClick: () => { track('practice_match'); startMatch(); },
     },
   ];
+
+  // 会話練習。**出せる会話が1本も無いときは、行そのものを出さない。**
+  // 中身が下書きのうちは engine 側が0本を返すので、社長の画面には現れない
+  const talks = availableDialogues();
+  if (talks.length) {
+    rows.push({
+      title: '会話練習', desc: '相手の言葉を聞いて、自分で返す',
+      badge: `${talks.length}`, ready: true, enabled: true,
+      onClick: () => { track('practice_talk'); openSheet('talks', 'practice'); },
+    });
+  }
   // 押せないものは下へ。押せるもの同士の順番は上の並びのまま
   // (「おすすめ」を作らない。実際にできるかどうかだけで決める)
   rows.forEach((r, i) => { r.order = i; });
@@ -6104,6 +6951,186 @@ function startMistakeSession(ready) {
   lessonEnd = queue.length;
   showScreen('session');
   nextItem();
+}
+
+// ---------- 会話練習 (試作) ----------
+/** 出せる会話の一覧。場面ごとにまとめる。 */
+function renderTalks(root) {
+  const list = availableDialogues();
+  if (!list.length) {
+    root.appendChild(el('p', { class: 'fr-empty', text: 'いま出せる会話がありません。' }));
+    return;
+  }
+  root.appendChild(el('p', { class: 'ph-lead',
+    text: '相手の言葉を聞いて、自分で返す練習です。学習の記録には影響しません。' }));
+  const box = el('div', { class: 'practice' });
+  for (const d of list) {
+    const sc = scenarioOf(d.scenarioId);
+    box.appendChild(el('button', { class: 'pr', attrs: { type: 'button' },
+      on: { click: () => startTalk(d) } }, [
+      el('span', {}, [
+        el('span', { class: 'pr-t', text: d.labelJa || d.id }),
+        el('span', { class: 'pr-d', text: sc ? sc.labelJa : '' }),
+      ]),
+      el('span', { class: 'pr-n', text: `${(d.turns || []).length}往復` }),
+    ]));
+  }
+  root.appendChild(box);
+}
+
+
+/**
+ * 会話練習。**通し稽古であって、判定ではない。**
+ *
+ * 相手の番は「聞く/読む」、自分の番は「何と返すか思い出してから答えを見る」。
+ * ここでは覚え具合も連続日数も1つも動かさない。同じ表現を1問ずつの学習と
+ * 二重に数えると、次にいつ出すかの計算が狂うため。
+ *
+ * **中身が production_ready になるまで、通常の画面には出ない。**
+ * その判断は engine/content-pack.js が持ち、画面側は結果を受け取るだけ。
+ * 画面で status を見て回ると、1か所の見落としで未確認の文が世に出る。
+ */
+
+/** 開発中の中身も見るか。**社長の端末では常に false。** */
+function devTalk() {
+  try { return new URLSearchParams(location.search).has('talkdev'); }
+  catch (e) { return false; }
+}
+
+/**
+ * その表現の状態。**1か所でしか決めない。**
+ * 会話の中にしか出てこない文はパック側、既にある教材はカード側から引く。
+ */
+function statusOfLine(id) {
+  const c = state.cards[id];
+  if (c) return c.reviewStatus || null;
+  const it = dialogueCards[id];
+  return it ? it.status : null;
+}
+
+/** いま出せる会話。参照先の状態まで見た上で決まる。 */
+function availableDialogues() {
+  if (!dialogues.length) return [];
+  return contentPack.publicDialogues(dialogues, statusOfLine, { includeDrafts: devTalk() });
+}
+
+function scenarioOf(id) {
+  return scenarios.find(s => s.id === id) || null;
+}
+
+/** 会話の1行ぶんの本文。参照は既存の教材から引く (写しを持たない)。 */
+function turnLine(t) {
+  if (t.line) return t.line;
+  const c = state.cards[t.ref];
+  if (c) return { ja: c.promptKey, mn: c.answerKey };
+  const it = dialogueCards[t.ref];
+  return it ? { ja: it.ja, mn: it.mn } : null;
+}
+
+let talk = null;   // { dialogue, steps, at, revealed }
+
+function startTalk(d) {
+  const sc = scenarioOf(d.scenarioId);
+  const status = dialogueModel.effectiveStatus(d, statusOfLine);
+  talk = {
+    dialogue: d,
+    scenario: sc,
+    status,
+    // 相手の発話を音だけで先に出せるのは、**正式な音声があるときだけ。**
+    // 代用の声で聞き取りをさせない
+    steps: dialogueModel.toSteps(d, { audioForOther: audioPolicy.canPlayFirst(currentAudioTier()) }),
+    at: 0,
+    revealed: false,
+  };
+  track('talk_start');
+  $('talk-title').textContent = d.labelJa || (sc ? sc.labelJa : '会話練習');
+  showScreen('talk');
+  renderTalk();
+}
+
+/** いまの端末で使える音の層。**「鳴らせる」と「聞き取りに使える」は別。** */
+function currentAudioTier() {
+  return audioPolicy.tierFor({
+    hasStatic: false,
+    speechQuality: audio.speechQuality ? audio.speechQuality() : 'none',
+  });
+}
+
+function renderTalk() {
+  const log = $('talk-log');
+  clear(log);
+
+  // 未確認の中身を見ているときは、そうと分かるようにする。
+  // **通常の利用者には、そもそもこの画面が出ない**
+  const warn = $('talk-warn');
+  const draft = talk.status !== 'production_ready';
+  warn.textContent = draft
+    ? 'この会話はまだ下書きです。モンゴル語の確認が済んでいないので、実際の会話では使わないでください。'
+    : '';
+  warn.hidden = !draft;
+
+  const roles = (talk.scenario && talk.scenario.roles) || { other: '相手', learner: '自分' };
+
+  for (let i = 0; i <= talk.at && i < talk.steps.length; i++) {
+    const st = talk.steps[i];
+    const line = turnLine(st);
+    if (!line) continue;
+    const mine = st.speaker === 'learner';
+    const now = i === talk.at;
+    // 自分の番で、まだ答えを見ていない = 思い出す番
+    const asking = mine && now && !talk.revealed;
+
+    if (asking) {
+      log.appendChild(el('div', { class: 'turn turn-ask' }, [
+        el('div', { class: 'turn-who', text: `${roles.learner}（あなた）` }),
+        el('div', { class: 'turn-ja', text: `「${line.ja}」— モンゴル語で言ってみてください` }),
+      ]));
+      continue;
+    }
+    log.appendChild(el('div', { class: mine ? 'turn turn-mine' : 'turn turn-other' }, [
+      el('div', { class: 'turn-who', text: mine ? `${roles.learner}（あなた）` : roles.other }),
+      el('div', { class: 'turn-mn', text: line.mn }),
+      el('div', { class: 'turn-ja', text: line.ja }),
+      caps.audio ? el('div', { class: 'turn-row' }, [
+        el('button', {
+          class: 'spk', attrs: { type: 'button', 'aria-label': `${line.ja} を聞く` },
+          on: { click: () => audio.play(st.ref, { manual: true }) },
+        }, [speakerIcon()]),
+      ]) : null,
+    ]));
+  }
+
+  const last = talk.at >= talk.steps.length - 1;
+  const st = talk.steps[talk.at];
+  const asking = st && st.speaker === 'learner' && !talk.revealed;
+  $('talk-reveal').hidden = !asking;
+  $('talk-next').hidden = asking;
+  $('talk-next').textContent = last && talk.revealed !== null && (!st || !asking)
+    ? (last ? 'おわり' : '次へ') : '次へ';
+  if (last && !asking) $('talk-next').textContent = 'おわり';
+  // 描いたあとに動かす。先に動かすと、増えた行のぶんだけ下が隠れる
+  requestAnimationFrame(() => window.scrollTo(0, document.body.scrollHeight));
+}
+
+function talkReveal() {
+  if (!talk) return;
+  talk.revealed = true;
+  renderTalk();
+}
+
+function talkNext() {
+  if (!talk) return;
+  if (talk.at >= talk.steps.length - 1) { track('talk_complete'); talkBack(); return; }
+  talk.at += 1;
+  talk.revealed = false;
+  renderTalk();
+  // 相手の番は見る/聞くだけなので、そのまま続けて出す手間を省く
+}
+
+function talkBack() {
+  audio.stop();
+  talk = null;
+  openSheet('practice');
 }
 
 // ---------- 組み合わせ練習 ----------
@@ -7635,6 +8662,9 @@ function wire() {
   $('more-btn').addEventListener('click', () => { showScreen('more'); renderMore(); });
   $('more-back').addEventListener('click', goHome);
   $('sheet-back').addEventListener('click', closeSheet);
+  $('talk-reveal').addEventListener('click', talkReveal);
+  $('talk-next').addEventListener('click', talkNext);
+  $('talk-back').addEventListener('click', talkBack);
   $('fieldlog-back').addEventListener('click', () => { showScreen('more'); renderMore(); });
   $('update-btn').addEventListener('click', applyUpdate);
   $('cp-continue').addEventListener('click', () => {
