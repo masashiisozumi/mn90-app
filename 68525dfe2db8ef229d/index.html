@@ -582,6 +582,9 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .cheer-n{font-size:2rem;font-weight:800;margin-top:16px;font-variant-numeric:tabular-nums}
 .cheer-n small{font-size:1rem;font-weight:700;margin-left:3px}
 .cheer-note{font-size:.94rem;color:var(--dim);margin-top:18px;line-height:1.7;text-wrap:balance}
+/* 言えなかったものの戻り先。責める文にしないので、控えめな大きさにする */
+.cheer-back{font-size:calc(var(--t-sub) * var(--fs));color:var(--faint);
+  margin-top:var(--space-2);line-height:1.6;text-wrap:balance}
 .cheer-streak{display:inline-flex;align-items:center;gap:6px;margin-top:18px;
   font-size:1rem;font-weight:700;color:var(--warn);
   background:var(--warn-soft);border-radius:var(--radius-pill);padding:8px 18px;align-self:center}
@@ -869,6 +872,8 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
     <div class="cheer-sub" id="done-sub"></div>
     <div class="cheer-streak" id="done-streak" hidden></div>
     <div class="cheer-note" id="done-note" hidden></div>
+    <!-- 言えなかったものが「いつ・どこで」戻ってくるか。事実だけを1行 -->
+    <div class="cheer-back" id="done-back" hidden></div>
 
     <!-- その日の分を終えたときだけ、任意で1タップ。答えなくてよい -->
     <div class="ask" id="ask-box" hidden>
@@ -4158,6 +4163,15 @@ const CYRILLIC_LANGS = ['ru', 'uk', 'bg', 'sr', 'mk', 'kk', 'ky', 'tg', 'be'];
  */
 const QUALITY = { MN: 'device_mn', FALLBACK: 'device_fallback', NONE: 'none' };
 
+/**
+ * 鳴り始めた合図をどれだけ待つか。
+ * これを過ぎても始まらなければ、その声では鳴らないものとして次を試す。
+ * 長すぎると「押したのに無反応」の時間が延びるので、短めにする。
+ */
+const START_TIMEOUT_MS = 700;
+/** 1回の再生で試す候補の数。増やしすぎると待たせることになる。 */
+const MAX_TRIES = 3;
+
 /** 言語表記を揃える。`mn_MN` / `MN` / `mn-MN` を同じに扱う。 */
 function normLang(v) {
   return String((v && v.lang) || '').replace('_', '-').toLowerCase();
@@ -4178,26 +4192,47 @@ function isCyrillic(voice) {
 }
 
 /**
- * 一覧から使う声を1つ決める。**「見つからなかった」で終わらせない。**
+ * 一覧から使う声を、**良い順に並べて**返す。
+ *
+ * 1つだけ選ぶのではなく候補を持っておく。1番目で鳴らなかったときに
+ * 次を試せるようにするため（端末によっては、一覧にあるのに実際は鳴らない声がある）。
+ *
+ * @returns {Array<{voice: object, tier: 'mn'|'cyrillic'|'other'}>}
+ */
+function rankVoices(list) {
+  const voices = (list || []).filter(v => v && typeof v.lang === 'string');
+  const out = [];
+  const seen = new Set();
+  const add = (v, tier) => {
+    if (!v || seen.has(v)) return;
+    seen.add(v);
+    out.push({ voice: v, tier });
+  };
+
+  // 1. モンゴル語
+  for (const v of voices) if (normLang(v) === EXACT_LOCALE.toLowerCase()) add(v, 'mn');
+  for (const v of voices) if (isMongolian(v)) add(v, 'mn');
+
+  // 2〜3. 同じキリル文字の言語。ロシア語をいちばん先に
+  for (const code of CYRILLIC_LANGS) {
+    for (const v of voices) {
+      if (normLang(v) === code || normLang(v).startsWith(code + '-')) add(v, 'cyrillic');
+    }
+  }
+
+  // 4. 端末の既定 → 残り全部。**とにかく鳴らす**
+  for (const v of voices) if (v.default) add(v, 'other');
+  for (const v of voices) add(v, 'other');
+  return out;
+}
+
+/**
+ * 使う声を1つ決める。**「見つからなかった」で終わらせない。**
  * @returns {{voice: object|null, tier: 'mn'|'cyrillic'|'other'|null}}
  */
 function pickVoice(list) {
-  const voices = (list || []).filter(v => v && typeof v.lang === 'string');
-  if (!voices.length) return { voice: null, tier: null };
-
-  const exact = voices.find(v => normLang(v) === EXACT_LOCALE.toLowerCase());
-  if (exact) return { voice: exact, tier: 'mn' };
-  const mn = voices.find(isMongolian);
-  if (mn) return { voice: mn, tier: 'mn' };
-
-  // 同じキリル文字の言語。ロシア語をいちばん先に探す
-  for (const code of CYRILLIC_LANGS) {
-    const hit = voices.find(v => normLang(v) === code || normLang(v).startsWith(code + '-'));
-    if (hit) return { voice: hit, tier: 'cyrillic' };
-  }
-
-  // それも無ければ、端末の既定 → 一覧の先頭。**とにかく鳴らす**
-  return { voice: voices.find(v => v.default) || voices[0], tier: 'other' };
+  const ranked = rankVoices(list);
+  return ranked.length ? ranked[0] : { voice: null, tier: null };
 }
 
 /**
@@ -4214,14 +4249,19 @@ function createSpeech(p = {}) {
 
   const usable = !!(synth && Utterance && typeof synth.speak === 'function');
 
-  let voice = null;
-  let tier = null;          // 'mn' | 'cyrillic' | 'other' | null
+  let candidates = [];      // 良い順に並べた候補。1番目で鳴らなければ次を試す
+  let at = 0;               // いま使っている候補の位置
   let voiceCount = 0;
   let voiceSettable = true; // この端末で声を指定できるか (一度失敗したら諦める)
   let token = 0;
+  let timer = null;
+
+  const current = () => (candidates[at] || null);
+  const voiceOf = () => (current() ? current().voice : null);
+  const tierOf = () => (current() ? current().tier : null);
 
   // 何が起きたかの記録。**教材本文は入れない。**不具合報告に出すためのもの
-  const log = { calls: 0, started: 0, ended: 0, errors: 0, lastError: null, lastManual: null };
+  const log = { calls: 0, started: 0, ended: 0, errors: 0, retries: 0, lastError: null, lastManual: null };
 
   /**
    * 声を選び直す。**押されたときにも呼ぶ。**
@@ -4232,11 +4272,22 @@ function createSpeech(p = {}) {
     let list = [];
     try { list = synth.getVoices() || []; } catch (e) { list = []; }
     voiceCount = list.length;
-    if (!list.length) { voice = null; tier = null; return null; }
-    const picked = pickVoice(list);
-    voice = picked.voice;
-    tier = picked.tier;
-    return voice;
+    const before = voiceOf();
+    candidates = rankVoices(list);
+    // いま使っている声が新しい一覧にも残っていれば、その位置を保つ
+    const keep = before ? candidates.findIndex(c => c.voice === before) : -1;
+    at = keep >= 0 ? keep : 0;
+    return voiceOf();
+  }
+
+  /**
+   * いまの候補では鳴らなかった。**次の候補へ移る。**
+   * 一覧にあるのに実際は鳴らない声がある端末のための逃げ道。
+   * @returns {boolean} 次があるか
+   */
+  function nextCandidate() {
+    if (at + 1 < candidates.length) { at += 1; return true; }
+    return false;
   }
 
   if (usable && typeof synth.addEventListener === 'function') {
@@ -4247,11 +4298,11 @@ function createSpeech(p = {}) {
   /** モンゴル語の声が見つかったときだけ device_mn。それ以外は fallback。 */
   function quality() {
     if (!usable) return QUALITY.NONE;
-    if (!voice) resolveVoice();
+    if (!voiceOf()) resolveVoice();
     // 声を指定できない端末では、どの声で読まれたか確かめようがない。
     // 参考として聞くのは構わないが、**聞き取り問題の正解には使わない**
     if (!voiceSettable) return QUALITY.FALLBACK;
-    return tier === 'mn' ? QUALITY.MN : QUALITY.FALLBACK;
+    return tierOf() === 'mn' ? QUALITY.MN : QUALITY.FALLBACK;
   }
 
   function available() { return usable; }
@@ -4277,7 +4328,19 @@ function createSpeech(p = {}) {
     const mine = ++token;
     log.calls += 1;
     log.lastManual = !!opt.manual;
+    return attempt(String(text), mine, 0);
+  }
 
+  /**
+   * 1回鳴らしてみる。**鳴り始めなければ、次の候補で試し直す。**
+   *
+   * 端末によっては、一覧に載っているのに実際は鳴らない声がある。
+   * `onerror` すら来ずに黙ることもあるので、**鳴り始めた合図(onstart)が
+   * 一定時間来なければ失敗とみなす。**
+   *
+   * @param {number} tries すでに試した回数
+   */
+  function attempt(text, mine, tries) {
     // **鳴っていないなら止めない。**
     // WebKit は cancel の直後の speak を取りこぼすことがある
     try {
@@ -4290,18 +4353,40 @@ function createSpeech(p = {}) {
     } catch (e) { /* 判定できなくても進む */ }
 
     // 押された時点で一覧を見直す。起動時が空でも、ここで拾える
-    if (!voice) resolveVoice();
+    if (!voiceOf()) resolveVoice();
 
     return new Promise((resolve) => {
       let done = false;
+      let started = false;
+      const clear = () => { if (timer) { clearTimeout(timer); timer = null; } };
       const finish = (r) => {
         if (done) return;
         done = true;
+        clear();
         if (p.onEnded) { try { p.onEnded(); } catch (e) { /* 画面の印を消すだけ */ } }
         resolve(r);
       };
+      /** 鳴らなかった。次の候補があればもう一度。 */
+      const retry = (why) => {
+        if (done) return;
+        log.errors += 1;
+        log.lastError = why;
+        clear();
+        // 押し直したり次の問題へ進んだりしていたら、もう追いかけない
+        if (mine !== token) { finish('superseded'); return; }
+        // 一覧を取り直してから次の候補へ
+        resolveVoice();
+        if (tries < MAX_TRIES - 1 && nextCandidate()) {
+          done = true;                    // この試行はここで終わり
+          clear();
+          log.retries += 1;
+          attempt(text, mine, tries + 1).then(resolve);
+          return;
+        }
+        finish('blocked');
+      };
       try {
-        const u = new Utterance(String(text));
+        const u = new Utterance(text);
         // **端末の声そのまま。**速度も高さも音量も触らない
         u.rate = 1; u.pitch = 1; u.volume = 1;
 
@@ -4311,23 +4396,36 @@ function createSpeech(p = {}) {
         // 声を指定できなかった場合は、**言語も指定しない。**
         // 「声は付けられないが lang だけ mn-MN」は、まさに無音になる組み合わせ。
         // 何も指定せず端末の既定にまかせたほうが、鳴る見込みが高い
-        if (voice && voiceSettable) {
-          try { u.voice = voice; u.lang = voice.lang; }
+        const v = voiceOf();
+        if (v && voiceSettable) {
+          try { u.voice = v; u.lang = v.lang; }
           catch (e) { voiceSettable = false; }
         }
 
-        u.onstart = () => { log.started += 1; };
+        u.onstart = () => { started = true; log.started += 1; clear(); };
         u.onend = () => { log.ended += 1; finish(mine === token ? 'played' : 'superseded'); };
         u.onerror = (e) => {
-          log.errors += 1;
-          log.lastError = (e && (e.error || e.name)) ? String(e.error || e.name) : 'error';
-          finish('blocked');
+          const why = (e && (e.error || e.name)) ? String(e.error || e.name) : 'error';
+          // 利用者が押し直した・次へ進んだことによる中断は、失敗ではない
+          if (why === 'interrupted' || why === 'canceled' || why === 'cancelled') {
+            clear(); finish('superseded'); return;
+          }
+          retry(why);
         };
         synth.speak(u);
+
+        // **鳴り始めた合図が来ないまま黙る端末**への備え。
+        // onstart も onerror も来なければ、鳴らなかったものとして次を試す
+        clear();
+        timer = setTimeout(() => {
+          if (done || started) return;
+          let alive = false;
+          try { alive = !!(synth.speaking || synth.pending); } catch (e) { alive = false; }
+          if (alive) return;              // 鳴ってはいる (合図が来ないだけ)
+          retry('no_start');
+        }, START_TIMEOUT_MS);
       } catch (e) {
-        log.errors += 1;
-        log.lastError = 'speak_threw';
-        finish('blocked');
+        retry('speak_threw');
       }
     });
   }
@@ -4335,12 +4433,36 @@ function createSpeech(p = {}) {
   /** 次の問題へ進むときに呼ぶ。前の読み上げを引きずらない。 */
   function cancel() {
     token += 1;
+    if (timer) { clearTimeout(timer); timer = null; }
     if (!usable) return;
     try {
       if (synth.speaking || synth.pending) {
         if (typeof synth.cancel === 'function') synth.cancel();
       }
     } catch (e) { /* 進む */ }
+  }
+
+  /**
+   * 別のアプリや画面ロックから戻ってきたとき。
+   *
+   * iPhone は裏に回ると読み上げを止めるが、そのまま
+   * 「鳴っている / 止まっている」状態が残ることがある。
+   * その状態のまま次を積むと鳴らないので、**戻ってきた時点で片付ける。**
+   */
+  function reset() {
+    if (!usable) return;
+    try {
+      if (synth.speaking || synth.pending || synth.paused) {
+        if (typeof synth.cancel === 'function') synth.cancel();
+      }
+    } catch (e) { /* 片付けられなくても、次の再生で選び直す */ }
+    resolveVoice();
+  }
+
+  if (usable && typeof document !== 'undefined' && document.addEventListener) {
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) reset();
+    });
   }
 
   function speaking() {
@@ -4357,26 +4479,30 @@ function createSpeech(p = {}) {
     return {
       使える: usable,
       声の数: voiceCount,
-      選んだ声の言語: voice && voiceSettable ? voice.lang : null,
-      声の種別: voiceSettable ? tier : 'other',   // mn / cyrillic / other / null
+      選んだ声の言語: voiceOf() && voiceSettable ? voiceOf().lang : null,
+      声の種別: voiceSettable ? tierOf() : 'other',   // mn / cyrillic / other / null
       声を指定できるか: voiceSettable,
+      候補の数: candidates.length,
+      何番目の候補か: candidates.length ? at + 1 : 0,
       品質: quality(),
       鳴らそうとした回数: log.calls,
       実際に鳴り始めた回数: log.started,
       鳴り終わった回数: log.ended,
       失敗した回数: log.errors,
+      別の声で試し直した回数: log.retries,
       最後の失敗: log.lastError,
       最後は手で押した: log.lastManual,
     };
   }
 
-  return { available, quality, speak, cancel, unlock, speaking, report, resolveVoice,
-    get voiceName() { return voice ? voice.name : null; },
-    get voiceTier() { return tier; } };
+  return { available, quality, speak, cancel, unlock, speaking, report, resolveVoice, reset,
+    get voiceName() { const v = voiceOf(); return v ? v.name : null; },
+    get voiceTier() { return tierOf(); },
+    get candidateCount() { return candidates.length; } };
 }
 
 
-__m["app/speech.js"] = { createSpeech, isMongolian, isCyrillic, pickVoice, QUALITY, EXACT_LOCALE, CYRILLIC_LANGS };
+__m["app/speech.js"] = { createSpeech, isMongolian, isCyrillic, pickVoice, rankVoices, QUALITY, EXACT_LOCALE, CYRILLIC_LANGS, START_TIMEOUT_MS, MAX_TRIES };
 })();
 
 // ===== app/capabilities.js =====
@@ -4950,7 +5076,10 @@ function renderHome() {
   const cd = curriculumDay(today.day);
   const note = $('today-note');
   if (cd && cd.vocab && cd.vocab.newCount === 0 && !cd.milestone) {
-    note.textContent = 'この日の文字の練習は、この版に入っていません。';
+    // **無いことだけを言わない。**「今日の予定が入っていない」と読めてしまい、
+    // 道すじの「文字と最初の発話」と食い違って見える。
+    // 何が起きるのかまで書く
+    note.textContent = '文字の練習はこの版に入っていないので、先に単語から始めます。';
     note.hidden = false;
   } else { note.hidden = true; }
 
@@ -6268,11 +6397,16 @@ function playCurrent(manual = false) {
  * 音そのものが出ているかは画面からは分からないので、
  * **「鳴らそうとしている」ことだけ**を出す。
  */
+let playingTimer = null;
 function markPlaying(on) {
   for (const id of ['speak-btn', 'listen-big']) {
     const b = $(id);
     if (b) b.classList.toggle('is-playing', !!on);
   }
+  // **印が付いたままにならないようにする。**
+  // 鳴り終わった合図が来ない端末があるので、時間で必ず消す
+  if (playingTimer) { clearTimeout(playingTimer); playingTimer = null; }
+  if (on) playingTimer = setTimeout(() => { playingTimer = null; markPlaying(false); }, 12000);
 }
 
 // ---------- 押したことが分かる合図 ----------
@@ -6668,6 +6802,23 @@ function perfectLabel(stats) {
 }
 
 /**
+ * 言えなかったものの戻り先。**予定は engine が持つ。**
+ *
+ * 言えなかった語は、その場では出し直さない (直前の画面を覚えているだけになる)。
+ * 少し時間を置いてから「練習 → 間違えた表現」で出せるようになる。
+ * その仕組みを知らないと「間違えたまま流れた」と感じるので、1行だけ出す。
+ * **時刻は engine が決めた予定をそのまま読むだけ。**画面では計算しない。
+ */
+function relearnNote() {
+  if (today.day == null) return '';
+  const cards = Object.values(state.cards);
+  const m = engine.mistakes({ cards, nowIso: new Date().toISOString(), learningDayIso: today.today });
+  if (m.ready.length) return '「練習 → 間違えた表現」から、いま出せます';
+  if (m.nextAt) return `${formatTime(m.nextAt)}ごろから「練習 → 間違えた表現」で出せます`;
+  return '';
+}
+
+/**
  * 「前より言えた」。**比べられるときだけ出す。**
  * 前に間違えて今日は言えたものを engine が数える。0件なら何も出さない
  * (作り話の励ましは書かない)。
@@ -6738,6 +6889,13 @@ function showCheer(p) {
   streak.hidden = !p.streak;
 
   // 「前より言えた」があればそちらを優先して出す (事実のほうが励ましより効く)
+  // 言えなかったものが、いつ・どこで戻ってくるか。
+  // **責めない。**「また出ます」という事実だけを、engine の予定から出す
+  const backRow = $('done-back');
+  const backText = p.ng > 0 ? relearnNote() : '';
+  backRow.textContent = backText;
+  backRow.hidden = !backText;
+
   const note = $('done-note');
   const text = p.improved || p.note || '';
   note.textContent = text;
