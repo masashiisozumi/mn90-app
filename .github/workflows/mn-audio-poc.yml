@@ -13,153 +13,111 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - name: モンゴル語TTSを全数あたる（licenseとdatasetを実物で）
+      - name: OronTTS と その学習data を実物で読む
         run: |
           mkdir -p out
-          python3 - <<'PY' 2>&1 | tail -200 | tee out/40-all-models.txt
-          import json, urllib.request, urllib.parse, time
+          python3 - <<'PY' 2>&1 | tee out/50-oron.txt
+          import json, urllib.request
 
-          def api(path, params=None):
-              url = "https://huggingface.co/api/" + path
-              if params:
-                  url += "?" + urllib.parse.urlencode(params)
-              for _ in range(3):
-                  try:
-                      req = urllib.request.Request(url, headers={'User-Agent': 'mn90-poc'})
-                      with urllib.request.urlopen(req, timeout=40) as r:
-                          return json.loads(r.read())
-                  except Exception:
-                      time.sleep(2)
-              return None
-
-          def raw(repo, f, kind="models"):
-              base = "https://huggingface.co/" + ("datasets/" if kind == "datasets" else "") + repo
+          def get(url, raw=False):
               try:
-                  req = urllib.request.Request("%s/raw/main/%s" % (base, f),
-                                               headers={'User-Agent': 'mn90-poc'})
-                  with urllib.request.urlopen(req, timeout=30) as r:
+                  req = urllib.request.Request(url, headers={'User-Agent': 'mn90-poc'})
+                  with urllib.request.urlopen(req, timeout=40) as r:
+                      b = r.read()
+                      return b.decode('utf-8', 'replace') if raw else json.loads(b)
+              except Exception as e:
+                  return ("(ERR %s)" % e) if raw else None
+
+          for kind, i in [("models", "btsee/oron-tts"), ("models", "naba0106/oron-tts"),
+                          ("datasets", "btsee/mbspeech_mn")]:
+              print("\n" + "=" * 72)
+              print(kind.upper()[:-1] + ":", i)
+              info = get("https://huggingface.co/api/%s/%s" % (kind, i))
+              if not isinstance(info, dict):
+                  print("  (取得不可)"); continue
+              cd = info.get("cardData") or {}
+              print("  license :", cd.get("license"), "|", [t for t in info.get("tags", []) if t.startswith("license:")])
+              print("  datasets:", cd.get("datasets"))
+              print("  gated   :", info.get("gated"), " dl:", info.get("downloads"))
+              print("  files   :", [s.get("rfilename") for s in (info.get("siblings") or [])][:40])
+              base = "https://huggingface.co/" + ("datasets/" if kind == "datasets" else "") + i
+              rd = get(base + "/raw/main/README.md", raw=True) or ""
+              print("  --- README (3000) ---")
+              print(rd[:3000])
+              for f in ("LICENSE", "LICENSE.md", "LICENSE.txt", "NOTICE"):
+                  lic = get(base + "/raw/main/" + f, raw=True) or ""
+                  if lic and not lic.startswith("(ERR"):
+                      print("  --- %s (1000) ---" % f)
+                      print(lic[:1000]); break
+          PY
+
+      - name: OronTTS で実際に音を作る
+        if: always()
+        run: |
+          pip install -q torch torchaudio soundfile numpy 2>&1 | tail -2 || true
+          python3 - <<'PY' 2>&1 | tee out/51-oron-synth.txt
+          import json, os, time, urllib.request
+          def get(url):
+              try:
+                  req = urllib.request.Request(url, headers={'User-Agent': 'mn90-poc'})
+                  with urllib.request.urlopen(req, timeout=40) as r:
+                      return json.loads(r.read())
+              except Exception:
+                  return None
+          info = get("https://huggingface.co/api/models/btsee/oron-tts") or {}
+          files = [s.get("rfilename") for s in (info.get("siblings") or [])]
+          print("files:", files)
+          cfgs = [f for f in files if f.endswith(".json") or f.endswith(".yaml") or f.endswith(".yml")]
+          print("configs:", cfgs)
+          try:
+              from huggingface_hub import hf_hub_download
+              for f in cfgs[:4]:
+                  p = hf_hub_download("btsee/oron-tts", f)
+                  txt = open(p, encoding="utf-8", errors="replace").read()
+                  print("\n--- %s (1200) ---" % f)
+                  print(txt[:1200])
+          except Exception as e:
+              print("NG config:", type(e).__name__, str(e)[:300])
+          PY
+
+      - name: 権利7層のまとめ（最後に出す）
+        if: always()
+        run: |
+          python3 - <<'PY' 2>&1 | tee out/52-chain.txt
+          import json, urllib.request
+          def get(u):
+              try:
+                  req = urllib.request.Request(u, headers={'User-Agent': 'mn90-poc'})
+                  with urllib.request.urlopen(req, timeout=40) as r:
+                      return json.loads(r.read())
+              except Exception:
+                  return None
+          def raw(u):
+              try:
+                  req = urllib.request.Request(u, headers={'User-Agent': 'mn90-poc'})
+                  with urllib.request.urlopen(req, timeout=40) as r:
                       return r.read().decode('utf-8', 'replace')
               except Exception:
                   return ""
-
-          # モンゴル語 + 音声合成 のモデルを、名前ではなく tag で全部取る
-          ids = set()
-          for pt in ["text-to-speech", "text-to-audio"]:
-              page = 0
-              while page < 6:
-                  d = api("models", [("filter", "mn"), ("filter", pt),
-                                     ("limit", 100), ("skip", page * 100), ("full", "true")])
-                  if not isinstance(d, list) or not d:
-                      break
-                  for m in d:
-                      if m.get("modelId"):
-                          ids.add(m["modelId"])
-                  if len(d) < 100:
-                      break
-                  page += 1
-          for q in ["mongolian", "mongol", "khalkha", "монгол"]:
-              d = api("models", [("search", q), ("limit", 100)])
-              if isinstance(d, list):
-                  for m in d:
-                      mid = m.get("modelId") or ""
-                      tags = " ".join(m.get("tags", [])).lower()
-                      if "text-to-speech" in tags or "tts" in mid.lower() or "vits" in tags:
-                          ids.add(mid)
-
-          print("走査したモデル数:", len(ids))
-          print()
-          rows = []
-          for i in sorted(ids):
-              info = api("models/" + i)
+          print("%-34s %-12s %-24s %s" % ("REPO", "LICENSE", "DATASET", "声の出所がREADMEにあるか"))
+          for kind, i in [("models", "btsee/oron-tts"), ("models", "naba0106/oron-tts"),
+                          ("models", "Maax-Bits/oron-tts-bucket"),
+                          ("datasets", "btsee/mbspeech_mn"),
+                          ("datasets", "Blgn94/mongolian-stt-dataset"),
+                          ("datasets", "google/fleurs")]:
+              info = get("https://huggingface.co/api/%s/%s" % (kind, i))
               if not isinstance(info, dict):
-                  continue
-              cd = info.get("cardData") or {}
-              tags = info.get("tags", [])
-              lic = str(cd.get("license") or "")
-              if not lic:
-                  t = [x[8:] for x in tags if x.startswith("license:")]
-                  lic = t[0] if t else ""
-              ds = cd.get("datasets") or []
-              # モンゴル語専用かどうか (多言語モデルは声の出所が更に辿れないので分ける)
-              langs = cd.get("language") or []
-              if isinstance(langs, str):
-                  langs = [langs]
-              mn_only = len(langs) <= 2 and any(str(l).lower() in ("mn", "mon", "mongolian") for l in langs)
-              rows.append({
-                  "id": i, "lic": lic or "(無)", "ds": ",".join(ds) or "(無)",
-                  "dl": info.get("downloads") or 0, "mn_only": mn_only,
-                  "gated": bool(info.get("gated")),
-              })
-
-          PERMISSIVE = ("apache-2.0", "mit", "cc0-1.0", "cc-by-4.0", "bsd", "bsd-3-clause", "cc-by-sa-4.0")
-          print("=== モンゴル語専用 TTS ===")
-          print("%-44s %-14s %-24s %-6s" % ("MODEL", "LICENSE", "DATASET(申告)", "DL"))
-          for r in sorted(rows, key=lambda x: (not x["mn_only"], -x["dl"])):
-              if r["mn_only"]:
-                  print("%-44s %-14s %-24s %-6s" % (r["id"][:44], r["lic"][:14], r["ds"][:24], r["dl"]))
-          print()
-          print("=== 両方そろっている候補 (license が緩い かつ dataset を申告している) ===")
-          hit = [r for r in rows if r["lic"] in PERMISSIVE and r["ds"] != "(無)"]
-          if not hit:
-              print("  無し")
-          for r in hit:
-              print("  %-44s %-14s %s" % (r["id"][:44], r["lic"], r["ds"]))
-          print()
-          print("=== 多言語だがモンゴル語を含む TTS (件数のみ) ===")
-          print("  ", len([r for r in rows if not r["mn_only"]]), "件")
-          PY
-
-      - name: モンゴル語の音声データ側を全数あたる
-        if: always()
-        run: |
-          python3 - <<'PY' 2>&1 | tail -80 | tee out/41-datasets.txt
-          import json, urllib.request, urllib.parse, time
-
-          def api(path, params=None):
-              url = "https://huggingface.co/api/" + path
-              if params:
-                  url += "?" + urllib.parse.urlencode(params)
-              for _ in range(3):
-                  try:
-                      req = urllib.request.Request(url, headers={'User-Agent': 'mn90-poc'})
-                      with urllib.request.urlopen(req, timeout=40) as r:
-                          return json.loads(r.read())
-                  except Exception:
-                      time.sleep(2)
-              return None
-
-          ids = set(["google/fleurs", "openslr/librispeech_asr", "mozilla-foundation/common_voice_17_0"])
-          for f in [("filter", "mn"), ("search", "mongolian")]:
-              for extra in [[("filter", "text-to-speech")], [("filter", "audio")], []]:
-                  d = api("datasets", [f] + extra + [("limit", 100)])
-                  if isinstance(d, list):
-                      for m in d:
-                          if m.get("id"):
-                              ids.add(m["id"])
-
-          print("走査したデータ数:", len(ids))
-          print("%-52s %-16s %-6s" % ("DATASET", "LICENSE", "GATED"))
-          clean = []
-          for i in sorted(ids):
-              info = api("datasets/" + i)
-              if not isinstance(info, dict):
-                  continue
+                  print("%-34s %s" % (i[:34], "(取得不可)")); continue
               cd = info.get("cardData") or {}
               lic = cd.get("license")
-              if isinstance(lic, list):
-                  lic = ",".join(lic)
-              lic = str(lic or "(無)")
-              g = bool(info.get("gated"))
-              tags = " ".join(info.get("tags", [])).lower()
-              speechy = "audio" in tags or "speech" in tags or "text-to-speech" in tags
-              if speechy:
-                  print("%-52s %-16s %-6s" % (i[:52], lic[:16], g))
-                  if lic not in ("(無)",) and not g:
-                      clean.append((i, lic))
-          print()
-          print("=== license がはっきりしている音声データ ===")
-          for i, l in clean:
-              print("  %-52s %s" % (i, l))
+              if isinstance(lic, list): lic = ",".join(lic)
+              ds = ",".join(cd.get("datasets") or []) or "-"
+              base = "https://huggingface.co/" + ("datasets/" if kind == "datasets" else "") + i
+              rd = raw(base + "/raw/main/README.md").lower()
+              words = [w for w in ("speaker", "voice", "recorded", "bible", "audiobook",
+                                   "consent", "permission", "volunteer", "narrator", "hour")
+                       if w in rd]
+              print("%-34s %-12s %-24s %s" % (i[:34], str(lic or "(無)")[:12], ds[:24], ",".join(words) or "(なし)"))
           PY
 
       - uses: actions/upload-artifact@v4
