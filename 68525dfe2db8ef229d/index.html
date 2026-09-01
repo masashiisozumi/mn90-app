@@ -485,12 +485,11 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .ph-item .fav[aria-pressed="true"]{background:var(--warn-soft);color:var(--warn);border-color:var(--warn)}
 
 /* ---- 商談中に数秒で探すための見出しジャンプ ---- */
-/* 横に並べて上に貼り付ける。スクロールして探す時間を無くす */
-.jump{position:sticky;top:68px;z-index:5;display:flex;gap:6px;overflow-x:auto;
-  padding:10px 0 12px;margin-bottom:6px;background:var(--paper);
-  -webkit-overflow-scrolling:touch;scrollbar-width:none}
-.jump::-webkit-scrollbar{display:none}
-.jump button{flex:none;min-height:44px;padding:0 14px;border-radius:var(--radius-pill);
+/* **8つの場面を全部見せる。**横に流していたときは4つ半しか見えず、
+   残りがあること自体に気づけなかった (商談中に横スクロールは探せない) */
+.jump{position:sticky;top:68px;z-index:5;display:flex;flex-wrap:wrap;gap:6px;
+  padding:10px 0 12px;margin-bottom:6px;background:var(--paper)}
+.jump button{flex:none;min-height:44px;padding:0 13px;border-radius:var(--radius-pill);
   font-size:calc(var(--t-sub) * var(--fs));font-weight:600;white-space:nowrap;
   background:var(--sunk);color:var(--dim)}
 .jump button[aria-current="true"]{background:var(--accent);color:var(--on-accent)}
@@ -506,20 +505,32 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .ph-count{font-size:calc(var(--t-sub) * var(--fs));color:var(--dim);
   margin-bottom:var(--space-2);font-variant-numeric:tabular-nums}
 
-.ph-topic{font-size:1.06rem;font-weight:700;margin:26px 0 10px;padding-bottom:6px;
+.ph-topic{font-size:calc(1.06rem * var(--fs));font-weight:700;margin:26px 0 10px;padding-bottom:6px;
   border-bottom:2px solid var(--accent);color:var(--accent)}
 .ph-topic:first-child{margin-top:0}
+/* この一覧の外から出したものだと分かるようにする (色を強くしない) */
+.ph-topic-more{color:var(--dim);border-bottom-color:var(--line);
+  font-size:calc(var(--t-sub) * var(--fs))}
 .ph-item{background:var(--raised);border:1px solid var(--line);border-radius:var(--radius-card);
   padding:14px 15px;margin-bottom:9px;display:flex;align-items:center;gap:12px}
 .ph-txt{flex:1;min-width:0}
-.ph-ja{font-size:.94rem;color:var(--dim);line-height:1.45}
-.ph-mn{font-size:1.35rem;font-weight:700;line-height:1.35;word-break:break-word;margin-top:3px}
+/* **モンゴル語がこの画面の主役。**相手にそのまま見せることがある。
+   文字を大きくする設定を、ここにも効かせる (前は効いていなかった) */
+.ph-ja{font-size:calc(.94rem * var(--fs));color:var(--dim);line-height:1.45}
+.ph-mn{font-size:calc(1.4rem * var(--fs));font-weight:700;line-height:1.35;
+  word-break:break-word;margin-top:3px}
+/* 探して見つからなかったときの戻り口。行き止まりにしない */
+.ph-back{margin-top:var(--space-3)}
+.ph-back button{width:100%;min-height:var(--tap-main)}
 .ph-lead{font-size:.85rem;color:var(--dim);line-height:1.7;margin:0 0 20px}
 /* 一覧のあとに置く但し書き。読み終わったあとに目に入ればよい */
 .ph-lead-foot{font-size:calc(var(--t-sub) * var(--fs));color:var(--faint);
   margin:var(--space-4) 0 0}
-.ph-del{min-height:var(--tap);min-width:var(--tap);border-radius:var(--radius-btn);font-size:.82rem;
+.ph-del{min-height:var(--tap);min-width:var(--tap);border-radius:var(--radius-btn);
+  font-size:calc(var(--t-sub) * var(--fs));
   background:var(--sunk);color:var(--dim);border:1px solid var(--line);padding:0 12px}
+/* 1回押しただけでは消さない。押し直しを待っている間だけ色を変える */
+.ph-del.is-armed{background:var(--warn-soft);color:var(--warn);border-color:var(--warn);font-weight:700}
 
 /* ---- 書き出し / 不具合報告 ---- */
 .copybox{background:var(--raised);border:1px solid var(--line);border-radius:var(--radius-card);padding:15px}
@@ -3837,6 +3848,43 @@ const pack = {
   },
 
   /**
+   * 画面で探すための、日本語の別の言い方。**教材ではない。**
+   *
+   * 社長が商談中に打つ日本語と、教材の日本語がずれることがある
+   * (「わからない」と打っても、教材は「分かりません」と書いてある)。
+   * そのずれを埋めるためだけの一覧で、**モンゴル語は1文字も足さない。**
+   * ここに書いた言葉が画面に出ることもない (探すときにだけ使う)。
+   *
+   * 入れてよいのは「同じことを指す別の言い方」だけ。
+   * 近いだけの言葉 (「待って」に「ゆっくり」を当てるなど) は入れない。
+   * 違う意味のモンゴル語を相手に見せることになる。
+   */
+  searchAliases: {
+    s_card_exchange: ['カード', 'めいし', '名刺交換'],
+    n_businesscard: ['カード', 'めいし'],
+    s_i_dont_get: ['わからない', 'わかりません', '分からない', 'わかんない'],
+    s_say_again: ['もういちど', 'もう１度', 'きこえない', '聞こえない', '聞き取れない'],
+    s_slowly: ['ゆっくり話して', 'はやい', '速い'],
+    n_price: ['いくら', 'ねだん', '価格', '金額', '料金', '支払い', '支払', 'いくらですか'],
+    s_how_much: ['ねだん', '値段', '価格', '金額', '料金', '支払い', '支払'],
+    n_money: ['支払い', '支払', '現金', 'おかね'],
+    s_please_wait: ['待って', 'まって', 'まってください', 'ちょっと'],
+    n_accident: ['じこ'],
+    s_no_accident: ['じこ', '事故なし'],
+    n_part: ['パーツ', 'ぶひん'],
+    s_how_many_km: ['距離', 'きょり', 'メーター'],
+    s_what_year: ['年式', '何年', 'ねんしき'],
+    n_phone: ['でんわ', '連絡先', '電話番号'],
+    s_can_i_contact: ['連絡先', 'れんらく'],
+    s_ill_contact: ['れんらく'],
+    n_engine: ['エンジン'],
+    s_do_you_speak_en: ['えいご', '英語'],
+    s_ill_send_quote: ['見積', 'みつもり', '見積書'],
+    s_i_buy_this: ['かいます', '購入'],
+    s_show_me: ['みせて', '見せて'],
+  },
+
+  /**
    * 場面ごとの分類。**新しい教材は作らない。**既にある140件を、
    * 「これができるようになる」という単位で並べ替えただけのもの。
    * ここに新しいモンゴル語を書き足してはいけない (IDだけを並べる)。
@@ -4886,6 +4934,8 @@ function showScreen(name) {
   // 完了画面から離れたら、案内の書き換えを止めて消す。
   // 残しておくと、次に完了画面を開いた一瞬だけ前回の文字が見える
   if (name !== 'summary') { relearnNoteOn = false; paintRelearnNote(); }
+  // 見えない画面を描き直さない
+  if (name !== 'sheet') { clearSheetTimer(); sheetRepaint = null; }
   for (const s of SCREENS) $(s).hidden = (s !== name);
   for (const s of SCREENS) {
     const node = $(s + '-dock');
@@ -5420,8 +5470,10 @@ const SHEETS = {
   cando: { title: 'できること', render: renderCanDo },
   mistakes: { title: '間違えた表現', render: renderMistakes },
   stats: { title: '学習状況', render: renderStats },
-  favorites: { title: '保存したフレーズ', render: () => renderPhrases('favorites') },
-  briefing: { title: '商談の直前に見る', render: () => renderPhrases('briefing') },
+  // どちらも用件は「読むこと」。下の「もどる」を主役にすると、
+  // 読みに来た画面で目立つのが出口になってしまう
+  favorites: { title: '保存したフレーズ', render: () => renderPhrases('favorites'), quietBack: true },
+  briefing: { title: '商談の直前に見る', render: () => renderPhrases('briefing'), quietBack: true },
   // 3つに分かれていた書き出しを1つにまとめた (何を貼ればよいか迷わせない)
   // 用件はコピーなので、下の「もどる」は控えめにする
   export: { title: '書き出す', render: renderExport, quietBack: true },
@@ -5429,16 +5481,65 @@ const SHEETS = {
   about: { title: 'このアプリについて', render: renderAbout },
 };
 
-function openSheet(id) {
+/**
+ * どの画面から開いたか。**戻り先を決めるためだけに使う。**
+ *
+ * 「その他 → 練習 → 商談の直前に見る」と進んだあと「もどる」で
+ * その他まで一気に戻ってしまうと、練習の続きを見るのに開き直すことになる。
+ * 深い履歴は持たず、1つ手前だけを覚える (それ以上は iPhone の操作らしくない)。
+ */
+let sheetFrom = 'more';
+
+function openSheet(id, from) {
   const sheet = SHEETS[id];
   if (!sheet) return;
+  // 練習の中から開いたものは、練習へ戻す
+  sheetFrom = from || 'more';
   $('sheet-title').textContent = sheet.title;
   clear($('sheet-body'));
   // その画面の用件が別にあるときは、「もどる」を主役から降ろす。
   // 同じ画面に強いボタンが2つあると、どちらを押すのか毎回考えることになる
   $('sheet-back').className = sheet.quietBack ? 'ghost' : 'primary';
+  // **戻り先を名前で書く。**「もどる」だけだと、どこへ戻るのか押すまで分からない
+  $('sheet-back').textContent = sheetFrom === 'practice' ? '練習へもどる' : 'もどる';
   showScreen('sheet');
   sheet.render($('sheet-body'));
+}
+
+/**
+ * 開いている画面を、予定の時刻に自分で描き直す。
+ *
+ * 「19:25ごろから出せます」と書いた画面を開いたまま時刻をまたぐと、
+ * もう出せるのに待たされていると読める。完了画面で直したのと同じことを、
+ * 練習と「間違えた表現」でもする。
+ * **予定そのもの (3/8/15分) は engine の担当で、ここでは触らない。**
+ */
+let sheetTimer = null;
+let sheetRepaint = null;
+const SHEET_RECHECK_MAX_MS = 15 * 60 * 1000;
+
+function clearSheetTimer() {
+  if (sheetTimer) { clearTimeout(sheetTimer); sheetTimer = null; }
+}
+
+function refreshSheetAt(iso, repaint) {
+  clearSheetTimer();
+  sheetRepaint = repaint || null;
+  if (!iso || !repaint) return;
+  const ms = new Date(iso).getTime() - Date.now();
+  // 過ぎているのに待ちのままなら engine の判断が正。呼び直して電池を使わない
+  if (ms <= 0) return;
+  sheetTimer = setTimeout(() => {
+    if (currentScreen === 'sheet' && sheetRepaint) sheetRepaint();
+  }, Math.min(ms + 1000, SHEET_RECHECK_MAX_MS));
+}
+
+/** 「もどる」。開いた場所へ返す。音は必ず止める (次の画面へ持ち越さない)。 */
+function closeSheet() {
+  audio.stop();
+  if (sheetFrom === 'practice') { openSheet('practice'); return; }
+  showScreen('more');
+  renderMore();
 }
 
 /**
@@ -5853,6 +5954,10 @@ function renderPractice(root) {
   const favCount = Object.keys(favorites()).length;
   const dueNow = dueOrRelearnCount();
 
+  // 「待機中」のまま置き去りにしない。時刻が来たら件数に変わる
+  refreshSheetAt(m.ready.length ? null : m.nextAt,
+    () => { clear(root); renderPractice(root); });
+
   root.appendChild(el('p', { class: 'ph-lead',
     text: '今日の学習とは別に、いつでもできる練習です。' }));
 
@@ -5863,6 +5968,8 @@ function renderPractice(root) {
    * できないものは下へ下げ、待機中ならそう書く。engine が「まだ出さない」と
    * 言っているものを、画面の都合で先頭に置いて期待させない。
    */
+  // 並べ方は2段。**まず「いま押せるもの」、その中を社長の決めた順。**
+  // できないものを上に置くと、押して初めて空だと分かる (探し直しになる)
   const rows = [
     {
       title: '間違えた表現',
@@ -5872,35 +5979,33 @@ function renderPractice(root) {
       ready: m.ready.length > 0,
       // 復習待ちがあるときは、いつ出せるかを見に行けるので押せるままにする
       enabled: m.ready.length > 0 || m.waiting.length > 0,
-      onClick: () => { track('practice_mistakes'); openSheet('mistakes'); },
+      onClick: () => { track('practice_mistakes'); openSheet('mistakes', 'practice'); },
     },
     {
       title: '5分だけ復習', desc: '期日の来ているものだけ',
       badge: dueNow ? `${dueNow}` : '', ready: dueNow > 0, enabled: dueNow > 0,
       onClick: () => { track('practice_sprint'); startSession('sprint5'); },
     },
-  ];
-  // いまできるほうを上へ。どちらもできないときは、この2つの順番は変えない
-  rows.sort((a, b) => (b.ready ? 1 : 0) - (a.ready ? 1 : 0));
-
-  // ここから下は「いつでも見るもの」。状態で順番を入れ替えない
-  rows.push(
-    {
-      title: '商談の直前に見る', desc: '場面ごとに並べた35表現。日本語で探せます',
-      badge: '5分', ready: true, enabled: true,
-      onClick: () => { track('practice_briefing'); openSheet('briefing'); },
-    },
     {
       title: '保存したフレーズ', desc: '☆ を付けたもの',
       badge: favCount ? `${favCount}` : '', ready: favCount > 0, enabled: favCount > 0,
-      onClick: () => { track('practice_favorites'); openSheet('favorites'); },
+      onClick: () => { track('practice_favorites'); openSheet('favorites', 'practice'); },
+    },
+    {
+      title: '商談の直前に見る', desc: '場面ごとに並べた35表現。日本語で探せます',
+      badge: '5分', ready: true, enabled: true,
+      onClick: () => { track('practice_briefing'); openSheet('briefing', 'practice'); },
     },
     {
       title: '組み合わせ', desc: 'ウォームアップ。学習の記録には影響しません',
       badge: '', ready: true, enabled: true,
       onClick: () => { track('practice_match'); startMatch(); },
     },
-  );
+  ];
+  // 押せないものは下へ。押せるもの同士の順番は上の並びのまま
+  // (「おすすめ」を作らない。実際にできるかどうかだけで決める)
+  rows.forEach((r, i) => { r.order = i; });
+  rows.sort((a, b) => (b.enabled ? 1 : 0) - (a.enabled ? 1 : 0) || a.order - b.order);
 
   const list = el('div', { class: 'practice' });
   for (const r of rows) {
@@ -5934,6 +6039,10 @@ function renderMistakes(root) {
   const nowIso = new Date().toISOString();
   const m = today.day == null ? { ready: [], waiting: [], nextAt: null }
     : engine.mistakes({ cards, nowIso, learningDayIso: today.today });
+
+  // 待っている間にこの画面を開いたままにしていても、時刻が来たら出せる形になる
+  refreshSheetAt(m.ready.length ? null : m.nextAt,
+    () => { clear(root); renderMistakes(root); });
 
   if (!m.ready.length) {
     root.appendChild(el('p', { class: 'fr-empty',
@@ -6765,10 +6874,12 @@ function endSession() {
   planCache = null;
 
   if (sessionKind === 'practice') {
+    // **来た場所へ返す。**ホームへ放り出すと、続けてもう1つ練習するのに
+    // その他 → 練習 と辿り直すことになる
     showCheer({
       mark: '✓', title: '練習 完了',
       count: sessionStats.answered, ok: sessionStats.correct, ng: sessionStats.wrong,
-      note: goalNote(), streak: null, next: null,
+      note: goalNote(), streak: null, next: null, backTo: 'practice',
     });
     return;
   }
@@ -6901,6 +7012,9 @@ function extraAvailable() {
        + engine.relearnCards(cards, nowIso, today.today).length;
 }
 
+/** 完了画面の「もどる」の行き先。練習から来たときだけ練習へ返す。 */
+let cheerBackTo = 'home';
+
 /** 完了画面。レッスンの区切りも1日の完了も、同じ場所を使い分ける。 */
 function showCheer(p) {
   $('done-mark').textContent = p.mark;
@@ -6957,7 +7071,9 @@ function showCheer(p) {
   // 続きがあるときは「次の5問」を主役にし、切り上げるほうは控えめにする。
   // 同じ見た目のボタンを2つ並べると、どちらを押すのか毎回考えることになる
   const back = $('back-home');
-  back.textContent = p.next ? '今日はここまで' : 'ホームへ';
+  cheerBackTo = p.backTo || 'home';
+  back.textContent = p.next ? '今日はここまで'
+    : cheerBackTo === 'practice' ? '練習へもどる' : 'ホームへ';
   back.className = p.next ? 'ghost' : 'primary';
 
   renderAsk(!!p.ask);
@@ -7087,6 +7203,9 @@ function localDayOf(iso) {
  * 「復習した」と数えてしまうと、次にいつ出すかの計算が狂うため。
  * 出てくるモンゴル語は既にある教材そのままで、ここで新しくは作らない。
  */
+/** 保存したフレーズが何件を超えたら、探す入り口を出すか。 */
+const SEARCHABLE_FROM = 10;
+
 const PHRASE_VIEWS = {
   briefing: {
     // 商談の直前に開く画面なので、説明は最短にする。
@@ -7097,6 +7216,7 @@ const PHRASE_VIEWS = {
       .filter(g => g.ids.length),
     deletable: false,
     search: true,       // 商談中に日本語で探す。既存教材の中だけ
+    searchAll: true,    // 35件に無いときは、アプリの中の残りからも出す (新しくは作らない)
   },
   favorites: {
     lead: '学習中に「☆ 保存」を押したものが、新しい順に並びます。'
@@ -7133,25 +7253,50 @@ function renderPhrases(viewId) {
   // 開いた瞬間に探し始められないと、この画面を開く意味が薄い。
   // **既にある教材の中を日本語で探すだけ**で、新しいモンゴル語は作らない
   // (作れば誰も確かめていない文が混ざる)。覚え具合も出題の順番も動かさない。
-  if (view.search) {
+  //
+  // 保存したフレーズも、増えてくると目で追えなくなる。
+  // 同じ入り口を使い回すだけで、新しい仕組みは足さない
+  const total = groups.reduce((n, g) => n + g.ids.length, 0);
+  let repaint = () => paintPhrases(list, groups, view, viewId, '');
+
+  if (view.search || total >= SEARCHABLE_FROM) {
     const input = el('input', { class: 'ph-q', attrs: {
       type: 'search', inputmode: 'search', autocomplete: 'off',
       placeholder: '日本語で探す', 'aria-label': '日本語で探す',
     } });
-    input.addEventListener('input', () => paintPhrases(list, groups, view, viewId, input.value));
+    // 探した言葉を消して一覧へ戻す口を、0件の画面に渡す
+    const clearQuery = () => { input.value = ''; repaint(); input.focus(); };
+    repaint = () => paintPhrases(list, groups, view, viewId, input.value, clearQuery);
+    input.addEventListener('input', repaint);
     body.appendChild(el('div', { class: 'ph-search' }, [input]));
   }
 
   body.appendChild(list);
   body.appendChild(el('p', { class: 'ph-lead ph-lead-foot', text: view.lead }));
-  paintPhrases(list, groups, view, viewId, '');
+  repaint();
+}
+
+/**
+ * 打った日本語が、この表現を指しているか。
+ *
+ * 教材の日本語そのままだけで探すと、打ち方が少し違うだけで見つからない
+ * (「わからない」と打っても、教材は「分かりません」と書いてある)。
+ * そこで、**探すためだけの日本語の別名**も見る。別名は言語パックにあり、
+ * 画面には出ない。モンゴル語は探し先にも別名にも一切足していない。
+ */
+function matchesQuery(id, q) {
+  const card = state.cards[id];
+  if (!card) return false;
+  if (card.promptKey.includes(q)) return true;
+  const alias = (mnPack.searchAliases && mnPack.searchAliases[id]) || [];
+  return alias.some(a => a.includes(q) || q.includes(a));
 }
 
 /**
  * 一覧の中身。探している最中は、見出しごとの並びをやめて該当だけを出す。
  * 商談中に「見出しを開いてから探す」の一手間を挟ませないため。
  */
-function paintPhrases(list, groups, view, viewId, query) {
+function paintPhrases(list, groups, view, viewId, query, onClear) {
   clear(list);
   const q = (query || '').trim();
 
@@ -7159,16 +7304,40 @@ function paintPhrases(list, groups, view, viewId, query) {
     // 日本語側だけで探す。モンゴル語での検索は、社長がキリル文字を
     // 打てる前提になってしまうので今は作らない
     const hits = [];
+    const inList = new Set();
     for (const g of groups) for (const id of g.ids) {
-      const card = state.cards[id];
-      if (card && card.promptKey.includes(q)) hits.push(id);
+      inList.add(id);
+      if (matchesQuery(id, q)) hits.push(id);
     }
-    if (!hits.length) {
+
+    // **この一覧に無くても、アプリの中にあるなら出す。**
+    // 商談の最中に「少しお待ちください」を探して行き止まりになるのが
+    // いちばん困る。出すのは既にある教材だけで、新しくは作らない
+    const more = view.searchAll
+      ? Object.keys(state.cards).filter(id => !inList.has(id) && matchesQuery(id, q))
+      : [];
+
+    if (!hits.length && !more.length) {
       list.appendChild(el('p', { class: 'fr-empty', text: `「${q}」に当てはまる表現はありません。` }));
+      // **行き止まりにしない。**商談中に画面を閉じさせない戻り方を1つ置く
+      if (onClear) {
+        list.appendChild(el('div', { class: 'ph-back' }, [
+          el('button', { class: 'ghost', attrs: { type: 'button' }, text: '検索を消して一覧へもどる',
+            on: { click: onClear } }),
+        ]));
+      }
       return;
     }
-    list.appendChild(el('div', { class: 'ph-count', text: `${hits.length}件` }));
-    for (const id of hits) list.appendChild(phraseRow(id, view, viewId));
+
+    if (hits.length) {
+      list.appendChild(el('div', { class: 'ph-count', text: `${hits.length}件` }));
+      for (const id of hits) list.appendChild(phraseRow(id, view, viewId));
+    }
+    if (more.length) {
+      list.appendChild(el('div', { class: 'ph-topic ph-topic-more',
+        text: hits.length ? 'この一覧の外にもあります' : 'この一覧には無いので、ほかから出しました' }));
+      for (const id of more) list.appendChild(phraseRow(id, view, viewId));
+    }
     return;
   }
 
@@ -7184,7 +7353,13 @@ function paintPhrases(list, groups, view, viewId, query) {
       btn.addEventListener('click', () => {
         const target = anchors[i];
         if (!target) return;
-        target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        // **上に貼り付いている帯のぶんだけ下げる。**
+        // そのまま先頭へ合わせると、探している見出しが帯の裏に隠れて、
+        // 「押したのに違うところが出た」ように見える
+        const bar = document.querySelector('.ph-search');
+        const offset = (bar ? bar.offsetHeight : 0) + jump.offsetHeight + 8;
+        const y = window.scrollY + target.getBoundingClientRect().top - offset;
+        window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
         for (const b of jump.children) b.setAttribute('aria-current', 'false');
         btn.setAttribute('aria-current', 'true');
       });
@@ -7210,16 +7385,39 @@ function phraseRow(id, view, viewId) {
       el('div', { class: 'ph-ja', text: card.promptKey }),
       el('div', { class: 'ph-mn', text: card.answerKey }),
     ]),
-    // 音声が入れば、ここにスピーカーが並ぶ。無いあいだは出さない
+    // 音声が入れば、ここにスピーカーが並ぶ。無いあいだは出さない。
+    // **手で押したことを伝える** (iPhone はその操作の中で鳴らす必要がある)。
+    // 前の表現が鳴っていれば、audio 側が止めてから鳴らす
     caps.audioFor(id) ? el('button', {
       class: 'spk', attrs: { type: 'button', 'aria-label': `${card.promptKey} を聞く` },
-      on: { click: () => audio.play(id) },
+      on: { click: () => audio.play(id, { manual: true }) },
     }, [speakerIcon()]) : null,
     view.deletable
       ? el('button', {
         class: 'ph-del', attrs: { type: 'button', 'aria-label': `${card.promptKey} を保存から外す` },
-        text: '削除',
-        on: { click: () => { removeFav(id); renderPhrases(viewId); } },
+        text: '外す',
+        // **1回では消さない。**指が当たっただけで消えると、
+        // 何が入っていたかも分からないまま無くなる。押し直しで確定する
+        on: { click: (e) => {
+          const b = e.currentTarget;
+          if (b.dataset.armed !== '1') {
+            b.dataset.armed = '1';
+            b.textContent = '外す？';
+            b.classList.add('is-armed');
+            clearTimeout(Number(b.dataset.timer));
+            b.dataset.timer = String(setTimeout(() => {
+              b.dataset.armed = ''; b.textContent = '外す'; b.classList.remove('is-armed');
+            }, 3000));
+            return;
+          }
+          clearTimeout(Number(b.dataset.timer));
+          removeFav(id);
+          // **見ていた場所を保つ。**上まで飛ばされると、
+          // どこを消したのか分からなくなる
+          const keep = window.scrollY;
+          renderPhrases(viewId);
+          window.scrollTo(0, keep);
+        } },
       })
       : el('button', {
         class: 'fav', attrs: { type: 'button', 'aria-pressed': String(isFav(id)),
@@ -7430,12 +7628,13 @@ function wire() {
   });
   $('back-home').addEventListener('click', () => {
     if (!$('next-lesson').hidden) track('stop_here');
+    if (cheerBackTo === 'practice') { openSheet('practice'); return; }
     goHome();
   });
   $('extra-btn').addEventListener('click', startExtra);
   $('more-btn').addEventListener('click', () => { showScreen('more'); renderMore(); });
   $('more-back').addEventListener('click', goHome);
-  $('sheet-back').addEventListener('click', () => { showScreen('more'); renderMore(); });
+  $('sheet-back').addEventListener('click', closeSheet);
   $('fieldlog-back').addEventListener('click', () => { showScreen('more'); renderMore(); });
   $('update-btn').addEventListener('click', applyUpdate);
   $('cp-continue').addEventListener('click', () => {
@@ -7462,8 +7661,9 @@ function wire() {
   // 戻ってきたら、スピーカーを押せばそのまま続けられる。
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') { audio.stop(); return; }
-    // 画面を消している間はタイマーが止まる。戻ってきたら案内を今の時刻で描き直す
+    // 画面を消している間はタイマーが止まる。戻ってきたら今の時刻で描き直す
     if (currentScreen === 'summary') paintRelearnNote();
+    if (currentScreen === 'sheet' && sheetRepaint) sheetRepaint();
   });
 }
 
