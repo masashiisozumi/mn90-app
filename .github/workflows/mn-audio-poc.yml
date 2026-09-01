@@ -36,8 +36,16 @@ jobs:
               cp = hf_hub_download(repo, "config.json")
               sp = hf_hub_download(repo, "speakers.pth")
               print("download_sec: %.1f  checkpoint_MB: %.1f" % (time.time() - t0, os.path.getsize(mp) / 1e6))
+              # config.json に作者の環境の path が焼き込まれているので、落とした実物に差し替える
+              import json as _j
+              cfg = _j.load(open(cp))
+              cfg["speakers_file"] = sp
+              if isinstance(cfg.get("model_args"), dict):
+                  cfg["model_args"]["speakers_file"] = sp
+              cp2 = "config_fixed.json"
+              _j.dump(cfg, open(cp2, "w"))
               t1 = time.time()
-              syn = Synthesizer(tts_checkpoint=mp, tts_config_path=cp,
+              syn = Synthesizer(tts_checkpoint=mp, tts_config_path=cp2,
                                 tts_speakers_file=sp, use_cuda=False)
               print("init_sec: %.1f" % (time.time() - t1))
               names = list(syn.tts_model.speaker_manager.speaker_names)
