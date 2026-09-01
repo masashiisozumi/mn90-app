@@ -11,106 +11,139 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
-      - name: 候補を探す（Hugging Face 検索）
+      - name: 候補一覧とlicenseを1行ずつ
         run: |
           mkdir -p out
-          for q in "mongolian tts" "mongolian text-to-speech" "khalkha tts" "mn tts"; do
-            echo "=== search: $q ===" >> out/00-search.txt
-            curl -sS -G "https://huggingface.co/api/models" \
-              --data-urlencode "search=$q" \
-              --data-urlencode "filter=text-to-speech" \
-              --data-urlencode "limit=25" \
-              | python3 -c "import sys,json;[print(m.get('modelId'),'| license:',[t for t in m.get('tags',[]) if t.startswith('license:')],'| dl:',m.get('downloads')) for m in json.load(sys.stdin)]" >> out/00-search.txt 2>&1 || echo "(failed)" >> out/00-search.txt
-          done
-          echo "=== filter mn + text-to-speech ===" >> out/00-search.txt
-          curl -sS -G "https://huggingface.co/api/models" \
-            --data-urlencode "filter=mn" \
-            --data-urlencode "filter=text-to-speech" \
-            --data-urlencode "limit=50" \
-            | python3 -c "import sys,json;[print(m.get('modelId'),'| license:',[t for t in m.get('tags',[]) if t.startswith('license:')],'| dl:',m.get('downloads')) for m in json.load(sys.stdin)]" >> out/00-search.txt 2>&1 || echo "(failed)" >> out/00-search.txt
-          cat out/00-search.txt
-
-      - name: license を実物で読む
-        run: |
-          python3 - <<'PY' 2>&1 | tee out/01-licenses.txt
+          python3 - <<'PY' 2>&1 | tee out/10-table.txt
           import json, urllib.request, urllib.parse
 
           def get(url, raw=False):
               try:
-                  with urllib.request.urlopen(url, timeout=30) as r:
+                  req = urllib.request.Request(url, headers={'User-Agent': 'mn90-poc'})
+                  with urllib.request.urlopen(req, timeout=30) as r:
                       b = r.read()
                       return b.decode('utf-8', 'replace') if raw else json.loads(b)
               except Exception as e:
-                  return None if not raw else "(ERR %s)" % e
+                  return ("(ERR %s)" % e) if raw else None
 
-          ids = set([
-              "Bokhbat/mongolian-vits-tts",
-              "btseee/oron-tts",
-              "facebook/mms-tts-mon",
-          ])
-          for q in ["mongolian tts", "mongolian text-to-speech", "khalkha tts", "mn tts"]:
-              u = "https://huggingface.co/api/models?" + urllib.parse.urlencode(
-                  {"search": q, "filter": "text-to-speech", "limit": 25})
-              d = get(u)
+          ids = set(["Bokhbat/mongolian-vits-tts", "btseee/oron-tts", "facebook/mms-tts-mon"])
+          queries = [
+              [("search", "mongolian"), ("filter", "text-to-speech"), ("limit", 100)],
+              [("search", "khalkha"), ("limit", 50)],
+              [("search", "mongol tts"), ("limit", 50)],
+              [("filter", "mn"), ("filter", "text-to-speech"), ("limit", 100)],
+              [("filter", "mn"), ("filter", "text-to-audio"), ("limit", 100)],
+          ]
+          for q in queries:
+              d = get("https://huggingface.co/api/models?" + urllib.parse.urlencode(q))
               if isinstance(d, list):
                   for m in d:
                       if m.get("modelId"):
                           ids.add(m["modelId"])
-          u = "https://huggingface.co/api/models?" + urllib.parse.urlencode(
-              [("filter", "mn"), ("filter", "text-to-speech"), ("limit", 50)])
-          d = get(u)
-          if isinstance(d, list):
-              for m in d:
-                  if m.get("modelId"):
-                      ids.add(m["modelId"])
 
           print("candidates:", len(ids))
+          rows = []
           for i in sorted(ids):
+              info = get("https://huggingface.co/api/models/" + i)
+              if not isinstance(info, dict):
+                  rows.append((i, "(api-fail)", "", "", 0, False, ""))
+                  continue
+              tags = info.get("tags", [])
+              cd = info.get("cardData") or {}
+              lic = ",".join([t[8:] for t in tags if t.startswith("license:")]) or "-"
+              cdl = str(cd.get("license") or "-")
+              ds = ",".join(cd.get("datasets") or []) or "-"
+              gated = bool(info.get("gated"))
+              mn = "mn" in tags or "mon" in tags or "mongolian" in " ".join(tags).lower() \
+                   or "mongol" in i.lower() or "mms-tts-mon" in i
+              rows.append((i, lic, cdl, ds, info.get("downloads") or 0, gated, "MN" if mn else ""))
+
+          rows.sort(key=lambda r: (r[6] != "MN", -r[4]))
+          print("%-52s %-16s %-14s %-8s %-5s %s" % ("MODEL", "LICENSE-TAG", "CARD-LICENSE", "DL", "GATED", "MN?"))
+          for r in rows:
+              print("%-52s %-16s %-14s %-8s %-5s %s" % (r[0][:52], r[1][:16], r[2][:14], r[4], r[5], r[6]))
+          print()
+          print("=== datasets (MN候補のみ) ===")
+          for r in rows:
+              if r[6] == "MN":
+                  print(r[0], "->", r[3])
+          PY
+
+      - name: MN候補のREADME/LICENSEを実物で読む
+        run: |
+          python3 - <<'PY' 2>&1 | tee out/11-mn-license.txt
+          import json, urllib.request, re
+
+          def get(url, raw=False):
+              try:
+                  req = urllib.request.Request(url, headers={'User-Agent': 'mn90-poc'})
+                  with urllib.request.urlopen(req, timeout=30) as r:
+                      b = r.read()
+                      return b.decode('utf-8', 'replace') if raw else json.loads(b)
+              except Exception as e:
+                  return ("(ERR %s)" % e) if raw else None
+
+          for i in ["Bokhbat/mongolian-vits-tts", "btseee/oron-tts", "facebook/mms-tts-mon"]:
               print("\n" + "=" * 70)
               print("MODEL:", i)
               info = get("https://huggingface.co/api/models/" + i)
               if not isinstance(info, dict):
-                  print("  (api unreachable)")
+                  print("  (存在しない / 取得不可)")
                   continue
-              tags = info.get("tags", [])
               cd = info.get("cardData") or {}
-              print("  license-tag :", [t for t in tags if t.startswith("license:")])
+              print("  license-tag:", [t for t in info.get("tags", []) if t.startswith("license:")])
               print("  cardData.license:", cd.get("license"))
               print("  cardData.datasets:", cd.get("datasets"))
-              print("  downloads   :", info.get("downloads"))
-              sib = [s.get("rfilename") for s in (info.get("siblings") or [])]
-              print("  files       :", sib[:40])
+              print("  gated:", info.get("gated"), " downloads:", info.get("downloads"))
+              print("  files:", [s.get("rfilename") for s in (info.get("siblings") or [])][:30])
               rd = get("https://huggingface.co/%s/raw/main/README.md" % i, raw=True) or ""
-              print("  --- README (first 1500) ---")
-              print(rd[:1500])
-              lic = get("https://huggingface.co/%s/raw/main/LICENSE" % i, raw=True) or ""
-              print("  --- LICENSE (first 600) ---")
-              print(lic[:600])
+              print("  --- README (2000) ---")
+              print(rd[:2000])
+              for f in ("LICENSE", "LICENSE.md", "LICENSE.txt"):
+                  lic = get("https://huggingface.co/%s/raw/main/%s" % (i, f), raw=True) or ""
+                  if lic and not lic.startswith("(ERR"):
+                      print("  --- %s (800) ---" % f)
+                      print(lic[:800])
+                      break
           PY
 
-      - name: 音を1つ作れるか
+      - name: 実際に音を作る（MMS-TTS mon / 参考比較のみ）
         run: |
-          {
-            echo "### piper voices (mn?) ###"
-            curl -sS "https://huggingface.co/api/models/rhasspy/piper-voices" \
-              | python3 -c "import sys,json;d=json.load(sys.stdin);print([s['rfilename'] for s in d.get('siblings',[]) if '/mn' in s['rfilename'] or s['rfilename'].startswith('mn')][:60])" 2>&1 || true
-            echo
-            echo "### pip install piper-tts ###"
-            pip install piper-tts 2>&1 | tail -5 || true
-            echo
-            echo "### espeak-ng mongolian voice? ###"
-            sudo apt-get -qq update >/dev/null 2>&1 || true
-            sudo apt-get -qq install -y espeak-ng >/dev/null 2>&1 || true
-            espeak-ng --voices 2>&1 | grep -iE " mn | mongol" || echo "(no mongolian voice in espeak-ng)"
-            echo
-            echo "### synth attempt (existing production_ready phrase only) ###"
-            python3 - <<'PY' 2>&1 || true
-          TEXT = "Баярлалаа"
-          print("text:", TEXT)
+          pip install -q "transformers>=4.44" torch --index-url https://pypi.org/simple 2>&1 | tail -3
+          python3 - <<'PY' 2>&1 | tee out/12-synth.txt
+          import time, os
+          TEXT = "Баярлалаа"   # 既存 production_ready の g_thanks。新しいモンゴル語は作らない
+          t0 = time.time()
+          try:
+              from transformers import VitsModel, AutoTokenizer
+              import torch, wave, numpy as np
+              mid = "facebook/mms-tts-mon"
+              tok = AutoTokenizer.from_pretrained(mid)
+              model = VitsModel.from_pretrained(mid)
+              t1 = time.time()
+              inputs = tok(TEXT, return_tensors="pt")
+              with torch.no_grad():
+                  out = model(**inputs).waveform
+              t2 = time.time()
+              wav = out.squeeze().numpy()
+              sr = model.config.sampling_rate
+              os.makedirs("out", exist_ok=True)
+              p = "out/mms_mon_thanks.wav"
+              with wave.open(p, "w") as w:
+                  w.setnchannels(1); w.setsampwidth(2); w.setframerate(sr)
+                  w.writeframes((np.clip(wav, -1, 1) * 32767).astype("<i2").tobytes())
+              print("OK synthesized")
+              print("  model      :", mid)
+              print("  load_sec   : %.1f" % (t1 - t0))
+              print("  synth_sec  : %.2f" % (t2 - t1))
+              print("  sample_rate:", sr)
+              print("  duration_s : %.2f" % (len(wav) / sr))
+              print("  bytes      :", os.path.getsize(p))
+          except Exception as e:
+              print("NG:", type(e).__name__, e)
           PY
-          } | tee out/02-synth.txt
 
       - uses: actions/upload-artifact@v4
         if: always()
