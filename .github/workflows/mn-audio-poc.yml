@@ -13,138 +13,154 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - name: 技術的に音を作れるか（apache-2.0 の VITS で実測）
+      - name: モンゴル語TTSを全数あたる（licenseとdatasetを実物で）
         run: |
           mkdir -p out
-          pip install -q torch torchaudio coqui-tts "transformers==4.49.0" 2>&1 | tail -3 || echo "(install failed)"
-          python3 -c "import transformers,sys;print('transformers',transformers.__version__)"
-          python3 - <<'PY' 2>&1 | tee out/30-synth.txt
-          import os, time, wave
-          import numpy as np
-          # 既存 production_ready の本文だけを使う。新しいモンゴル語は1文字も作らない
-          TEXTS = [
-              ("g_thanks", "Баярлалаа"),
-              ("g_hello", "Сайн байна уу?"),
-              ("s_how_much", "Энэ ямар үнэтэй вэ?"),
-          ]
-          try:
-              from huggingface_hub import hf_hub_download
-              from TTS.utils.synthesizer import Synthesizer
-              repo = "Bokhbat/mongolian-vits-tts"
-              t0 = time.time()
-              mp = hf_hub_download(repo, "best_model.pth")
-              cp = hf_hub_download(repo, "config.json")
-              sp = hf_hub_download(repo, "speakers.pth")
-              print("download_sec: %.1f  checkpoint_MB: %.1f" % (time.time() - t0, os.path.getsize(mp) / 1e6))
-              # config.json に作者の環境の path が焼き込まれているので、落とした実物に差し替える
-              import json as _j
-              cfg = _j.load(open(cp))
-              cfg["speakers_file"] = sp
-              if isinstance(cfg.get("model_args"), dict):
-                  cfg["model_args"]["speakers_file"] = sp
-              cp2 = "config_fixed.json"
-              _j.dump(cfg, open(cp2, "w"))
-              t1 = time.time()
-              syn = Synthesizer(tts_checkpoint=mp, tts_config_path=cp2,
-                                tts_speakers_file=sp, use_cuda=False)
-              print("init_sec: %.1f" % (time.time() - t1))
-              names = list(syn.tts_model.speaker_manager.speaker_names)
-              print("speakers:", len(names))
-              sr = syn.output_sample_rate
-              print("sample_rate:", sr)
-              os.makedirs("out", exist_ok=True)
-              total = 0.0
-              for cid, text in TEXTS:
-                  for si in (0, 1):
-                      t2 = time.time()
-                      w = np.array(syn.tts(text, speaker_name=names[si]))
-                      dt = time.time() - t2
-                      total += dt
-                      p = "out/%s_spk%d.wav" % (cid, si)
-                      with wave.open(p, "w") as f:
-                          f.setnchannels(1); f.setsampwidth(2); f.setframerate(sr)
-                          f.writeframes((np.clip(w, -1, 1) * 32767).astype("<i2").tobytes())
-                      print("  %-12s spk=%-2d synth=%.2fs dur=%.2fs bytes=%d"
-                            % (cid, si, dt, len(w) / sr, os.path.getsize(p)))
-              print("avg_synth_sec: %.2f" % (total / (len(TEXTS) * 2)))
-              print("est_140_items_sec: %.0f" % (total / (len(TEXTS) * 2) * 140))
-          except Exception as e:
-              print("NG:", type(e).__name__, str(e)[:600])
-          PY
+          python3 - <<'PY' 2>&1 | tail -200 | tee out/40-all-models.txt
+          import json, urllib.request, urllib.parse, time
 
-      - name: 権利の7層を1画面にまとめる（最後に出す）
-        if: always()
-        run: |
-          python3 - <<'PY' 2>&1 | tee out/31-chain.txt
-          import json, urllib.request
-
-          def api(path):
-              try:
-                  req = urllib.request.Request("https://huggingface.co/api/" + path,
-                                               headers={'User-Agent': 'mn90-poc'})
-                  with urllib.request.urlopen(req, timeout=40) as r:
-                      return json.loads(r.read())
-              except Exception:
-                  return None
+          def api(path, params=None):
+              url = "https://huggingface.co/api/" + path
+              if params:
+                  url += "?" + urllib.parse.urlencode(params)
+              for _ in range(3):
+                  try:
+                      req = urllib.request.Request(url, headers={'User-Agent': 'mn90-poc'})
+                      with urllib.request.urlopen(req, timeout=40) as r:
+                          return json.loads(r.read())
+                  except Exception:
+                      time.sleep(2)
+              return None
 
           def raw(repo, f, kind="models"):
               base = "https://huggingface.co/" + ("datasets/" if kind == "datasets" else "") + repo
               try:
                   req = urllib.request.Request("%s/raw/main/%s" % (base, f),
                                                headers={'User-Agent': 'mn90-poc'})
-                  with urllib.request.urlopen(req, timeout=40) as r:
+                  with urllib.request.urlopen(req, timeout=30) as r:
                       return r.read().decode('utf-8', 'replace')
               except Exception:
                   return ""
 
-          MODELS = [
-              "Bokhbat/mongolian-vits-tts",
-              "Bokhbat/mongolian-vits-myvoice",
-              "mazalaai/TTS_Mongolian",
-              "mendeeb/F5-TTS-mongolian",
-              "antoniow12/speecht5_tts_mongolian",
-              "antoniow12/speecht5_tts_mongolian2",
-              "antoniow12/mongolian-tts2",
-              "bayartsogt/tts_transformer-mn-mbspeech",
-              "k2-fsa/OmniVoice",
-              "facebook/mms-tts-mon",
-          ]
-          print("%-40s %-13s %-26s %-7s %s" % ("MODEL", "WEIGHT-LIC", "DECLARED-DATASET", "GATED", "DATA-WORDS-IN-README"))
-          for m in MODELS:
-              info = api("models/" + m)
-              if not isinstance(info, dict):
-                  print("%-40s %-13s %-26s %-7s %s" % (m[:40], "(取得不可)", "-", "-", "-"))
-                  continue
-              cd = info.get("cardData") or {}
-              lic = str(cd.get("license") or "-")
-              ds = ",".join(cd.get("datasets") or []) or "-"
-              rd = raw(m, "README.md")
-              hits = []
-              low = rd.lower()
-              for w in ("dataset", "training data", "trained on", "corpus", "common voice",
-                        "voice of", "speaker consent", "recorded"):
-                  if w in low:
-                      hits.append(w)
-              print("%-40s %-13s %-26s %-7s %s" % (m[:40], lic[:13], ds[:26],
-                                                   str(info.get("gated")), ",".join(hits) or "(なし)"))
+          # モンゴル語 + 音声合成 のモデルを、名前ではなく tag で全部取る
+          ids = set()
+          for pt in ["text-to-speech", "text-to-audio"]:
+              page = 0
+              while page < 6:
+                  d = api("models", [("filter", "mn"), ("filter", pt),
+                                     ("limit", 100), ("skip", page * 100), ("full", "true")])
+                  if not isinstance(d, list) or not d:
+                      break
+                  for m in d:
+                      if m.get("modelId"):
+                          ids.add(m["modelId"])
+                  if len(d) < 100:
+                      break
+                  page += 1
+          for q in ["mongolian", "mongol", "khalkha", "монгол"]:
+              d = api("models", [("search", q), ("limit", 100)])
+              if isinstance(d, list):
+                  for m in d:
+                      mid = m.get("modelId") or ""
+                      tags = " ".join(m.get("tags", [])).lower()
+                      if "text-to-speech" in tags or "tts" in mid.lower() or "vits" in tags:
+                          ids.add(mid)
 
+          print("走査したモデル数:", len(ids))
           print()
-          print("=== 学習data側 ===")
-          for d in ["mozilla-foundation/common_voice_17_0", "bayartsogt/mbspeech",
-                    "mozilla-foundation/common_voice_13_0"]:
-              info = api("datasets/" + d)
+          rows = []
+          for i in sorted(ids):
+              info = api("models/" + i)
               if not isinstance(info, dict):
-                  print("  %-42s (取得不可 / HFに無い)" % d)
                   continue
               cd = info.get("cardData") or {}
-              print("  %-42s license=%s gated=%s" % (d, cd.get("license"), info.get("gated")))
+              tags = info.get("tags", [])
+              lic = str(cd.get("license") or "")
+              if not lic:
+                  t = [x[8:] for x in tags if x.startswith("license:")]
+                  lic = t[0] if t else ""
+              ds = cd.get("datasets") or []
+              # モンゴル語専用かどうか (多言語モデルは声の出所が更に辿れないので分ける)
+              langs = cd.get("language") or []
+              if isinstance(langs, str):
+                  langs = [langs]
+              mn_only = len(langs) <= 2 and any(str(l).lower() in ("mn", "mon", "mongolian") for l in langs)
+              rows.append({
+                  "id": i, "lic": lic or "(無)", "ds": ",".join(ds) or "(無)",
+                  "dl": info.get("downloads") or 0, "mn_only": mn_only,
+                  "gated": bool(info.get("gated")),
+              })
+
+          PERMISSIVE = ("apache-2.0", "mit", "cc0-1.0", "cc-by-4.0", "bsd", "bsd-3-clause", "cc-by-sa-4.0")
+          print("=== モンゴル語専用 TTS ===")
+          print("%-44s %-14s %-24s %-6s" % ("MODEL", "LICENSE", "DATASET(申告)", "DL"))
+          for r in sorted(rows, key=lambda x: (not x["mn_only"], -x["dl"])):
+              if r["mn_only"]:
+                  print("%-44s %-14s %-24s %-6s" % (r["id"][:44], r["lic"][:14], r["ds"][:24], r["dl"]))
+          print()
+          print("=== 両方そろっている候補 (license が緩い かつ dataset を申告している) ===")
+          hit = [r for r in rows if r["lic"] in PERMISSIVE and r["ds"] != "(無)"]
+          if not hit:
+              print("  無し")
+          for r in hit:
+              print("  %-44s %-14s %s" % (r["id"][:44], r["lic"], r["ds"]))
+          print()
+          print("=== 多言語だがモンゴル語を含む TTS (件数のみ) ===")
+          print("  ", len([r for r in rows if not r["mn_only"]]), "件")
           PY
 
-      - name: 合成の結果をもう一度、最後に出す
+      - name: モンゴル語の音声データ側を全数あたる
         if: always()
         run: |
-          echo "===== 30-synth.txt ====="
-          cat out/30-synth.txt 2>/dev/null || echo "(無し)"
+          python3 - <<'PY' 2>&1 | tail -80 | tee out/41-datasets.txt
+          import json, urllib.request, urllib.parse, time
+
+          def api(path, params=None):
+              url = "https://huggingface.co/api/" + path
+              if params:
+                  url += "?" + urllib.parse.urlencode(params)
+              for _ in range(3):
+                  try:
+                      req = urllib.request.Request(url, headers={'User-Agent': 'mn90-poc'})
+                      with urllib.request.urlopen(req, timeout=40) as r:
+                          return json.loads(r.read())
+                  except Exception:
+                      time.sleep(2)
+              return None
+
+          ids = set(["google/fleurs", "openslr/librispeech_asr", "mozilla-foundation/common_voice_17_0"])
+          for f in [("filter", "mn"), ("search", "mongolian")]:
+              for extra in [[("filter", "text-to-speech")], [("filter", "audio")], []]:
+                  d = api("datasets", [f] + extra + [("limit", 100)])
+                  if isinstance(d, list):
+                      for m in d:
+                          if m.get("id"):
+                              ids.add(m["id"])
+
+          print("走査したデータ数:", len(ids))
+          print("%-52s %-16s %-6s" % ("DATASET", "LICENSE", "GATED"))
+          clean = []
+          for i in sorted(ids):
+              info = api("datasets/" + i)
+              if not isinstance(info, dict):
+                  continue
+              cd = info.get("cardData") or {}
+              lic = cd.get("license")
+              if isinstance(lic, list):
+                  lic = ",".join(lic)
+              lic = str(lic or "(無)")
+              g = bool(info.get("gated"))
+              tags = " ".join(info.get("tags", [])).lower()
+              speechy = "audio" in tags or "speech" in tags or "text-to-speech" in tags
+              if speechy:
+                  print("%-52s %-16s %-6s" % (i[:52], lic[:16], g))
+                  if lic not in ("(無)",) and not g:
+                      clean.append((i, lic))
+          print()
+          print("=== license がはっきりしている音声データ ===")
+          for i, l in clean:
+              print("  %-52s %s" % (i, l))
+          PY
 
       - uses: actions/upload-artifact@v4
         if: always()
