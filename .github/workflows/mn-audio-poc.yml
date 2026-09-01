@@ -16,7 +16,8 @@ jobs:
       - name: 技術的に音を作れるか（apache-2.0 の VITS で実測）
         run: |
           mkdir -p out
-          pip install -q torch torchaudio coqui-tts 2>&1 | tail -3 || echo "(install failed)"
+          pip install -q torch torchaudio coqui-tts "transformers==4.49.0" 2>&1 | tail -3 || echo "(install failed)"
+          python3 -c "import transformers,sys;print('transformers',transformers.__version__)"
           python3 - <<'PY' 2>&1 | tee out/30-synth.txt
           import os, time, wave
           import numpy as np
