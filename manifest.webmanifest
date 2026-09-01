@@ -1,0 +1,16 @@
+{
+  "name": "Mongolian 90",
+  "short_name": "Mongolian 90",
+  "description": "90日でモンゴル語の商談表現を身につける個人用の学習アプリ",
+  "lang": "ja",
+  "dir": "ltr",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f6f7",
+  "theme_color": "#0f5f6b",
+  "icons": [
+    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ]
+}
