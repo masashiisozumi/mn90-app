@@ -2,7 +2,7 @@
   Mongolian 90 — 社長個人β (1ファイル版)
   build-standalone.js が engine/ 言語パック/ UI / 教材を連結して生成する。
   手で編集しない。直すときは元のファイルを直して作り直す。
-  生成元: 教材 140件 / モジュール 25本 / 参考音声 0件
+  生成元: 教材 140件 / モジュール 26本 / 参考音声 0件
 -->
 <!doctype html>
 <html lang="ja">
@@ -475,9 +475,6 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .spk svg{width:1.35em;height:1.35em;flex:none}
 .spk-big{min-height:96px;min-width:180px;font-size:1.12rem;border-radius:var(--radius-card)}
 .spk-big svg{width:2em;height:2em}
-.spk-again{background:var(--sunk);color:var(--dim);border-color:var(--line);
-  min-height:var(--tap);font-size:.84rem;font-weight:600}
-.audio-note{font-size:calc(var(--t-tiny) * var(--fs));color:var(--faint);margin-top:8px}
 .sess-actions{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:20px}
 
 /* 保存(お気に入り)。学習の判定とは別物なので、色も位置も分ける */
@@ -773,17 +770,19 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
     </div>
 
     <div id="answer-box" hidden>
+      <!-- モンゴル語はこの画面の主役。**真ん中に置く。**
+           隣にボタンを並べると、その分だけ答えが横にずれる -->
       <div class="answer-row">
         <div id="answer">—</div>
-        <button id="speak-btn" class="spk" type="button" aria-label="聞く" hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 2.2v2.1a7.7 7.7 0 0 1 0 15.4v2.1a9.8 9.8 0 0 0 0-19.6z"/></svg></button>
       </div>
       <!-- 聞き取りのときだけ、意味をここに出す -->
       <div class="answer-ja" id="answer-ja" hidden></div>
 
+      <!-- 音の操作は**1つだけ。**押すたびに最初から鳴る。
+           ボタンに「合成」と書いてあるので、別に注記を並べなくてよい -->
       <div class="sess-actions">
-        <button id="replay-btn" class="spk spk-again" type="button" hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z"/></svg><span>もう一度聞く</span></button>
+        <button id="speak-btn" class="spk" type="button" hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 2.2v2.1a7.7 7.7 0 0 1 0 15.4v2.1a9.8 9.8 0 0 0 0-19.6z"/></svg><span id="speak-label">参考音声（合成）</span></button>
       </div>
-      <div class="audio-note" id="audio-note" hidden></div>
 
       <!-- 押さない限り、通常の学習の邪魔をしない -->
       <div class="sub-actions">
@@ -3909,7 +3908,16 @@ __m["languages/mn/pack.js"] = { default: __default };
  * **速度は変えない。** 極端に遅くすると母音が別の音になり、
  * 通常の発話と違うものを覚えてしまう。繰り返し聞けることで代える。
  *
- * 音声が1件も無い状態(いまの状態)でも、この層は静かに「無い」と答えるだけで
+ * **鳴らし方は2通りある。順番が決まっている:**
+ *
+ *   1. 焼いてある音声ファイル (Azure などで作った mp3) があれば、それを鳴らす
+ *   2. 無ければ、**端末が持っている読み上げ**でモンゴル語本文を読む (app/speech.js)
+ *
+ * 2 は鍵も通信もアカウントも要らないので、社長が何も設定しなくても音が出る。
+ * あとから 1 の音声を入れれば、画面も学習の仕組みも作り直さずに
+ * 自動で品質の高いほうへ切り替わる。
+ *
+ * どちらも使えない端末では、この層は静かに「無い」と答えるだけで
  * 学習の流れは止まらない。
  */
 
@@ -3921,6 +3929,15 @@ function createAudio(opts = {}) {
   const items = (manifest && manifest.items) || {};
   const base = (manifest && manifest.base) || 'audio/';
   const makeElement = opts.makeElement || (() => new Audio());
+  // 端末の読み上げ。渡されなければ「使えない」として扱う (検査で差し替えられる)
+  const speech = opts.speech || null;
+  /**
+   * id から、いま画面に出ているモンゴル語本文を引く。
+   *
+   * **本文をこの層で持たない。**持つと、教材を直したときに音声用の写しだけが
+   * 古いまま残る。呼ぶたびにカードの現在値を見に行く。
+   */
+  const resolveText = typeof opts.resolveText === 'function' ? opts.resolveText : (() => null);
 
   let elParams = null;
   let unlocked = false;
@@ -3945,11 +3962,38 @@ function createAudio(opts = {}) {
     return a;
   }
 
-  /** その項目の音声があるか。無ければ画面はスピーカーを出さない。 */
-  function has(id) { return !!items[id]; }
+  /** 焼いてある音声ファイルがあるか。 */
+  function hasStatic(id) { return !!items[id]; }
 
-  /** 目録に載っている件数。0 なら「音声なし」の表示にする。 */
+  /** 端末の読み上げで鳴らせるか (本文が取れて、読み上げが使えること)。 */
+  function hasSpeech(id) {
+    if (!speech || !speech.available()) return false;
+    const text = resolveText(id);
+    return !!(text && String(text).trim());
+  }
+
+  /**
+   * その項目を鳴らせるか。**どちらかの方法で鳴らせれば true。**
+   * 画面はこれを見てスピーカーを出す (押しても鳴らないボタンを出さないため)。
+   */
+  function has(id) { return hasStatic(id) || hasSpeech(id); }
+
+  /** 焼いてある音声の件数。0 でも、読み上げが使えれば音は出せる。 */
   function count() { return Object.keys(items).length; }
+
+  /**
+   * その項目をどの方法で鳴らすか。**画面には出さない。**
+   * 聞き取り問題に使ってよいかを決めるためだけに使う。
+   */
+  function qualityFor(id) {
+    if (hasStatic(id)) return 'static';
+    if (!hasSpeech(id)) return 'none';
+    return speech.quality();      // device_mn / device_fallback
+  }
+
+  /** 端末の読み上げが使えるか (項目によらない)。 */
+  function speechAvailable() { return !!(speech && speech.available()); }
+  function speechQuality() { return speech ? speech.quality() : 'none'; }
 
   function srcFor(id) {
     const it = items[id];
@@ -3963,6 +4007,8 @@ function createAudio(opts = {}) {
   function unlock() {
     if (unlocked) return Promise.resolve(false);
     unlocked = true;
+    // 端末の読み上げも、最初の操作の中で1回通しておく
+    if (speech) { try { speech.unlock(); } catch (e) { /* 通らなくても押せば鳴る */ } }
     const a = element();
     try {
       a.src = SILENCE;
@@ -3978,10 +4024,21 @@ function createAudio(opts = {}) {
    * @returns {Promise<'played'|'no_audio'|'blocked'|'error'>}
    */
   function play(id) {
-    if (!has(id)) return Promise.resolve('no_audio');
+    // 焼いてある音声が無ければ、端末の読み上げで鳴らす。
+    // **同じ id を渡すだけで、呼ぶ側は方法を意識しない**
+    if (!hasStatic(id)) {
+      if (!hasSpeech(id)) return Promise.resolve('no_audio');
+      stopElement();
+      currentId = id;
+      const mine = ++token;
+      return speech.speak(resolveText(id))
+        .then(r => (mine === token ? r : 'superseded'));
+    }
     const a = element();
     const mine = ++token;
     currentId = id;
+    // 読み上げが途中なら止める。2つの方法が重ならないようにする
+    if (speech) speech.cancel();
     const src = srcFor(id);
     try {
       // 同じ音なら読み直さず頭に戻す。iOS で読み込みし直すと間が空く
@@ -3994,16 +4051,26 @@ function createAudio(opts = {}) {
     } catch (e) { return Promise.resolve('error'); }
   }
 
-  /** 次の問題へ進むときに必ず呼ぶ。前の音を引きずらない。 */
-  function stop() {
-    token += 1;
-    currentId = null;
+  /** 音の要素だけ止める (読み上げには触らない)。 */
+  function stopElement() {
     const a = elParams;
     if (!a) return;
     try { a.pause(); a.currentTime = 0; } catch (e) { /* 停止できなくても進む */ }
   }
 
+  /**
+   * 次の問題へ進むとき・画面を離れるときに必ず呼ぶ。
+   * **前の音を引きずらない。**焼いた音声も読み上げも、両方止める。
+   */
+  function stop() {
+    token += 1;
+    currentId = null;
+    stopElement();
+    if (speech) speech.cancel();
+  }
+
   function playing() {
+    if (speech && speech.speaking()) return true;
     const a = elParams;
     return !!(a && !a.paused && !a.ended && currentId);
   }
@@ -4015,6 +4082,7 @@ function createAudio(opts = {}) {
 
   return {
     has, count, play, stop, unlock, playing,
+    hasStatic, hasSpeech, qualityFor, speechAvailable, speechQuality,
     get label() { return (manifest && manifest.displayLabel) || '参考音声（合成）'; },
     get voice() { return (manifest && manifest.voice) || null; },
     _srcFor: srcFor,
@@ -4023,6 +4091,189 @@ function createAudio(opts = {}) {
 
 
 __m["app/audio.js"] = { createAudio, SILENCE };
+})();
+
+// ===== app/speech.js =====
+(() => {
+/**
+ * 端末の中の音声合成（Web Speech / speechSynthesis）。
+ *
+ * **鍵も、アカウントも、通信も要らない。** iPhone や PC のブラウザが
+ * もともと持っている読み上げ機能を、そのまま使う。
+ * 社長に設定作業をさせないための第一手段。
+ *
+ * 分かっていること・気をつけていること:
+ *
+ *  - **Safari は最初 getVoices() が空を返す。** あとから voiceschanged が来て
+ *    そろう。1回目が空だっただけで「音声なし」と決めつけない。
+ *  - **最初の1回は利用者の操作の中で鳴らす必要がある。** 学習を始めるタップの
+ *    ついでに一度だけ空の発話を通しておく（unlock）。
+ *  - **cancel してすぐ speak すると詰まることがある。** 必ず cancel してから
+ *    次を積み、鳴っている途中に重ねない。
+ *  - **速度・高さ・音量は触らない。** 端末の声そのままにする。極端に遅くすると
+ *    母音が別の音になり、通常の発話と違うものを覚えてしまう。
+ *
+ * **これは「参考音声（合成）」であって、正しい発音の見本ではない。**
+ * モンゴル語の声が無い端末では、別の言語の声で読み上げることになる。
+ * その場合は品質を区別して記録し、聞き取り問題には使わない
+ * （不自然な音を「聞き取りの正解」として覚えさせないため）。
+ */
+
+/** 声の選び方。上から順に探す。 */
+const EXACT_LOCALE = 'mn-MN';
+const LANG_PREFIX = 'mn';
+
+/**
+ * 品質の区分。**画面には出さない。**内部で聞き取り問題の可否を決めるためだけ。
+ *   device_mn        モンゴル語の声が実際に見つかった
+ *   device_fallback  見つからず、別の声で読ませている
+ *   none             読み上げ自体が使えない
+ */
+const QUALITY = { MN: 'device_mn', FALLBACK: 'device_fallback', NONE: 'none' };
+
+/** その声がモンゴル語か。表記ゆれ (mn-MN / mn_MN / mn) を吸収する。 */
+function isMongolian(voice) {
+  const lang = String((voice && voice.lang) || '').replace('_', '-').toLowerCase();
+  if (!lang) return false;
+  return lang === EXACT_LOCALE.toLowerCase() || lang === LANG_PREFIX || lang.startsWith(LANG_PREFIX + '-');
+}
+
+/**
+ * @param {object} p
+ *   synth      speechSynthesis 相当。省略時は window のものを使う
+ *   Utterance  SpeechSynthesisUtterance 相当。省略時は window のもの
+ *   onEnded    鳴り終わった / 鳴らせなかったときに呼ぶ
+ */
+function createSpeech(p = {}) {
+  const synth = p.synth !== undefined ? p.synth
+    : (typeof window !== 'undefined' ? window.speechSynthesis : null);
+  const Utterance = p.Utterance !== undefined ? p.Utterance
+    : (typeof window !== 'undefined' ? window.SpeechSynthesisUtterance : null);
+
+  const usable = !!(synth && Utterance && typeof synth.speak === 'function');
+
+  let voice = null;         // 見つかった声。null なら端末任せ
+  let resolved = false;     // 一度でも声の一覧を見たか
+  let voiceSettable = true; // この端末で声を指定できるか (一度失敗したら諦める)
+  let unlocked = false;
+  let token = 0;
+
+  /**
+   * 声を選ぶ。**一覧が空でも「無い」と決めない。**
+   * Safari は最初の呼び出しで空を返し、あとから voiceschanged で揃う。
+   */
+  function resolveVoice() {
+    if (!usable) return null;
+    let list = [];
+    try { list = synth.getVoices() || []; } catch (e) { list = []; }
+    if (!list.length) return null;          // まだ揃っていない。resolved にしない
+    resolved = true;
+    voice = list.find(v => String((v.lang || '')).replace('_', '-').toLowerCase() === EXACT_LOCALE.toLowerCase())
+      || list.find(isMongolian)
+      || null;
+    return voice;
+  }
+
+  if (usable && typeof synth.addEventListener === 'function') {
+    // あとから声が揃ったら選び直す
+    synth.addEventListener('voiceschanged', () => { resolveVoice(); });
+  }
+  resolveVoice();
+
+  /**
+   * いまの品質。**呼ぶたびに選び直す**ので、あとから声が揃った場合も拾える。
+   * モンゴル語の声が無くても、読み上げ自体が使えるなら fallback として使う
+   * （「多少おかしくても音がある方がいい」という判断による）。
+   */
+  function quality() {
+    if (!usable) return QUALITY.NONE;
+    if (!voice && !resolved) resolveVoice();
+    // 声を指定できない端末では、どの声で読まれたかを確かめようがない。
+    // 参考として聞くのは構わないが、**聞き取り問題の正解には使わない**
+    if (!voiceSettable) return QUALITY.FALLBACK;
+    return voice ? QUALITY.MN : QUALITY.FALLBACK;
+  }
+
+  function available() { return usable; }
+
+  /**
+   * 最初の利用者操作で1回だけ呼ぶ。以後の自動再生が通りやすくなる。
+   * **失敗しても何も壊さない。**通らない端末では、押したときだけ鳴る。
+   */
+  function unlock() {
+    if (!usable || unlocked) return false;
+    unlocked = true;
+    try {
+      const u = new Utterance('');
+      u.volume = 0;
+      synth.speak(u);
+      if (typeof synth.cancel === 'function') synth.cancel();
+      return true;
+    } catch (e) { return false; }
+  }
+
+  /**
+   * 読み上げる。
+   *
+   * 連打しても重ならない: 先に止めてから1本だけ積む。
+   * @returns {Promise<'played'|'blocked'|'superseded'|'no_audio'>}
+   */
+  function speak(text) {
+    if (!usable || !text) return Promise.resolve('no_audio');
+    const mine = ++token;
+    try { if (typeof synth.cancel === 'function') synth.cancel(); } catch (e) { /* 続ける */ }
+    if (!voice && !resolved) resolveVoice();
+    return new Promise((resolve) => {
+      let done = false;
+      const finish = (r) => {
+        if (done) return;
+        done = true;
+        if (p.onEnded) { try { p.onEnded(); } catch (e) { /* 画面の印を消すだけ */ } }
+        resolve(r);
+      };
+      try {
+        const u = new Utterance(String(text));
+        // **端末の声そのまま。**速度も高さも音量も触らない
+        u.rate = 1; u.pitch = 1; u.volume = 1;
+        u.lang = EXACT_LOCALE;
+        // 声が見つかればそれを指定する。
+        // **ここで失敗しても、音そのものをあきらめない。**
+        // 声の指定が通らない端末では、言語だけ伝えて端末に選ばせる
+        // (「声を選べない」と「音が出ない」は別物。後者にしてはいけない)
+        if (voice && voiceSettable) {
+          try { u.voice = voice; }
+          catch (e) { voiceSettable = false; }
+        }
+        u.onend = () => finish(mine === token ? 'played' : 'superseded');
+        u.onerror = () => finish('blocked');
+        synth.speak(u);
+        // onend が来ない端末があるので、鳴り始めたことだけは返せるようにする
+        if (typeof synth.speaking === 'boolean' && !synth.speaking) {
+          // 直後に speaking が false のままなら、止められている可能性が高い。
+          // ただし断定はしない (onend/onerror が来ればそちらが優先される)
+        }
+      } catch (e) { finish('blocked'); }
+    });
+  }
+
+  /** 次の問題へ進むときに必ず呼ぶ。前の読み上げを引きずらない。 */
+  function cancel() {
+    token += 1;
+    if (!usable) return;
+    try { if (typeof synth.cancel === 'function') synth.cancel(); } catch (e) { /* 進む */ }
+  }
+
+  function speaking() {
+    if (!usable) return false;
+    try { return !!synth.speaking; } catch (e) { return false; }
+  }
+
+  return { available, quality, speak, cancel, unlock, speaking, isMongolian,
+    get voiceName() { return voice ? voice.name : null; } };
+}
+
+
+__m["app/speech.js"] = { createSpeech, isMongolian, QUALITY, EXACT_LOCALE };
 })();
 
 // ===== app/capabilities.js =====
@@ -4034,7 +4285,8 @@ __m["app/audio.js"] = { createAudio, SILENCE };
  * 個別に有無を判定すると必ず食い違う。片方は音のボタンを出し、もう片方は
  * 出さない、という状態になり、押しても鳴らないボタンが残る。
  *
- * **画面側は `caps.audio` だけを見る。** 目録の中身を直接のぞかない。
+ * **画面側は `caps.audio` / `caps.audioFor(id)` だけを見る。**
+ * 目録の中身も、端末の読み上げの有無も、直接のぞかない。
  */
 
 /**
@@ -4043,10 +4295,29 @@ __m["app/audio.js"] = { createAudio, SILENCE };
  */
 function createCapabilities(p = {}) {
   const audio = p.audio || null;
+  /** 古い形の再生層を渡されても落ちないようにする。 */
+  const can = (name) => !!(audio && typeof audio[name] === 'function');
 
-  // 目録に1件でも実体があるか。0件なら「音声という機能自体が無い版」として扱う
-  const audioCount = audio && typeof audio.count === 'function' ? audio.count() : 0;
-  const audioAvailable = audioCount > 0;
+  // 焼いてある音声の件数
+  const audioCount = can('count') ? audio.count() : 0;
+
+  /**
+   * 音を鳴らせるか。**焼いた音声が0件でも、端末が読み上げられるなら使える。**
+   * 社長に設定作業をさせないための判断で、
+   * 「多少おかしくても音がある方がいい」という指示に沿っている。
+   */
+  const audioAvailable = audioCount > 0
+    || (can('speechAvailable') && audio.speechAvailable());
+
+  /**
+   * 聞き取り問題に使ってよいか。**鳴らせることと同じではない。**
+   *
+   * モンゴル語の声が無い端末では、別の言語の声で読み上げることになる。
+   * 参考として聞くぶんにはそれでよいが、**その音を「聞き取りの正解」として
+   * 覚えさせるのは行き過ぎる。**焼いた音声か、モンゴル語の声があるときだけ許す。
+   */
+  const speechQuality = can('speechQuality') ? audio.speechQuality() : 'none';
+  const listeningOk = audioCount > 0 || speechQuality === 'device_mn';
 
   return {
     /** 参考音声が使えるか。false のあいだは音に関するものを画面に一切出さない。 */
@@ -4054,16 +4325,28 @@ function createCapabilities(p = {}) {
     audioCount,
 
     /** その項目の音声が使えるか。機能自体が無ければ必ず false。 */
-    audioFor(id) { return audioAvailable && audio.has(id); },
+    audioFor(id) { return audioAvailable && can('has') && audio.has(id); },
+
+    /** 聞き取り問題を出してよいか (品質の条件つき)。 */
+    listening: listeningOk,
+    /** その項目を聞き取り問題に使ってよいか。 */
+    listeningFor(id) {
+      if (!listeningOk || !can('has') || !audio.has(id)) return false;
+      if (!can('qualityFor')) return false;
+      const k = audio.qualityFor(id);
+      return k === 'static' || k === 'device_mn';
+    },
 
     /** 画面に出す音声の呼び名。人の録音ではないことが分かる言い方だけを返す。 */
     audioLabel: (audio && audio.label) || '参考音声（合成）',
   };
 }
 
-/** 音声が1件も無いときの能力。テストと、読み込みに失敗したときの既定。 */
+/** 音声が1件も使えないときの能力。テストと、読み込みに失敗したときの既定。 */
 const NO_CAPABILITIES = {
-  audio: false, audioCount: 0, audioFor: () => false, audioLabel: '参考音声（合成）',
+  audio: false, audioCount: 0, audioFor: () => false,
+  listening: false, listeningFor: () => false,
+  audioLabel: '参考音声（合成）',
 };
 
 
@@ -4210,6 +4493,7 @@ const { PRESET_PROFILES } = __m["engine/profile.js"];
 const { MODES } = __m["engine/session.js"];
 const mnPack = __m["languages/mn/pack.js"].default;
 const { createAudio } = __m["app/audio.js"];
+const { createSpeech } = __m["app/speech.js"];
 const { createCapabilities } = __m["app/capabilities.js"];
 const { createSettings } = __m["app/settings.js"];
 const { buildReport, BETA_VERSION } = __m["app/diagnostics.js"];
@@ -4239,7 +4523,31 @@ async function loadCurriculum() {
  * 各所で目録を直接のぞくと、片方は音のボタンを出し片方は出さない、という
  * 食い違いが必ず起きる (押しても鳴らないボタンが残る)。
  */
-let audio = createAudio({ manifest: null, onEnded: () => markPlaying(false) });
+/**
+ * 端末の読み上げ。**鍵も通信もアカウントも要らない。**
+ * 焼いてある音声が無いときに、モンゴル語本文をその場で読ませる。
+ */
+const speech = createSpeech({ onEnded: () => markPlaying(false) });
+
+/**
+ * id から、いま画面に出ているモンゴル語本文を引く。
+ *
+ * **本文を音声層に写さない。**写すと、教材を直したときに音声用の写しだけが
+ * 古いまま残る。いつでもカードの現在値を見に行く。
+ */
+function answerTextOf(id) {
+  const c = state && state.cards ? state.cards[id] : null;
+  return c ? c.answerKey : null;
+}
+
+function makeAudio(manifest) {
+  return createAudio({
+    manifest, speech, resolveText: answerTextOf,
+    onEnded: () => markPlaying(false),
+  });
+}
+
+let audio = makeAudio(null);
 let caps = createCapabilities({ audio });
 async function loadAudio() {
   let manifest = window.__MN90_AUDIO || null;
@@ -4249,8 +4557,22 @@ async function loadAudio() {
       manifest = await res.json();
     }
   } catch (e) { manifest = null; }
-  audio = createAudio({ manifest, onEnded: () => markPlaying(false) });
+  audio = makeAudio(manifest);
   caps = createCapabilities({ audio });
+}
+
+/**
+ * 声があとから揃うことがある (Safari は最初 getVoices() が空)。
+ * そのときは能力を判定し直し、いま出ている画面を描き直す。
+ * **1回空だっただけで「音声なし」のまま固定しない。**
+ */
+function refreshAudioCapabilities() {
+  const before = caps.audio;
+  caps = createCapabilities({ audio });
+  if (caps.audio !== before && today) {
+    if (currentScreen === 'home') renderHome();
+    else if (currentScreen === 'session') nextItem();
+  }
 }
 
 /** 教材を読み込み、まだカード化していないものを取り込む。 */
@@ -5086,12 +5408,14 @@ function aboutSections() {
     ['参考音声について', caps.audio
       ? '流れるのは合成音声で、人が録音したものではありません。まねる手本としては使えますが、'
         + '唯一の正解の音ではありません。現地で実際に聞いた音のほうを優先してください。'
-      : '音声はまだ1件も入っていません。そのため音を出すボタンや、音を聞いて答える問題は'
-        + '一切出てきません。あとから入る音声は合成音声で、人が録音したものではありません。'],
+        + (caps.listening ? '' : 'この端末にはモンゴル語の声が入っていないため、'
+          + '別の言語の声で読み上げています。音を聞いて答える問題は出していません。')
+      : 'この端末では音を出せないため、音のボタンや、音を聞いて答える問題は'
+        + '一切出てきません。学習そのものは今までどおり進められます。'],
     ['発音の採点はしません', 'モンゴル語は資料の少ない言語で、AIの発音判定は当てになりません。'
       + '誤った音を「正解」として覚えてしまうほうが有害なので、採点機能は作りません。'
       + '音声が入っても、できるのは「聞く」「繰り返し聞く」「自分でまねる」までです。'],
-    ['まだ入っていないもの', '参考音声、キリル文字の練習（Day1〜3の分）、運転中に聞くモード、'
+    ['まだ入っていないもの', 'キリル文字の練習（Day1〜3の分）、運転中に聞くモード、'
       + 'シャドーイングやロールプレイ、Day15以降の教材。'],
     ['教材の品質について', 'この教材は、人のモンゴル語話者が確認したものではありません。'
       + '複数のAIによる検査と規則検査を通しただけです。'
@@ -5132,7 +5456,9 @@ function renderAbout(root) {
   for (const [label, value] of [
     ['版', BETA_VERSION],
     ['教材', `${Object.keys(state.cards).length} 件`],
-    ['参考音声', caps.audio ? `${caps.audioCount} 件` : 'まだ入っていません'],
+    // 件数を出すと、端末の読み上げで鳴っているのに「0件」と見えてしまう
+    ['参考音声', caps.audioCount > 0 ? `${caps.audioCount} 件`
+      : caps.audio ? '使えます' : 'この端末では使えません'],
   ]) {
     info.appendChild(el('div', { class: 'stat' }, [el('span', { text: label }), el('i', { text: value })]));
   }
@@ -5526,9 +5852,11 @@ function planFor(modeId) {
   const base = {
     modeId, cards, events: state.events || [], freshCards: fresh,
     learningDayIso: today.today, nowIso: new Date().toISOString(), day: today.day,
-    // 音声という機能自体が使えるか。false なら聞き取り問題は1問も作られない
-    audioAvailable: caps.audio,
-    hasAudio: id => caps.audioFor(id),
+    // **聞き取り問題に使ってよいか。**単に鳴らせるかとは別。
+    // モンゴル語の声が無い端末では、別の言語の声で読み上げることになるので、
+    // 参考として聞くのは許すが、聞き取りの正解には使わない
+    audioAvailable: caps.listening,
+    hasAudio: id => caps.listeningFor(id),
     // 「その日すでに出した新規語」を数えるための暦日の決め方。
     // 時間帯の扱いはアプリ側の責務なので、engine には関数として渡す
     dayOf: localDayOf,
@@ -5692,12 +6020,10 @@ function nextItem() {
   $('answer-ja').textContent = listening ? card.promptKey : '';
   $('answer-ja').hidden = !listening;
 
-  // 音声が使えない版では、音に関するものを一切出さない
+  // 音声が使えない版では、音に関するものを一切出さない。
+  // 押す場所は1つだけ。ボタン自身が「参考音声（合成）」と名乗る
   $('speak-btn').hidden = !hasAudio;
-  $('replay-btn').hidden = !hasAudio;
-  const note = $('audio-note');
-  note.textContent = hasAudio ? caps.audioLabel : '';
-  note.hidden = !hasAudio;
+  $('speak-label').textContent = caps.audioLabel;
 
   renderFav(card);
 
@@ -5822,7 +6148,7 @@ function playCurrent() {
  * **「鳴らそうとしている」ことだけ**を出す。
  */
 function markPlaying(on) {
-  for (const id of ['speak-btn', 'replay-btn', 'listen-big']) {
+  for (const id of ['speak-btn', 'listen-big']) {
     const b = $(id);
     if (b) b.classList.toggle('is-playing', !!on);
   }
@@ -6753,8 +7079,15 @@ function goHome() {
 }
 
 function wire() {
+  // Safari は最初 getVoices() が空を返し、あとから揃う。
+  // 揃ったら判定し直す (1回空だっただけで「音声なし」に固定しない)
+  if (window.speechSynthesis && window.speechSynthesis.addEventListener) {
+    window.speechSynthesis.addEventListener('voiceschanged', refreshAudioCapabilities);
+  }
   // 押す場所を1つにする。学習の長さを選ばせない
-  $('start-btn').addEventListener('click', () => { markStartTap(); startSession(null); });
+  // 最初のタップの中で音を1回通しておく。iOS はこれをしないと、
+  // あとから画面が自動で音を出そうとしても止められる
+  $('start-btn').addEventListener('click', () => { audio.unlock(); markStartTap(); startSession(null); });
   // 練習は「その他」からも、ホームの下からも1タップで開ける
   $('practice-btn').addEventListener('click', () => openSheet('practice'));
   $('next-lesson').addEventListener('click', continueLesson);
@@ -6768,7 +7101,6 @@ function wire() {
   $('field-open').addEventListener('click', openFieldRow);
   // 参考音声。押せば必ず鳴る。速度は変えない (遅くすると別の音になるため)
   $('speak-btn').addEventListener('click', playCurrent);
-  $('replay-btn').addEventListener('click', playCurrent);
   $('listen-big').addEventListener('click', playCurrent);
   $('fav-btn').addEventListener('click', () => {
     const card = currentCard();
