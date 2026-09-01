@@ -6,98 +6,130 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  probe:
+  build-audio:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
-      - name: FLEURS モンゴル語の中身を実測する
-        run: |
-          mkdir -p out
-          pip install -q "datasets<4" soundfile numpy 2>&1 | tail -2 || true
-          python3 - <<'PY' 2>&1 | tail -50 | tee out/90-fleurs-mn.txt
-          import json, urllib.request
-          def get(u):
-              try:
-                  req = urllib.request.Request(u, headers={'User-Agent': 'mn90-poc'})
-                  with urllib.request.urlopen(req, timeout=45) as r:
-                      return json.loads(r.read())
-              except Exception as e:
-                  return {"_err": str(e)[:120]}
-
-          # まず「モンゴル語ぶんが本当に入っているか」を、ファイル一覧から確かめる
-          info = get("https://huggingface.co/api/datasets/google/fleurs")
-          sib = [s.get("rfilename", "") for s in (info.get("siblings") or [])]
-          mn = [f for f in sib if "mn_mn" in f or "/mn" in f]
-          print("FLEURS のファイル総数:", len(sib))
-          print("モンゴル語 (mn_mn) のファイル:", len(mn))
-          for f in mn[:12]:
-              print("   ", f)
-
-          print()
-          print("=== 実際に読み込んで、時間・話者・標本化周波数を数える ===")
-          try:
-              from datasets import load_dataset
-              import numpy as np
-              ds = load_dataset("google/fleurs", "mn_mn", split="train", streaming=True)
-              total = 0.0; n = 0; srs = set(); genders = {}; ids = set()
-              for ex in ds:
-                  a = ex.get("audio") or {}
-                  arr = a.get("array"); sr = a.get("sampling_rate")
-                  if arr is None or not sr: continue
-                  total += len(arr) / sr; n += 1; srs.add(sr)
-                  g = ex.get("gender"); genders[g] = genders.get(g, 0) + 1
-                  if ex.get("id") is not None: ids.add(ex["id"])
-                  if n >= 300: break
-              print("読んだ件数:", n)
-              print("標本化周波数:", srs)
-              print("平均の長さ: %.2f 秒" % (total / max(1, n)))
-              print("300件で %.1f 分" % (total / 60))
-              print("gender の内訳:", genders)
-              print()
-              print("※ FLEURS は話者IDを公開していない。gender しか無い。")
-              print("  → 1人の声で揃えて学習することが、そもそもできるか分からない")
-          except Exception as e:
-              print("NG:", type(e).__name__, str(e)[:400])
-          PY
-
-      - name: FLEURS の利用条件が書かれた一次情報を探す
-        if: always()
-        run: |
-          python3 - <<'PY' 2>&1 | tail -40 | tee out/91-terms.txt
-          import re, urllib.request
-          def raw(u):
-              try:
-                  req = urllib.request.Request(u, headers={'User-Agent': 'mn90-poc'})
-                  with urllib.request.urlopen(req, timeout=45) as r:
-                      return r.read().decode('utf-8', 'replace')
-              except Exception as e:
-                  return "(ERR %s)" % e
-
-          KEY = ("consent", "voice", "likeness", "synthes", "clone", "tts",
-                 "text-to-speech", "permission", "personal data", "privacy", "attribut")
-          for name, url in [
-              ("FLEURS card", "https://huggingface.co/datasets/google/fleurs/raw/main/README.md"),
-              ("FLoRes README", "https://raw.githubusercontent.com/facebookresearch/flores/main/README.md"),
-          ]:
-              print("\n" + "=" * 70)
-              print(name)
-              t = raw(url)
-              if t.startswith("(ERR"):
-                  print("  ", t[:120]); continue
-              lines = [re.sub(r"\s+", " ", l).strip() for l in re.split(r"[\n。.]", re.sub(r"<[^>]+>", " ", t))]
-              hits = [l for l in lines if 20 < len(l) < 240 and any(k in l.lower() for k in KEY)]
-              if not hits:
-                  print("   声の利用条件に触れた記述は1つも無い")
-              for l in hits[:10]:
-                  print("  " + l[:220])
-          PY
-
-      - uses: actions/upload-artifact@v4
-        if: always()
+      - uses: actions/checkout@v4
         with:
-          name: mn-audio-poc
-          path: out/
-          retention-days: 7
+          ref: audio-poc
+
+      - name: license を一次情報で再確認する
+        run: |
+          python3 - <<'PY' 2>&1 | tee license-check.txt
+          import json, urllib.request
+          def get(u, raw=False):
+              req = urllib.request.Request(u, headers={'User-Agent': 'mn90'})
+              with urllib.request.urlopen(req, timeout=40) as r:
+                  b = r.read()
+                  return b.decode('utf-8', 'replace') if raw else json.loads(b)
+          info = get("https://huggingface.co/api/models/facebook/mms-tts-mon")
+          cd = info.get("cardData") or {}
+          print("model   :", info.get("id"))
+          print("license :", cd.get("license"), "|",
+                [t for t in info.get("tags", []) if t.startswith("license:")])
+          print("pipeline:", cd.get("pipeline_tag") or [t for t in info.get("tags", []) if "text-to-speech" in t])
+          rd = get("https://huggingface.co/facebook/mms-tts-mon/raw/main/README.md", raw=True)
+          for ln in rd.split("\n")[:20]:
+              if ln.strip(): print("  |", ln[:110])
+          assert (cd.get("license") or "").lower() == "cc-by-nc-4.0", "license が想定と違う。止める"
+          print()
+          print("確認: CC BY-NC 4.0。非商用利用に限り、表示(attribution)を条件に利用できる")
+          PY
+
+      - name: 140件を合成する
+        run: |
+          sudo apt-get -qq update >/dev/null 2>&1 || true
+          sudo apt-get -qq install -y ffmpeg >/dev/null 2>&1
+          pip install -q "transformers>=4.44" torch numpy 2>&1 | tail -2
+          mkdir -p audio-out
+          python3 - <<'PY' 2>&1 | tail -60 | tee synth-log.txt
+          import json, os, time, wave, subprocess, hashlib
+          import numpy as np
+          import torch
+          from transformers import VitsModel, AutoTokenizer
+
+          MODEL = "facebook/mms-tts-mon"
+          texts = json.load(open("mn-texts.json", encoding="utf-8"))
+          t0 = time.time()
+          tok = AutoTokenizer.from_pretrained(MODEL)
+          model = VitsModel.from_pretrained(MODEL)
+          model.eval()
+          sr = model.config.sampling_rate
+          print("model 読み込み: %.1f 秒 / %d Hz / %d 件" % (time.time() - t0, sr, len(texts)))
+
+          os.makedirs("audio-out", exist_ok=True)
+          rows = []
+          t1 = time.time()
+          for i, (cid, rec) in enumerate(sorted(texts.items())):
+              text = rec["mn"]
+              with torch.no_grad():
+                  wav = model(**tok(text, return_tensors="pt")).waveform.squeeze().numpy()
+              # 端の無音を削り、音量をそろえる (割れない範囲で)
+              peak = float(np.max(np.abs(wav))) or 1.0
+              wav = wav / peak * 0.85
+              nz = np.where(np.abs(wav) > 0.01)[0]
+              if len(nz):
+                  a = max(0, nz[0] - int(sr * 0.05)); b = min(len(wav), nz[-1] + int(sr * 0.15))
+                  wav = wav[a:b]
+              raw = "audio-out/%s.wav" % cid
+              with wave.open(raw, "w") as w:
+                  w.setnchannels(1); w.setsampwidth(2); w.setframerate(sr)
+                  w.writeframes((np.clip(wav, -1, 1) * 32767).astype("<i2").tobytes())
+              mp3 = "audio-out/%s.mp3" % cid
+              subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", raw,
+                              "-codec:a", "libmp3lame", "-b:a", "48k", "-ac", "1", "-ar", "24000", mp3],
+                             check=True)
+              os.remove(raw)
+              n = os.path.getsize(mp3)
+              h = hashlib.sha256(open(mp3, "rb").read()).hexdigest()
+              rows.append({"id": cid, "bytes": n, "sha256": h,
+                           "duration": round(len(wav) / sr, 3), "contentRevision": rec["rev"]})
+              if (i + 1) % 40 == 0:
+                  print("  %d 件 (%.0f 秒経過)" % (i + 1, time.time() - t1))
+          dt = time.time() - t1
+          total = sum(r["bytes"] for r in rows)
+          print("合成 %d 件 / %.1f 秒 (1件 %.2f 秒) / 合計 %.2f MB"
+                % (len(rows), dt, dt / len(rows), total / 1e6))
+          print("最短 %.2f 秒 / 最長 %.2f 秒"
+                % (min(r["duration"] for r in rows), max(r["duration"] for r in rows)))
+          json.dump({"model": MODEL, "license": "cc-by-nc-4.0", "sampleRate": sr,
+                     "format": "mp3", "bitrateKbps": 48, "generatedAt":
+                     time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                     "synthSeconds": round(dt, 1), "totalBytes": total, "items": rows},
+                    open("audio-out/index.json", "w"), ensure_ascii=False, indent=1)
+          PY
+
+      - name: 中身をあらためて検査する
+        run: |
+          python3 - <<'PY' 2>&1 | tail -25 | tee quality-log.txt
+          import json, os, subprocess
+          idx = json.load(open("audio-out/index.json"))
+          bad = []
+          for r in idx["items"]:
+              p = "audio-out/%s.mp3" % r["id"]
+              if not os.path.exists(p) or os.path.getsize(p) < 512:
+                  bad.append((r["id"], "小さすぎる")); continue
+              head = open(p, "rb").read(4)
+              if not (head[:3] == b"ID3" or (head[0] == 0xFF and (head[1] & 0xE0) == 0xE0)):
+                  bad.append((r["id"], "mp3として読めない"))
+              if r["duration"] < 0.25: bad.append((r["id"], "短すぎる"))
+              if r["duration"] > 20: bad.append((r["id"], "長すぎる"))
+          print("検査 %d 件 / 問題 %d 件" % (len(idx["items"]), len(bad)))
+          for b in bad[:20]: print("  !", b)
+          print("合計 %.2f MB / 平均 %.1f KB"
+                % (idx["totalBytes"] / 1e6, idx["totalBytes"] / len(idx["items"]) / 1e3))
+          PY
+
+      - name: 生成した音声をブランチへ置く
+        run: |
+          git config user.name "mn90-audio-bot"
+          git config user.email "noreply@github.com"
+          git checkout -B audio-assets
+          git add -f audio-out license-check.txt synth-log.txt quality-log.txt
+          git commit -q -m "facebook/mms-tts-mon で 140件を合成 (CC BY-NC 4.0 / 非商用)" || echo "変更なし"
+          git push -f origin audio-assets
+          echo "pushed to audio-assets"
