@@ -11,108 +11,88 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
-      - name: モンゴル語音声データの出所を、要点だけ抜き出す
+      - name: FLEURS モンゴル語の中身を実測する
         run: |
           mkdir -p out
-          python3 - <<'PY' 2>&1 | tail -120 | tee out/80-provenance.txt
-          import json, re, urllib.request, urllib.parse
-
-          def get(url, raw=False):
+          pip install -q "datasets<4" soundfile numpy 2>&1 | tail -2 || true
+          python3 - <<'PY' 2>&1 | tail -50 | tee out/90-fleurs-mn.txt
+          import json, urllib.request
+          def get(u):
               try:
-                  req = urllib.request.Request(url, headers={'User-Agent': 'mn90-poc'})
+                  req = urllib.request.Request(u, headers={'User-Agent': 'mn90-poc'})
                   with urllib.request.urlopen(req, timeout=45) as r:
-                      b = r.read()
-                      return b.decode('utf-8', 'replace') if raw else json.loads(b)
+                      return json.loads(r.read())
               except Exception as e:
-                  return ("(ERR %s)" % e) if raw else None
+                  return {"_err": str(e)[:120]}
 
-          ids = set(["google/fleurs", "Blgn94/mongolian-stt-dataset",
-                     "Otgonbaatar/Mongolian_number_1-10", "btsee/mbspeech_mn",
-                     "Sodkhuu/Mongolian_audios", "Tsedee/monsub-mongolian-asr",
-                     "shunyalabs/mongolian-speech-dataset", "Bokhbat/mongolian-tts-dataset",
-                     "Enkhmanlai/common-voice-mongolian-validated"])
-          for f in [[("filter", "mn")], [("search", "mongolian")]]:
-              for extra in [[("filter", "audio")], [("filter", "text-to-speech")], []]:
-                  d = get("https://huggingface.co/api/datasets?" +
-                          urllib.parse.urlencode(f + extra + [("limit", 100)]))
-                  if isinstance(d, list):
-                      for m in d:
-                          if m.get("id"): ids.add(m["id"])
-
-          # 出所を示す文だけを抜く。全文は長いので載せない
-          KEY = ("record", "speaker", "volunteer", "consent", "collect", "commission",
-                 "crowdsourc", "bible", "broadcast", "youtube", "scrap", "narrator",
-                 "professional", "studio", "permission", "copyright", "hour", "source")
-          print("%-44s %-14s %s" % ("DATASET", "LICENSE", "出所の記述"))
-          print("-" * 100)
-          rows = []
-          for i in sorted(ids):
-              info = get("https://huggingface.co/api/datasets/" + i)
-              if not isinstance(info, dict): continue
-              tags = " ".join(info.get("tags", [])).lower()
-              if not ("audio" in tags or "speech" in tags): continue
-              cd = info.get("cardData") or {}
-              lic = cd.get("license")
-              if isinstance(lic, list): lic = ",".join(lic)
-              lic = str(lic or "(無)")
-              rd = get("https://huggingface.co/datasets/%s/raw/main/README.md" % i, raw=True) or ""
-              sents = []
-              for ln in re.split(r"[\n。.]", rd):
-                  l = ln.strip()
-                  if 20 < len(l) < 200 and any(k in l.lower() for k in KEY):
-                      sents.append(l)
-              rows.append((i, lic, sents))
-              print("%-44s %-14s %s" % (i[:44], lic[:14],
-                    (sents[0][:60] if sents else "(出所の記述なし)")))
+          # まず「モンゴル語ぶんが本当に入っているか」を、ファイル一覧から確かめる
+          info = get("https://huggingface.co/api/datasets/google/fleurs")
+          sib = [s.get("rfilename", "") for s in (info.get("siblings") or [])]
+          mn = [f for f in sib if "mn_mn" in f or "/mn" in f]
+          print("FLEURS のファイル総数:", len(sib))
+          print("モンゴル語 (mn_mn) のファイル:", len(mn))
+          for f in mn[:12]:
+              print("   ", f)
 
           print()
-          print("=== license がある候補の、出所の記述を全部 ===")
-          for i, lic, sents in rows:
-              if lic == "(無)":
-                  continue
-              print("\n--- %s (%s) ---" % (i, lic))
-              if not sents:
-                  print("   出所の記述が1つも無い")
-              for s in sents[:8]:
-                  print("   " + s[:180])
+          print("=== 実際に読み込んで、時間・話者・標本化周波数を数える ===")
+          try:
+              from datasets import load_dataset
+              import numpy as np
+              ds = load_dataset("google/fleurs", "mn_mn", split="train", streaming=True)
+              total = 0.0; n = 0; srs = set(); genders = {}; ids = set()
+              for ex in ds:
+                  a = ex.get("audio") or {}
+                  arr = a.get("array"); sr = a.get("sampling_rate")
+                  if arr is None or not sr: continue
+                  total += len(arr) / sr; n += 1; srs.add(sr)
+                  g = ex.get("gender"); genders[g] = genders.get(g, 0) + 1
+                  if ex.get("id") is not None: ids.add(ex["id"])
+                  if n >= 300: break
+              print("読んだ件数:", n)
+              print("標本化周波数:", srs)
+              print("平均の長さ: %.2f 秒" % (total / max(1, n)))
+              print("300件で %.1f 分" % (total / 60))
+              print("gender の内訳:", genders)
+              print()
+              print("※ FLEURS は話者IDを公開していない。gender しか無い。")
+              print("  → 1人の声で揃えて学習することが、そもそもできるか分からない")
+          except Exception as e:
+              print("NG:", type(e).__name__, str(e)[:400])
           PY
 
-      - name: FLEURS の大元 (論文と配布元) を確かめる
+      - name: FLEURS の利用条件が書かれた一次情報を探す
         if: always()
         run: |
-          python3 - <<'PY' 2>&1 | tail -60 | tee out/81-fleurs.txt
+          python3 - <<'PY' 2>&1 | tail -40 | tee out/91-terms.txt
           import re, urllib.request
-
-          def raw(url):
+          def raw(u):
               try:
-                  req = urllib.request.Request(url, headers={'User-Agent': 'mn90-poc'})
+                  req = urllib.request.Request(u, headers={'User-Agent': 'mn90-poc'})
                   with urllib.request.urlopen(req, timeout=45) as r:
                       return r.read().decode('utf-8', 'replace')
               except Exception as e:
                   return "(ERR %s)" % e
 
-          KEY = ("record", "speaker", "licen", "cc-by", "creative commons", "collect",
-                 "commission", "native", "hour", "consent", "annotat", "crowd")
+          KEY = ("consent", "voice", "likeness", "synthes", "clone", "tts",
+                 "text-to-speech", "permission", "personal data", "privacy", "attribut")
           for name, url in [
               ("FLEURS card", "https://huggingface.co/datasets/google/fleurs/raw/main/README.md"),
-              ("FLEURS 論文 (arXiv abs)", "https://arxiv.org/abs/2205.12446"),
-              ("XTREME-S 配布元", "https://raw.githubusercontent.com/google-research/xtreme/master/README.md"),
+              ("FLoRes README", "https://raw.githubusercontent.com/facebookresearch/flores/main/README.md"),
           ]:
-              print("\n" + "=" * 72)
+              print("\n" + "=" * 70)
               print(name)
               t = raw(url)
               if t.startswith("(ERR"):
                   print("  ", t[:120]); continue
-              t = re.sub(r"<[^>]+>", " ", t)
-              lines = [re.sub(r"\s+", " ", l).strip() for l in re.split(r"[\n。.]", t)]
-              hits = [l for l in lines if 25 < len(l) < 260 and any(k in l.lower() for k in KEY)]
-              seen = set()
-              for l in hits[:14]:
-                  if l in seen: continue
-                  seen.add(l)
-                  print("  " + l[:230])
+              lines = [re.sub(r"\s+", " ", l).strip() for l in re.split(r"[\n。.]", re.sub(r"<[^>]+>", " ", t))]
+              hits = [l for l in lines if 20 < len(l) < 240 and any(k in l.lower() for k in KEY)]
+              if not hits:
+                  print("   声の利用条件に触れた記述は1つも無い")
+              for l in hits[:10]:
+                  print("  " + l[:220])
           PY
 
       - uses: actions/upload-artifact@v4
