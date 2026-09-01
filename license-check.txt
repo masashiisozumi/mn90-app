@@ -1,0 +1,19 @@
+model   : facebook/mms-tts-mon
+license : cc-by-nc-4.0 | ['license:cc-by-nc-4.0']
+pipeline: text-to-speech
+  | ---
+  | license: cc-by-nc-4.0
+  | tags:
+  | - mms
+  | - vits
+  | pipeline_tag: text-to-speech
+  | ---
+  | # Massively Multilingual Speech (MMS): Mongolian Text-to-Speech
+  | This repository contains the **Mongolian (mon)** language text-to-speech (TTS) model checkpoint.
+  | This model is part of Facebook's [Massively Multilingual Speech](https://arxiv.org/abs/2305.13516) project, ai
+  | provide speech technology across a diverse range of languages. You can find more details about the supported l
+  | and their ISO 639-3 codes in the [MMS Language Coverage Overview](https://dl.fbaipublicfiles.com/mms/misc/lang
+  | and see all MMS-TTS checkpoints on the Hugging Face Hub: [facebook/mms-tts](https://huggingface.co/models?sort
+  | MMS-TTS is available in the 🤗 Transformers library from version 4.33 onwards.
+
+確認: CC BY-NC 4.0。非商用利用に限り、表示(attribution)を条件に利用できる

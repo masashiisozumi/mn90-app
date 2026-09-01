@@ -1,0 +1,11 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/762 [00:00<?, ?it/s]Loading weights:  58%|█████▊    | 439/762 [00:00<00:00, 4387.53it/s]Loading weights: 100%|██████████| 762/762 [00:00<00:00, 4458.02it/s]
+model 読み込み 3.8 秒 / 16000 Hz / 140 件 / 速さ 0.85
+  50 件
+  100 件
+1 回目: 浮いているもの 3 件 → 作り直す
+作り直しが要るものは無し (2 回目で安定)
+合成 140 件 / 61.2 秒 / 合計 0.84 MB
+長さ 最短 0.30 秒 / 最長 2.50 秒
+1文字あたり 最短 0.066 秒 / 中央 0.123 秒 / 最長 0.240 秒
+作り直した件数: 3
