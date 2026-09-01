@@ -4883,6 +4883,9 @@ const SCREENS = ['onboarding', 'home', 'more', 'sheet', 'session', 'summary', 'c
 let currentScreen = 'home';
 function showScreen(name) {
   currentScreen = name;
+  // 完了画面から離れたら、案内の書き換えを止めて消す。
+  // 残しておくと、次に完了画面を開いた一瞬だけ前回の文字が見える
+  if (name !== 'summary') { relearnNoteOn = false; paintRelearnNote(); }
   for (const s of SCREENS) $(s).hidden = (s !== name);
   for (const s of SCREENS) {
     const node = $(s + '-dock');
@@ -6299,8 +6302,14 @@ function nextItem() {
   $('keyhint').textContent = introduce
     ? 'Space = 次へ' : 'Space = 答え / ← 言えなかった / → 言えた';
 
-  $('progress').textContent = `${qIndex + 1} / ${queue.length}`;
-  $('progress-bar').style.width = `${(qIndex / queue.length) * 100}%`;
+  // **ホームで約束した数と、同じ数を出す。**
+  // ホームは「5問だけ進める」と言っているのに、ここで「1 / 30」と出ると
+  // 話が違う。1日の総数はレッスンの終わりの画面 (今日 5 / 30 問) が持つ。
+  // 数え方を変えただけで、出す順も中身も engine のまま。
+  const inLesson = Math.max(1, lessonEnd - lessonStart);
+  const donePos = Math.min(qIndex - lessonStart, inLesson);
+  $('progress').textContent = `${donePos + 1} / ${inLesson}`;
+  $('progress-bar').style.width = `${(donePos / inLesson) * 100}%`;
 
   // T2: 表示時刻を実測する
   shownAt = performance.now();
@@ -6809,13 +6818,49 @@ function perfectLabel(stats) {
  * その仕組みを知らないと「間違えたまま流れた」と感じるので、1行だけ出す。
  * **時刻は engine が決めた予定をそのまま読むだけ。**画面では計算しない。
  */
-function relearnNote() {
-  if (today.day == null) return '';
+function relearnInfo() {
+  if (today.day == null) return { text: '', nextAt: null };
   const cards = Object.values(state.cards);
   const m = engine.mistakes({ cards, nowIso: new Date().toISOString(), learningDayIso: today.today });
-  if (m.ready.length) return '「練習 → 間違えた表現」から、いま出せます';
-  if (m.nextAt) return `${formatTime(m.nextAt)}ごろから「練習 → 間違えた表現」で出せます`;
-  return '';
+  if (m.ready.length) return { text: '「練習 → 間違えた表現」から、いま出せます', nextAt: null };
+  if (m.nextAt) {
+    return { text: `${formatTime(m.nextAt)}ごろから「練習 → 間違えた表現」で出せます`, nextAt: m.nextAt };
+  }
+  return { text: '', nextAt: null };
+}
+
+/**
+ * 完了画面を開いたまま予定の時刻をまたいだときに、**古い案内を残さない。**
+ *
+ * 「19:25ごろから出せます」と書いたまま 19:25 を過ぎると、
+ * もう出せるのに待たされていると読める。1行しか無い案内なので、そこが嘘になると
+ * 「言えなかったものは戻ってくる」という約束そのものが疑わしくなる。
+ *
+ * そこで、予定の時刻に自分で書き換える。iPhone では画面を消している間
+ * タイマーが止まることがあるので、戻ってきたときにも描き直す。
+ * **予定そのもの (3/8/15分) は engine の担当で、ここでは触らない。**
+ */
+let relearnTimer = null;
+let relearnNoteOn = false;   // 完了画面で案内を出している最中か
+const RELEARN_RECHECK_MAX_MS = 15 * 60 * 1000;
+
+function clearRelearnTimer() {
+  if (relearnTimer) { clearTimeout(relearnTimer); relearnTimer = null; }
+}
+
+function paintRelearnNote() {
+  clearRelearnTimer();
+  const row = $('done-back');
+  if (!row) return;
+  if (!relearnNoteOn) { row.textContent = ''; row.hidden = true; return; }
+  const info = relearnInfo();
+  row.textContent = info.text;
+  row.hidden = !info.text;
+  if (!info.nextAt) return;
+  const ms = new Date(info.nextAt).getTime() - Date.now();
+  // 時刻を過ぎているのに待ちのままなら、engine の判断が正。
+  // 何度も呼び直して電池を使わないよう、そこでは張り直さない。
+  if (ms > 0) relearnTimer = setTimeout(paintRelearnNote, Math.min(ms + 1000, RELEARN_RECHECK_MAX_MS));
 }
 
 /**
@@ -6891,10 +6936,8 @@ function showCheer(p) {
   // 「前より言えた」があればそちらを優先して出す (事実のほうが励ましより効く)
   // 言えなかったものが、いつ・どこで戻ってくるか。
   // **責めない。**「また出ます」という事実だけを、engine の予定から出す
-  const backRow = $('done-back');
-  const backText = p.ng > 0 ? relearnNote() : '';
-  backRow.textContent = backText;
-  backRow.hidden = !backText;
+  relearnNoteOn = p.ng > 0;
+  paintRelearnNote();
 
   const note = $('done-note');
   const text = p.improved || p.note || '';
@@ -7418,7 +7461,9 @@ function wire() {
   // 別のアプリへ切り替えたとき、音を鳴らしっぱなしにしない。
   // 戻ってきたら、スピーカーを押せばそのまま続けられる。
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') audio.stop();
+    if (document.visibilityState === 'hidden') { audio.stop(); return; }
+    // 画面を消している間はタイマーが止まる。戻ってきたら案内を今の時刻で描き直す
+    if (currentScreen === 'summary') paintRelearnNote();
   });
 }
 
