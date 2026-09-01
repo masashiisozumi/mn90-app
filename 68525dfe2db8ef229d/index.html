@@ -2,7 +2,7 @@
   Mongolian 90 — 社長個人β (1ファイル版)
   build-standalone.js が engine/ 言語パック/ UI / 教材を連結して生成する。
   手で編集しない。直すときは元のファイルを直して作り直す。
-  生成元: 教材 140件 / モジュール 32本 / 参考音声 0件 / 読み方の目安 156件 (強弱 66件) / 追加コンテンツ 2パック(会話 10本)
+  生成元: 教材 140件 / モジュール 34本 / 参考音声 0件 / 読み方の目安 156件 (強弱 66件) / 追加コンテンツ 2パック(会話 13本)
 -->
 <!doctype html>
 <html lang="ja">
@@ -541,6 +541,16 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 /* 1回押しただけでは消さない。押し直しを待っている間だけ色を変える */
 .ph-del.is-armed{background:var(--warn-soft);color:var(--warn);border-color:var(--warn);font-weight:700}
 
+/* ---- ドライブ学習 ---- */
+/* 運転中に見る前提の画面ではないので、飾らない。**押す場所を1つに絞る** */
+.drive-warn{font-size:calc(var(--t-body) * var(--fs));color:var(--warn);
+  background:var(--warn-soft);border-radius:var(--radius-btn);
+  padding:14px 15px;margin:0 0 var(--space-4);line-height:1.7;font-weight:600}
+.drive-now{font-size:calc(1.6rem * var(--fs));font-weight:700;line-height:1.4;
+  text-align:center;margin:var(--space-6) 0 var(--space-2);word-break:break-word}
+.drive-sub{font-size:calc(var(--t-sub) * var(--fs));color:var(--dim);text-align:center}
+#drive-stop{background:var(--crit);color:var(--on-accent)}
+
 /* ---- 会話練習 (試作) ---- */
 /* 相手と自分で左右を分ける。**どちらの番か考えさせない** */
 .talk-warn{font-size:calc(var(--t-sub) * var(--fs));color:var(--warn);
@@ -942,6 +952,31 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 </div>
 
 <!-- 組み合わせ練習。覚え具合もSRSも動かさない -->
+<!-- ドライブ学習。**始めたら画面を触らせない。**
+     開始と停止だけ。運転中に押す場所は「やめる」1つに絞る -->
+<main id="drive" class="wrap" hidden>
+  <div class="head"><span class="brand" id="drive-title">ドライブ学習</span></div>
+  <p class="drive-warn" id="drive-warn"></p>
+  <div id="drive-setup">
+    <div class="grp-h">長さ</div>
+    <div class="opt-row" id="drive-mins"></div>
+    <p class="ph-lead" id="drive-lead"></p>
+  </div>
+  <div id="drive-run" hidden>
+    <div class="drive-now" id="drive-now">—</div>
+    <div class="drive-sub" id="drive-sub"></div>
+  </div>
+  <div class="dock-pad"></div>
+</main>
+
+<div class="dock" id="drive-dock" hidden>
+  <div class="dock-inner">
+    <button id="drive-start" class="primary" type="button">はじめる</button>
+    <button id="drive-stop" class="primary" type="button" hidden>やめる</button>
+    <button id="drive-back" class="ghost" type="button">練習へ戻る</button>
+  </div>
+</div>
+
 <!-- 会話練習 (試作)。**中身が production_ready になるまで通常の画面へ出ない。**
      相手の番は「聞く/読む」、自分の番は「思い出してから答えを見る」。
      ここでは覚え具合を1つも動かさない (通し稽古であって、判定ではない) -->
@@ -990,7 +1025,7 @@ window.__MN90_PROSODY = {"meta":{"version":1,"generatedBy":"languages/mn/build-p
 // 参考音声の目録。mp3 は隣の audio/ に置く (埋め込むと1枚が数MBになるため)
 window.__MN90_AUDIO = {"version":1,"languageCode":"mn","assetId":"azure-tts-mn","provider":"azure-speech","voice":"mn-MN-BataaNeural","locale":"mn-MN","format":"mp3","syntheticVoice":true,"displayLabel":"参考音声（合成）","base":"audio/","generatedAt":null,"items":{}};
 // 追加コンテンツ (会話)。offline で開けるよう、これも埋め込む
-window.__MN90_PACKS = [{"id":"daily-conversation-v1","meta":{"purpose":"日常会話 Skill v1。**新しいモンゴル語を1文字も作っていない。**","status":"production_ready","policy":"全ての turn が、既に production_ready の教材を ref で指す。新規表現ゼロ。","authoredBy":"claude:assembly-v1","authoredAt":"2026-09-01","note":"確かめたのは『並べ方が会話として成り立つか』だけ。モンゴル語の文そのものは既存140件のまま。"},"scenarios":[{"id":"daily","labelJa":"日常会話","skillId":"skill_daily","roles":{"other":"相手","learner":"自分"}}],"items":[],"dialogues":[{"id":"daily_greet_intro","scenarioId":"daily","labelJa":"はじめまして","aboutJa":"会って名乗るまで","status":"production_ready","turns":[{"n":1,"speaker":"other","ref":"g_hello","audioId":null},{"n":2,"speaker":"learner","ref":"g_hello","audioId":null},{"n":3,"speaker":"other","ref":"s_nice_to_meet","audioId":null},{"n":4,"speaker":"learner","ref":"s_my_name_is","audioId":null}]},{"id":"daily_where_from","scenarioId":"daily","labelJa":"どこから来たか","aboutJa":"出身を伝えて、次につなげる","status":"production_ready","turns":[{"n":1,"speaker":"other","ref":"s_nice_to_meet","audioId":null},{"n":2,"speaker":"learner","ref":"s_iam_from_jp","audioId":null},{"n":3,"speaker":"other","ref":"s_lets_work_together","audioId":null},{"n":4,"speaker":"learner","ref":"g_thanks","audioId":null}]},{"id":"daily_didnt_catch","scenarioId":"daily","labelJa":"聞き取れなかったとき","aboutJa":"分からないまま流さず、言い直してもらう","status":"production_ready","turns":[{"n":1,"speaker":"other","ref":"s_whats_this","audioId":null},{"n":2,"speaker":"learner","ref":"s_say_again","audioId":null},{"n":3,"speaker":"other","ref":"s_whats_this","audioId":null},{"n":4,"speaker":"learner","ref":"s_slowly","audioId":null}]},{"id":"daily_ask_toilet","scenarioId":"daily","labelJa":"お手洗いをたずねる","aboutJa":"呼びかけて、たずねて、待つ","status":"production_ready","turns":[{"n":1,"speaker":"learner","ref":"s_sorry","audioId":null},{"n":2,"speaker":"learner","ref":"s_where_is_toilet","audioId":null},{"n":3,"speaker":"other","ref":"s_please_wait","audioId":null},{"n":4,"speaker":"learner","ref":"g_thanks","audioId":null}]},{"id":"daily_contact","scenarioId":"daily","labelJa":"また連絡する約束","aboutJa":"連絡してよいか確かめて、受ける","status":"production_ready","turns":[{"n":1,"speaker":"other","ref":"s_can_i_contact","audioId":null},{"n":2,"speaker":"learner","ref":"g_yes","audioId":null},{"n":3,"speaker":"other","ref":"s_ill_contact","audioId":null},{"n":4,"speaker":"learner","ref":"g_thanks","audioId":null}]},{"id":"daily_thanks_goodbye","scenarioId":"daily","labelJa":"お礼を言って別れる","aboutJa":"その日を締めて、次につなげる","status":"production_ready","turns":[{"n":1,"speaker":"other","ref":"s_thanks_time","audioId":null},{"n":2,"speaker":"learner","ref":"s_thank_you_today","audioId":null},{"n":3,"speaker":"other","ref":"s_see_you","audioId":null},{"n":4,"speaker":"learner","ref":"s_goodbye","audioId":null}]},{"id":"daily_dont_understand","scenarioId":"daily","labelJa":"分からないと伝える","aboutJa":"分からないことを隠さず、英語を試す","status":"production_ready","turns":[{"n":1,"speaker":"other","ref":"s_where_is","audioId":null},{"n":2,"speaker":"learner","ref":"s_i_dont_get","audioId":null},{"n":3,"speaker":"other","ref":"s_where_is","audioId":null},{"n":4,"speaker":"learner","ref":"s_do_you_speak_en","audioId":null}]}]},{"id":"daily-travel-v1","meta":{"purpose":"日常・旅行の会話。Phase 17 の試作。","status":"draft","warning":"この中のモンゴル語は起草直後で、起草工程以外の確認を受けていない。通常の利用者へは出さない。","authoredBy":"claude:draft-v1","authoredAt":"2026-09-01","reusePolicy":"既にある140件で言えることは、新しいIDを作らず ref で指す。"},"scenarios":[{"id":"cafe","labelJa":"カフェ","skillId":"skill_cafe","roles":{"other":"店員","learner":"自分"}},{"id":"airport","labelJa":"空港","skillId":"skill_airport","roles":{"other":"係員","learner":"自分"}},{"id":"restaurant","labelJa":"レストラン","skillId":"skill_restaurant","roles":{"other":"店員","learner":"自分"}}],"items":[{"id":"d_cafe_what_have","ja":"何になさいますか","mn":"Юу авах вэ?","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_cafe_one_coffee","ja":"コーヒーを1つください","mn":"Нэг кофе өгнө үү","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_cafe_sugar","ja":"砂糖は入れますか","mn":"Чихэртэй юу?","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_cafe_no_thanks","ja":"いいえ、要りません","mn":"Үгүй, хэрэггүй","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["cafe","restaurant"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_cafe_takeaway","ja":"持ち帰りです","mn":"Авч явна","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_air_passport","ja":"パスポートをお願いします","mn":"Паспортоо өгнө үү","contentRevision":1,"status":"draft","register":"polite","themes":["travel"],"scenarioTags":["airport"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_air_here_it_is","ja":"こちらです","mn":"Энд байна","contentRevision":1,"status":"draft","register":"polite","themes":["travel"],"scenarioTags":["airport","hotel"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_air_any_bags","ja":"預ける荷物はありますか","mn":"Тээш байгаа юу?","contentRevision":1,"status":"draft","register":"polite","themes":["travel"],"scenarioTags":["airport"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_air_one_bag","ja":"はい、1つあります","mn":"Тийм, нэг ширхэг байна","contentRevision":1,"status":"draft","register":"polite","themes":["travel"],"scenarioTags":["airport"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_air_gate_number","ja":"ゲートは12番です","mn":"Арван хоёрдугаар хаалга","contentRevision":1,"status":"draft","register":"polite","themes":["travel"],"scenarioTags":["airport"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_res_how_many","ja":"何名様ですか","mn":"Хэдүүлээ вэ?","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["restaurant"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_res_two_people","ja":"2人です","mn":"Хоёр хүн","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["restaurant"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_res_order_what","ja":"ご注文は何になさいますか","mn":"Юу захиалах вэ?","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["restaurant"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_res_this_one","ja":"これをお願いします","mn":"Үүнийг өгнө үү","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["restaurant","cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_res_drink_what","ja":"お飲み物は何になさいますか","mn":"Юу уух вэ?","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["restaurant","cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_res_water_please","ja":"水をお願いします","mn":"Ус өгнө үү","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["restaurant","cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null}],"dialogues":[{"id":"cafe_order_basic","scenarioId":"cafe","labelJa":"コーヒーを1つ頼む","status":"draft","turns":[{"n":1,"speaker":"other","ref":"d_cafe_what_have","audioId":null},{"n":2,"speaker":"learner","ref":"d_cafe_one_coffee","audioId":null},{"n":3,"speaker":"other","ref":"d_cafe_sugar","audioId":null},{"n":4,"speaker":"learner","ref":"d_cafe_no_thanks","audioId":null},{"n":5,"speaker":"other","ref":"s_how_much","audioId":null},{"n":6,"speaker":"learner","ref":"g_thanks","audioId":null}]},{"id":"airport_checkin_basic","scenarioId":"airport","labelJa":"チェックインで荷物を預ける","status":"draft","turns":[{"n":1,"speaker":"other","ref":"d_air_passport","audioId":null},{"n":2,"speaker":"learner","ref":"d_air_here_it_is","audioId":null},{"n":3,"speaker":"other","ref":"d_air_any_bags","audioId":null},{"n":4,"speaker":"learner","ref":"d_air_one_bag","audioId":null},{"n":5,"speaker":"other","ref":"d_air_gate_number","audioId":null},{"n":6,"speaker":"learner","ref":"g_thanks","audioId":null}]},{"id":"restaurant_order_basic","scenarioId":"restaurant","labelJa":"席について注文する","status":"draft","turns":[{"n":1,"speaker":"other","ref":"d_res_how_many","audioId":null},{"n":2,"speaker":"learner","ref":"d_res_two_people","audioId":null},{"n":3,"speaker":"other","ref":"d_res_order_what","audioId":null},{"n":4,"speaker":"learner","ref":"d_res_this_one","audioId":null},{"n":5,"speaker":"other","ref":"d_res_drink_what","audioId":null},{"n":6,"speaker":"learner","ref":"d_res_water_please","audioId":null}]}]}];
+window.__MN90_PACKS = [{"id":"daily-conversation-v1","meta":{"purpose":"日常会話 Skill v1。**新しいモンゴル語を1文字も作っていない。**","status":"production_ready","policy":"全ての turn が、既に production_ready の教材を ref で指す。新規表現ゼロ。","authoredBy":"claude:assembly-v1","authoredAt":"2026-09-01","note":"確かめたのは『並べ方が会話として成り立つか』だけ。モンゴル語の文そのものは既存140件のまま。自分からたずねる形 (daily_ask_have / daily_check_ok / daily_meeting_plan) を追加した。"},"scenarios":[{"id":"daily","labelJa":"日常会話","skillId":"skill_daily","roles":{"other":"相手","learner":"自分"}}],"items":[],"dialogues":[{"id":"daily_greet_intro","scenarioId":"daily","labelJa":"はじめまして","aboutJa":"会って名乗るまで","status":"production_ready","turns":[{"n":1,"speaker":"other","ref":"g_hello","audioId":null},{"n":2,"speaker":"learner","ref":"g_hello","audioId":null},{"n":3,"speaker":"other","ref":"s_nice_to_meet","audioId":null},{"n":4,"speaker":"learner","ref":"s_my_name_is","audioId":null}]},{"id":"daily_where_from","scenarioId":"daily","labelJa":"どこから来たか","aboutJa":"出身を伝えて、次につなげる","status":"production_ready","turns":[{"n":1,"speaker":"other","ref":"s_nice_to_meet","audioId":null},{"n":2,"speaker":"learner","ref":"s_iam_from_jp","audioId":null},{"n":3,"speaker":"other","ref":"s_lets_work_together","audioId":null},{"n":4,"speaker":"learner","ref":"g_thanks","audioId":null}]},{"id":"daily_didnt_catch","scenarioId":"daily","labelJa":"聞き取れなかったとき","aboutJa":"分からないまま流さず、言い直してもらう","status":"production_ready","turns":[{"n":1,"speaker":"other","ref":"s_whats_this","audioId":null},{"n":2,"speaker":"learner","ref":"s_say_again","audioId":null},{"n":3,"speaker":"other","ref":"s_whats_this","audioId":null},{"n":4,"speaker":"learner","ref":"s_slowly","audioId":null}]},{"id":"daily_ask_toilet","scenarioId":"daily","labelJa":"お手洗いをたずねる","aboutJa":"呼びかけて、たずねて、待つ","status":"production_ready","turns":[{"n":1,"speaker":"learner","ref":"s_sorry","audioId":null},{"n":2,"speaker":"learner","ref":"s_where_is_toilet","audioId":null},{"n":3,"speaker":"other","ref":"s_please_wait","audioId":null},{"n":4,"speaker":"learner","ref":"g_thanks","audioId":null}]},{"id":"daily_contact","scenarioId":"daily","labelJa":"また連絡する約束","aboutJa":"連絡してよいか確かめて、受ける","status":"production_ready","turns":[{"n":1,"speaker":"other","ref":"s_can_i_contact","audioId":null},{"n":2,"speaker":"learner","ref":"g_yes","audioId":null},{"n":3,"speaker":"other","ref":"s_ill_contact","audioId":null},{"n":4,"speaker":"learner","ref":"g_thanks","audioId":null}]},{"id":"daily_thanks_goodbye","scenarioId":"daily","labelJa":"お礼を言って別れる","aboutJa":"その日を締めて、次につなげる","status":"production_ready","turns":[{"n":1,"speaker":"other","ref":"s_thanks_time","audioId":null},{"n":2,"speaker":"learner","ref":"s_thank_you_today","audioId":null},{"n":3,"speaker":"other","ref":"s_see_you","audioId":null},{"n":4,"speaker":"learner","ref":"s_goodbye","audioId":null}]},{"id":"daily_dont_understand","scenarioId":"daily","labelJa":"分からないと伝える","aboutJa":"分からないことを隠さず、英語を試す","status":"production_ready","turns":[{"n":1,"speaker":"other","ref":"s_where_is","audioId":null},{"n":2,"speaker":"learner","ref":"s_i_dont_get","audioId":null},{"n":3,"speaker":"other","ref":"s_where_is","audioId":null},{"n":4,"speaker":"learner","ref":"s_do_you_speak_en","audioId":null}]},{"id":"daily_ask_have","scenarioId":"daily","labelJa":"あるかどうかをたずねる","aboutJa":"自分からたずねて、無ければ次をたずねる","status":"production_ready","turns":[{"n":1,"speaker":"learner","ref":"s_do_you_have","audioId":null},{"n":2,"speaker":"other","ref":"s_i_dont_have","audioId":null},{"n":3,"speaker":"learner","ref":"s_where_is","audioId":null},{"n":4,"speaker":"other","ref":"s_please_wait","audioId":null},{"n":5,"speaker":"learner","ref":"g_thanks","audioId":null}]},{"id":"daily_check_ok","scenarioId":"daily","labelJa":"これでよいか確かめる","aboutJa":"言われたことに、その場で確認を返す","status":"production_ready","turns":[{"n":1,"speaker":"other","ref":"s_show_me","audioId":null},{"n":2,"speaker":"learner","ref":"s_is_this_ok","audioId":null},{"n":3,"speaker":"other","ref":"g_yes","audioId":null},{"n":4,"speaker":"learner","ref":"s_thanks_much","audioId":null}]},{"id":"daily_meeting_plan","scenarioId":"daily","labelJa":"次の約束を自分から決める","aboutJa":"自分から場所を決めて、連絡してよいかたずねる","status":"production_ready","turns":[{"n":1,"speaker":"learner","ref":"s_lets_meet_here","audioId":null},{"n":2,"speaker":"other","ref":"g_yes","audioId":null},{"n":3,"speaker":"learner","ref":"s_can_i_contact","audioId":null},{"n":4,"speaker":"other","ref":"s_ill_contact","audioId":null},{"n":5,"speaker":"learner","ref":"g_thanks","audioId":null}]}]},{"id":"daily-travel-v1","meta":{"purpose":"日常・旅行の会話。Phase 17 の試作。","status":"draft","warning":"この中のモンゴル語は起草直後で、起草工程以外の確認を受けていない。通常の利用者へは出さない。","authoredBy":"claude:draft-v1","authoredAt":"2026-09-01","reusePolicy":"既にある140件で言えることは、新しいIDを作らず ref で指す。"},"scenarios":[{"id":"cafe","labelJa":"カフェ","skillId":"skill_cafe","roles":{"other":"店員","learner":"自分"}},{"id":"airport","labelJa":"空港","skillId":"skill_airport","roles":{"other":"係員","learner":"自分"}},{"id":"restaurant","labelJa":"レストラン","skillId":"skill_restaurant","roles":{"other":"店員","learner":"自分"}}],"items":[{"id":"d_cafe_what_have","ja":"何になさいますか","mn":"Юу авах вэ?","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_cafe_one_coffee","ja":"コーヒーを1つください","mn":"Нэг кофе өгнө үү","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_cafe_sugar","ja":"砂糖は入れますか","mn":"Чихэртэй юу?","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_cafe_no_thanks","ja":"いいえ、要りません","mn":"Үгүй, хэрэггүй","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["cafe","restaurant"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_cafe_takeaway","ja":"持ち帰りです","mn":"Авч явна","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_air_passport","ja":"パスポートをお願いします","mn":"Паспортоо өгнө үү","contentRevision":1,"status":"draft","register":"polite","themes":["travel"],"scenarioTags":["airport"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_air_here_it_is","ja":"こちらです","mn":"Энд байна","contentRevision":1,"status":"draft","register":"polite","themes":["travel"],"scenarioTags":["airport","hotel"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_air_any_bags","ja":"預ける荷物はありますか","mn":"Тээш байгаа юу?","contentRevision":1,"status":"draft","register":"polite","themes":["travel"],"scenarioTags":["airport"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_air_one_bag","ja":"はい、1つあります","mn":"Тийм, нэг ширхэг байна","contentRevision":1,"status":"draft","register":"polite","themes":["travel"],"scenarioTags":["airport"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_air_gate_number","ja":"ゲートは12番です","mn":"Арван хоёрдугаар хаалга","contentRevision":1,"status":"draft","register":"polite","themes":["travel"],"scenarioTags":["airport"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_res_how_many","ja":"何名様ですか","mn":"Хэдүүлээ вэ?","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["restaurant"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_res_two_people","ja":"2人です","mn":"Хоёр хүн","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["restaurant"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_res_order_what","ja":"ご注文は何になさいますか","mn":"Юу захиалах вэ?","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["restaurant"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_res_this_one","ja":"これをお願いします","mn":"Үүнийг өгнө үү","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["restaurant","cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_res_drink_what","ja":"お飲み物は何になさいますか","mn":"Юу уух вэ?","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["restaurant","cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_res_water_please","ja":"水をお願いします","mn":"Ус өгнө үү","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["restaurant","cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null}],"dialogues":[{"id":"cafe_order_basic","scenarioId":"cafe","labelJa":"コーヒーを1つ頼む","status":"draft","turns":[{"n":1,"speaker":"other","ref":"d_cafe_what_have","audioId":null},{"n":2,"speaker":"learner","ref":"d_cafe_one_coffee","audioId":null},{"n":3,"speaker":"other","ref":"d_cafe_sugar","audioId":null},{"n":4,"speaker":"learner","ref":"d_cafe_no_thanks","audioId":null},{"n":5,"speaker":"other","ref":"s_how_much","audioId":null},{"n":6,"speaker":"learner","ref":"g_thanks","audioId":null}]},{"id":"airport_checkin_basic","scenarioId":"airport","labelJa":"チェックインで荷物を預ける","status":"draft","turns":[{"n":1,"speaker":"other","ref":"d_air_passport","audioId":null},{"n":2,"speaker":"learner","ref":"d_air_here_it_is","audioId":null},{"n":3,"speaker":"other","ref":"d_air_any_bags","audioId":null},{"n":4,"speaker":"learner","ref":"d_air_one_bag","audioId":null},{"n":5,"speaker":"other","ref":"d_air_gate_number","audioId":null},{"n":6,"speaker":"learner","ref":"g_thanks","audioId":null}]},{"id":"restaurant_order_basic","scenarioId":"restaurant","labelJa":"席について注文する","status":"draft","turns":[{"n":1,"speaker":"other","ref":"d_res_how_many","audioId":null},{"n":2,"speaker":"learner","ref":"d_res_two_people","audioId":null},{"n":3,"speaker":"other","ref":"d_res_order_what","audioId":null},{"n":4,"speaker":"learner","ref":"d_res_this_one","audioId":null},{"n":5,"speaker":"other","ref":"d_res_drink_what","audioId":null},{"n":6,"speaker":"learner","ref":"d_res_water_please","audioId":null}]}]}];
 window.__MN90_STANDALONE = true;
 
 // ===== engine/field-report.js =====
@@ -4044,6 +4079,268 @@ function remainingDays(day, totalDays = 90) {
 __m["engine/clock.js"] = { dayIso, programDay, remainingDays };
 })();
 
+// ===== engine/drive.js =====
+(() => {
+/**
+ * Drive Mode。**運転中に、画面を見ず、触らずに進む学習。**
+ *
+ * 音を流すだけの再生ではない。耳と口を使う手順を、時間で組み立てる。
+ *
+ *   日本語を聞く → 黙って思い出す → 自分で声に出す
+ *   → モンゴル語を聞く → もう一度言う → 次へ
+ *
+ * ## ここでやらないこと
+ *
+ * **録音しない。聞き取りの機械判定をしない。発音を採点しない。**
+ * 待ち時間は「考えるための時間」であって、時間切れでも遅くても不正解でもない。
+ * 運転中に評価されると、正しく答えようとして注意がそれる。
+ *
+ * ## 覚え具合を動かさない
+ *
+ * 聞いただけでは「言えた」かどうかを誰も確かめていない。
+ * だから Drive は **exposure (触れた) と rehearsal (言ってみた) の記録だけ**で、
+ * 昇格も、次にいつ出すかの予定も、連続日数も、1日の新規語も動かさない。
+ *
+ * ## 音の関門
+ *
+ * **正式な音声があるものしか入れない。**別の言語の声による代用は、
+ * 参考として1回聞くぶんには構わないが、耳から長時間くり返す正解音にはしない。
+ * その判断は engine/audio-policy.js が持ち、ここは結果を受け取るだけ。
+ *
+ * このファイルには特定の自然言語の文字列を置かない。
+ */
+
+const audioPolicy = __m["engine/audio-policy.js"];
+
+/** 1回の長さ。**開始前にだけ選ぶ。**始まったら触らせない。 */
+const DURATIONS = [10, 20, 30, null];   // 分。null = 続けられるだけ
+
+/** 手順の種類。 */
+const STEP_KINDS = [
+  'say_prompt',     // 日本語を聞く
+  'think',          // 黙って思い出す (無音)
+  'say_answer',     // モンゴル語を聞く
+  'repeat',         // もう一度自分で言う (無音)
+  'talk_line',      // 会話の1発話を聞く
+  'talk_gap',       // 会話の切れ目 (無音)
+  'talk_ask',       // 「あなたなら何と返しますか」
+  'talk_model',     // 返し方の例を聞く
+];
+
+/**
+ * 思い出すための時間 (ミリ秒)。
+ *
+ * **短い語と長い文で変える。**文が長いほど、思い出して声に出すのに時間が要る。
+ * 短くしすぎると焦らせ、長すぎると間延びして眠くなる。
+ * 文字数から決める (音の長さは端末によって変わるので当てにしない)。
+ */
+const THINK_BASE_MS = 2600;
+const THINK_PER_CHAR_MS = 90;
+const THINK_MAX_MS = 9000;
+const REPEAT_RATIO = 0.8;   // もう一度言う番は、思い出す番より少し短くてよい
+
+function thinkMs(text) {
+  const n = (text || '').length;
+  return Math.min(THINK_MAX_MS, THINK_BASE_MS + n * THINK_PER_CHAR_MS);
+}
+
+/**
+ * Drive に入れてよい項目か。**音の関門はここ1か所。**
+ * @param {object} item { id, tier }
+ */
+function eligible(item) {
+  return !!item && audioPolicy.canGradeListening(item.tier);
+}
+
+/**
+ * 流す順を作る。
+ *
+ * **弱かったものから。**ただし「間違えた罰」にはしない。
+ * 順番は 直近で言えなかった → 復習の期日が来ている → よく使うもの の順で、
+ * 同じものが続かないように散らす。
+ *
+ * @param {object} opt
+ * @param {object[]} opt.candidates { id, tier, weak, due, rank }
+ * @param {object[]} opt.dialogues  { id, tier, turns }
+ * @param {number}   opt.minutes    予定の長さ (null なら上限なし)
+ */
+function buildPlaylist({ candidates = [], dialogues = [], minutes = 20, everyNthTalk = 6 } = {}) {
+  const usable = candidates.filter(eligible);
+  const talks = dialogues.filter(eligible);
+
+  const score = c => (c.weak ? 0 : c.due ? 1 : 2);
+  const ordered = usable
+    .map((c, i) => ({ ...c, i }))
+    .sort((a, b) => score(a) - score(b) || (a.rank ?? 0) - (b.rank ?? 0) || a.i - b.i);
+
+  const out = [];
+  let talkAt = 0;
+  ordered.forEach((c, i) => {
+    out.push({ kind: 'item', id: c.id, text: c.text || '', prompt: c.prompt || '' });
+    // ときどき会話を挟む。単語の反復だけだと、耳が文の流れに慣れない
+    if (talks.length && (i + 1) % everyNthTalk === 0) {
+      out.push({ kind: 'talk', id: talks[talkAt % talks.length].id });
+      talkAt += 1;
+    }
+  });
+  // 会話が1本も入らない長さでも、最低1本は入れる
+  if (talks.length && !out.some(x => x.kind === 'talk')) {
+    out.push({ kind: 'talk', id: talks[0].id });
+  }
+  return { entries: out, minutes, itemCount: ordered.length, talkCount: talks.length };
+}
+
+/**
+ * 1項目ぶんの手順に開く。
+ * 日本語を聞く → 思い出す → モンゴル語を聞く → もう一度言う。
+ */
+function stepsForItem(entry) {
+  const think = thinkMs(entry.text);
+  return [
+    { kind: 'say_prompt', id: entry.id, side: 'prompt' },
+    { kind: 'think', ms: think },
+    { kind: 'say_answer', id: entry.id, side: 'answer' },
+    { kind: 'repeat', ms: Math.round(think * REPEAT_RATIO) },
+  ];
+}
+
+/**
+ * 会話1本ぶんの手順。
+ *
+ *   会話を通しで聞く → 間 → もう一度通しで聞く
+ *   → 最後の相手の発話 → 「あなたなら何と返しますか」→ 間
+ *   → 返し方の例 → もう一度言う
+ *
+ * **画面は要らない。**すべて音と間だけで進む。
+ */
+function stepsForTalk(dialogue) {
+  const turns = dialogue.turns || [];
+  if (!turns.length) return [];
+  const steps = [];
+  const play = () => {
+    for (const t of turns) {
+      steps.push({ kind: 'talk_line', id: dialogue.id, n: t.n, ref: t.ref, speaker: t.speaker });
+    }
+  };
+  play();
+  steps.push({ kind: 'talk_gap', ms: 1200 });
+  play();
+  steps.push({ kind: 'talk_gap', ms: 900 });
+
+  // 最後に相手が話しているところを取り、そこへ自分が返す形にする
+  let askAt = -1;
+  for (let i = turns.length - 1; i >= 1; i--) {
+    if (turns[i].speaker === 'learner' && turns[i - 1].speaker === 'other') { askAt = i; break; }
+  }
+  if (askAt < 0) return steps;
+
+  const other = turns[askAt - 1];
+  const model = turns[askAt];
+  steps.push({ kind: 'talk_line', id: dialogue.id, n: other.n, ref: other.ref, speaker: 'other' });
+  steps.push({ kind: 'talk_ask', id: dialogue.id });
+  steps.push({ kind: 'think', ms: THINK_MAX_MS });
+  steps.push({ kind: 'talk_model', id: dialogue.id, n: model.n, ref: model.ref });
+  steps.push({ kind: 'repeat', ms: Math.round(THINK_MAX_MS * REPEAT_RATIO) });
+  return steps;
+}
+
+/**
+ * 記録してよいもの。**中身は1文字も残さない。**
+ * 教材本文・モンゴル語・音声・個人情報・場所・走った道は保存しない。
+ */
+const ALLOWED_EVENTS = [
+  'drive_session_start', 'drive_session_end',
+  'drive_minutes', 'audio_items_played', 'conversation_played',
+];
+
+function isAllowedEvent(name) { return ALLOWED_EVENTS.includes(name); }
+
+/**
+ * Drive の結果を、学習の記録へどう混ぜるか。**混ぜない。**
+ * 正誤を本人が入れていないので、「習得」とは扱わない。
+ */
+function affectsSrs() { return false; }
+
+
+__m["engine/drive.js"] = { DURATIONS, STEP_KINDS, ALLOWED_EVENTS, THINK_BASE_MS, THINK_PER_CHAR_MS, THINK_MAX_MS, REPEAT_RATIO, thinkMs, eligible, buildPlaylist, stepsForItem, stepsForTalk, isAllowedEvent, affectsSrs };
+})();
+
+// ===== app/narration.js =====
+(() => {
+/**
+ * 日本語の読み上げ。**Drive Mode の案内だけに使う。**
+ *
+ * モンゴル語の読み上げ (app/speech.js) には**一切触らない。**
+ * あちらは実機で鳴ることが確認できている唯一の経路なので、
+ * 別の用途のために作り変えない。ここは新しく足すだけの層。
+ *
+ * 日本語の声は、iPhone にも Android にも標準で入っている。
+ * モンゴル語のように「無いかもしれない」を心配しなくてよい。
+ */
+
+const JA_LANGS = ['ja-JP', 'ja'];
+
+function createNarration(opt = {}) {
+  const synth = opt.synth || (typeof window !== 'undefined' ? window.speechSynthesis : null);
+  const Utterance = opt.Utterance
+    || (typeof window !== 'undefined' ? window.SpeechSynthesisUtterance : null);
+  const usable = !!(synth && Utterance && typeof synth.speak === 'function');
+
+  let voice = null;
+
+  function pick() {
+    if (!usable) return null;
+    let list = [];
+    try { list = synth.getVoices() || []; } catch (e) { list = []; }
+    voice = list.find(v => JA_LANGS.some(l => (v.lang || '').toLowerCase().startsWith(l.toLowerCase())))
+      || null;
+    return voice;
+  }
+
+  if (usable && typeof synth.addEventListener === 'function') {
+    synth.addEventListener('voiceschanged', pick);
+  }
+  pick();
+
+  /** 日本語の声が実際にあるか。**無ければ Drive を始めない。** */
+  function available() { return !!(usable && (voice || pick())); }
+
+  /**
+   * 読み上げて、終わったら解決する。
+   * 途中で止められたときも解決する (Drive が止まらないように)。
+   */
+  function speak(text) {
+    if (!available() || !text) return Promise.resolve('no_audio');
+    return new Promise((resolve) => {
+      let done = false;
+      const finish = (r) => { if (!done) { done = true; resolve(r); } };
+      let u;
+      try { u = new Utterance(String(text)); } catch (e) { return finish('error'); }
+      try { u.voice = voice; u.lang = voice.lang; } catch (e) { /* 声を指定できない端末 */ }
+      u.onend = () => finish('played');
+      u.onerror = () => finish('error');
+      try {
+        if (synth.speaking || synth.pending) synth.cancel();
+        else if (synth.paused) synth.resume();
+        synth.speak(u);
+      } catch (e) { return finish('error'); }
+      // 終わりの合図が来ない端末のための逃げ道
+      setTimeout(() => finish('timeout'), 2000 + String(text).length * 220);
+    });
+  }
+
+  function cancel() {
+    if (!usable) return;
+    try { if (synth.speaking || synth.pending) synth.cancel(); } catch (e) { /* 進む */ }
+  }
+
+  return { available, speak, cancel, voiceLang: () => (voice ? voice.lang : null) };
+}
+
+
+__m["app/narration.js"] = { createNarration, JA_LANGS };
+})();
+
 // ===== engine/storage.js =====
 (() => {
 const { LEGACY_STATUS_MAP } = __m["engine/schema.js"];
@@ -4765,6 +5062,8 @@ __m["languages/mn/pack.js"] = { default: __default };
 /** 解錠用の無音。1サンプルの WAV。外部ファイルを読まない。 */
 const SILENCE = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA=';
 
+const audioPolicy = __m["engine/audio-policy.js"];
+
 function createAudio(opts = {}) {
   const manifest = opts.manifest || null;
   const items = (manifest && manifest.items) || {};
@@ -4922,8 +5221,20 @@ function createAudio(opts = {}) {
     catch (e) { return src; }
   }
 
+  /**
+   * その表現に使える音の層。**「鳴らせる」と「聞き取りに使える」は別。**
+   * 判断そのものは engine/audio-policy.js が持ち、ここは材料を渡すだけ。
+   */
+  function tierFor(id) {
+    return audioPolicy.tierFor({
+      hasStatic: hasStatic(id),
+      staticTier: (manifest && manifest.tier) || 'tts',
+      speechQuality: speechQuality(),
+    });
+  }
+
   return {
-    has, count, play, stop, unlock, playing,
+    has, count, play, stop, unlock, playing, tierFor,
     hasStatic, hasSpeech, qualityFor, speechAvailable, speechQuality,
     /** 不具合報告に出す中身。教材本文は入らない。 */
     speechReport() { return speech && speech.report ? speech.report() : null; },
@@ -5582,6 +5893,8 @@ const scheduler = __m["engine/scheduler.js"];
 const contentPack = __m["engine/content-pack.js"];
 const dialogueModel = __m["engine/dialogue.js"];
 const audioPolicy = __m["engine/audio-policy.js"];
+const drive = __m["engine/drive.js"];
+const { createNarration } = __m["app/narration.js"];
 const { createStorage } = __m["engine/storage.js"];
 const { newCard, newProfile } = __m["engine/schema.js"];
 const { PRESET_PROFILES } = __m["engine/profile.js"];
@@ -5867,7 +6180,7 @@ function el(tag, opts = {}, children = []) {
 function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
 function $(id) { return document.getElementById(id); }
 
-const SCREENS = ['onboarding', 'home', 'more', 'sheet', 'session', 'summary', 'checkpoint', 'fieldlog', 'match', 'talk'];
+const SCREENS = ['onboarding', 'home', 'more', 'sheet', 'session', 'summary', 'checkpoint', 'fieldlog', 'match', 'talk', 'drive'];
 
 /** 画面と、それに対応する下部固定ボタンを同時に切り替える。 */
 let currentScreen = 'home';
@@ -6961,6 +7274,16 @@ function renderPractice(root) {
 
   // 会話練習。**出せる会話が1本も無いときは、行そのものを出さない。**
   // 中身が下書きのうちは engine 側が0本を返すので、社長の画面には現れない
+  // ドライブ学習。**正式な音声があるときだけ出す。**
+  // 別の言語の声で代用しているあいだは、入口ごと出さない
+  if (driveReady()) {
+    rows.push({
+      title: 'ドライブ学習', desc: '運転中に、画面を見ずに聞いて言う',
+      badge: '', ready: true, enabled: true,
+      onClick: () => { track('practice_drive'); openDrive(); },
+    });
+  }
+
   const talks = availableDialogues();
   if (talks.length) {
     rows.push({
@@ -7072,6 +7395,185 @@ function startMistakeSession(ready) {
   lessonEnd = queue.length;
   showScreen('session');
   nextItem();
+}
+
+// ---------- ドライブ学習 ----------
+/**
+ * 運転中に、画面を見ず・触らずに進む学習。
+ *
+ * **始まったら押す場所は「やめる」1つだけ。**答えを見るボタンも、
+ * 言えた/言えなかったも、選択肢も出さない。運転から注意をそらさないため。
+ *
+ * **音の関門がここの前提。**別の言語の声で代用しているあいだは、
+ * 入口そのものを出さない。耳から長時間くり返す音を、
+ * 違う言語の読みで埋めると、その言語のリズムを覚えてしまう。
+ *
+ * 覚え具合・連続日数・1日の新規語は1つも動かさない。
+ * 正誤を本人が入れていないので「習得した」とは扱わない。
+ */
+const narration = createNarration({});
+
+/** Drive に入れてよい表現。**正式な音声があるものだけ。** */
+function driveCandidates() {
+  const cards = Object.values(state.cards || {});
+  const nowIso = new Date().toISOString();
+  const weak = new Set(engine.relearnCards(cards, nowIso, today.today).map(c => c.id));
+  const due = new Set(engine.dueCards(cards, today.today).map(c => c.id));
+  return cards
+    .map(c => ({
+      id: c.id, text: c.answerKey, prompt: c.promptKey,
+      tier: audio.tierFor(c.id), weak: weak.has(c.id), due: due.has(c.id),
+      rank: c.introducedDay || 999,
+    }))
+    .filter(drive.eligible);
+}
+
+function driveTalks() {
+  return availableDialogues()
+    .map(d => ({ ...d, tier: audio.tierFor((d.turns[0] || {}).ref) }))
+    .filter(drive.eligible);
+}
+
+/** Drive を出してよいか。**出せないときは入口ごと出さない。** */
+function driveReady() {
+  return narration.available() && driveCandidates().length >= 5;
+}
+
+let driveState = null;   // { steps, at, timer, startedAt, played, talks, minutes }
+
+function openDrive() {
+  driveState = null;
+  track('drive_open');
+  $('drive-warn').textContent =
+    '運転を始める前に「はじめる」を押してください。運転中は画面を操作しないでください。';
+  $('drive-lead').textContent =
+    '日本語が流れます。少し間があくので、その間にモンゴル語を声に出してください。'
+    + 'そのあとモンゴル語が流れるので、もう一度言ってください。'
+    + '覚え具合や連続日数には影響しません。';
+  const row = $('drive-mins');
+  clear(row);
+  for (const m of drive.DURATIONS) {
+    row.appendChild(el('button', {
+      class: 'opt', attrs: { type: 'button', 'aria-pressed': String(driveMinutes === m) },
+      on: { click: () => { driveMinutes = m; openDrive(); } },
+    }, [
+      el('span', { class: 'opt-mark', text: driveMinutes === m ? '✓' : '' }),
+      el('span', { text: m ? `${m}分` : '続けられるだけ' }),
+    ]));
+  }
+  $('drive-setup').hidden = false;
+  $('drive-run').hidden = true;
+  $('drive-start').hidden = false;
+  $('drive-stop').hidden = true;
+  showScreen('drive');
+}
+
+let driveMinutes = 20;
+
+function startDrive() {
+  const plan = drive.buildPlaylist({
+    candidates: driveCandidates(), dialogues: driveTalks(), minutes: driveMinutes,
+  });
+  if (!plan.entries.length) { showNotice('いま流せるものがありません'); return; }
+
+  const steps = [];
+  for (const e of plan.entries) {
+    if (e.kind === 'item') steps.push(...drive.stepsForItem(e));
+    else {
+      const d = dialogues.find(x => x.id === e.id);
+      if (d) steps.push(...drive.stepsForTalk(d));
+    }
+  }
+  driveState = { steps, at: 0, timer: null, startedAt: Date.now(), played: 0, talks: 0,
+    minutes: driveMinutes, stopped: false };
+  track('drive_session_start');
+  $('drive-setup').hidden = true;
+  $('drive-run').hidden = false;
+  $('drive-start').hidden = true;
+  $('drive-stop').hidden = false;
+  $('drive-warn').textContent = '画面は見なくて大丈夫です。やめるときだけ「やめる」を押してください。';
+  runDrive();
+}
+
+/** 1手順ずつ進む。**同じ音を重ねない。**必ず前の手順が終わってから次へ行く。 */
+async function runDrive() {
+  if (!driveState || driveState.stopped) return;
+  const st = driveState.steps[driveState.at];
+  if (!st) { stopDrive('おわり'); return; }
+
+  // 予定の長さを過ぎたら、いまの手順を終えてから止める
+  if (driveState.minutes
+      && Date.now() - driveState.startedAt > driveState.minutes * 60000) {
+    stopDrive('おわり'); return;
+  }
+
+  const mine = ++driveToken;
+  // driveState が消えていたら false。**止めたあとに進めない**
+  const done = () => mine === driveToken && !!driveState && !driveState.stopped;
+
+  if (st.kind === 'think' || st.kind === 'repeat' || st.kind === 'talk_gap') {
+    $('drive-now').textContent = st.kind === 'repeat' ? 'もう一度' : '…';
+    $('drive-sub').textContent = st.kind === 'talk_gap' ? '' : '声に出してください';
+    driveState.timer = setTimeout(() => { if (done()) { driveState.at += 1; runDrive(); } }, st.ms);
+    return;
+  }
+
+  if (st.kind === 'say_prompt') {
+    const c = state.cards[st.id];
+    $('drive-now').textContent = c ? c.promptKey : '';
+    $('drive-sub').textContent = '日本語';
+    await narration.speak(c ? c.promptKey : '');
+  } else if (st.kind === 'talk_ask') {
+    $('drive-now').textContent = 'あなたなら何と返しますか';
+    $('drive-sub').textContent = '';
+    await narration.speak('あなたなら何と返しますか');
+  } else {
+    // モンゴル語側。**正式な音声のときしかここへ来ない**
+    const id = st.ref || st.id;
+    const c = state.cards[id];
+    $('drive-now').textContent = c ? c.answerKey : '';
+    $('drive-sub').textContent = 'モンゴル語';
+    await audio.play(id, { manual: false });
+    // **鳴っている間に「やめる」を押されていることがある。**
+    // 止まったあとの入れ物を触らない (押した瞬間に落ちる)
+    if (!done()) return;
+    if (st.kind === 'talk_line' || st.kind === 'talk_model') driveState.talks += 1;
+    else driveState.played += 1;
+  }
+  if (!done()) return;
+  driveState.at += 1;
+  runDrive();
+}
+
+let driveToken = 0;
+
+function stopDrive(why) {
+  if (!driveState) { showScreen('sheet'); openSheet('practice'); return; }
+  driveState.stopped = true;
+  driveToken += 1;
+  if (driveState.timer) { clearTimeout(driveState.timer); driveState.timer = null; }
+  narration.cancel();
+  audio.stop();
+  // **記録するのは回数と分だけ。**教材の本文も、モンゴル語も、場所も残さない
+  const mins = Math.round((Date.now() - driveState.startedAt) / 60000);
+  track('drive_session_end');
+  trackDrive(mins, driveState.played, driveState.talks);
+  driveState = null;
+  storage.save(state);
+  openSheet('practice');
+}
+
+/**
+ * Drive の記録。**中身は1文字も入れない。**
+ * 教材本文・モンゴル語・音声・場所・走った道は保存しない。数だけ。
+ * engine/drive.js の ALLOWED_EVENTS がその一覧で、そこに無い名前は足さない。
+ */
+function trackDrive(minutes, items, talks) {
+  state.analytics = state.analytics || {};
+  const a = state.analytics;
+  a.drive_minutes = (a.drive_minutes || 0) + Math.max(0, minutes);
+  a.audio_items_played = (a.audio_items_played || 0) + items;
+  a.conversation_played = (a.conversation_played || 0) + talks;
 }
 
 // ---------- 会話練習 (試作) ----------
@@ -8811,6 +9313,9 @@ function wire() {
   $('talk-reveal').addEventListener('click', talkReveal);
   $('talk-next').addEventListener('click', talkNext);
   $('talk-back').addEventListener('click', talkBack);
+  $('drive-start').addEventListener('click', startDrive);
+  $('drive-stop').addEventListener('click', () => stopDrive('やめる'));
+  $('drive-back').addEventListener('click', () => { stopDrive('もどる'); });
   $('fieldlog-back').addEventListener('click', () => { showScreen('more'); renderMore(); });
   $('update-btn').addEventListener('click', applyUpdate);
   $('cp-continue').addEventListener('click', () => {
