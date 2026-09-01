@@ -2,7 +2,7 @@
   Mongolian 90 — 社長個人β (1ファイル版)
   build-standalone.js が engine/ 言語パック/ UI / 教材を連結して生成する。
   手で編集しない。直すときは元のファイルを直して作り直す。
-  生成元: 教材 140件 / モジュール 22本 / 参考音声 0件
+  生成元: 教材 140件 / モジュール 25本 / 参考音声 0件
 -->
 <!doctype html>
 <html lang="ja">
@@ -87,6 +87,61 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .streak.off{color:var(--faint);font-weight:600}
 .streak-flame{font-size:1rem}
 
+/* ---- 今日のミッション ---- */
+/* 「カードを処理する」ではなく「これができるようになる」を先に見せる */
+.mission{background:var(--accent-soft);border:1px solid var(--accent);border-radius:14px;
+  padding:14px 16px;margin-bottom:12px}
+.mission-h{font-size:.75rem;color:var(--accent);letter-spacing:.06em;font-weight:700}
+.mission-t{font-size:1.2rem;font-weight:800;line-height:1.4;margin-top:4px;text-wrap:balance}
+.mission-n{font-size:.8rem;color:var(--dim);margin-top:6px;font-variant-numeric:tabular-nums}
+
+/* ---- 今週の目当て ---- */
+.wk{display:grid;gap:7px}
+.wk-row{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:10px;
+  background:var(--raised);border:1px solid var(--line);border-radius:12px;
+  padding:11px 14px;font-size:.9rem}
+.wk-row.met{background:var(--ok-soft);border-color:var(--ok-soft);color:var(--ok)}
+.wk-m{text-align:center}
+.wk-n{font-size:.8rem;color:var(--faint);font-variant-numeric:tabular-nums}
+.wk-row.met .wk-n{color:var(--ok)}
+
+/* ---- できること ---- */
+.can{display:grid;gap:7px}
+.can-row{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:10px;
+  background:var(--raised);border:1px solid var(--line);border-radius:12px;
+  padding:12px 14px;font-size:.94rem}
+.can-row.on{background:var(--ok-soft);border-color:var(--ok-soft)}
+.can-row.on .can-t{color:var(--ok);font-weight:700}
+.can-m{text-align:center;color:var(--faint)}
+.can-row.on .can-m{color:var(--ok)}
+.can-n{font-size:.78rem;color:var(--faint);font-variant-numeric:tabular-nums}
+
+/* ---- 学習中の小さな案内 ---- */
+.step-hint{font-size:.78rem;color:var(--faint);letter-spacing:.04em;margin-bottom:10px}
+.step-hint.near{color:var(--accent);font-weight:700}
+
+/* ---- 完了画面の飾り ---- */
+.perfect{display:inline-flex;align-items:center;gap:7px;align-self:center;margin-top:14px;
+  font-size:.94rem;font-weight:800;color:var(--accent);
+  background:var(--accent-soft);border:1px solid var(--accent);border-radius:99px;padding:7px 18px}
+.cheer-bar{height:8px;background:var(--sunk);border-radius:99px;overflow:hidden;
+  margin:18px auto 0;max-width:240px;width:100%}
+.cheer-bar>i{display:block;height:100%;background:var(--accent);border-radius:99px;width:0}
+@media (prefers-reduced-motion:no-preference){
+  .cheer-bar>i{transition:width .55s cubic-bezier(.3,.9,.4,1)}
+}
+.cheer-sub{font-size:.85rem;color:var(--faint);margin-top:8px;font-variant-numeric:tabular-nums}
+
+/* ---- 1タップ感想 ---- */
+.ask{margin-top:26px}
+.ask-q{font-size:.9rem;color:var(--dim);margin-bottom:10px}
+.ask-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ask-row button{min-height:52px;border-radius:12px;font-size:.88rem;
+  background:var(--raised);border:1px solid var(--line)}
+.ask-row button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);
+  color:var(--accent);font-weight:700}
+.ask-done{font-size:.85rem;color:var(--ok);margin-top:10px}
+
 /* ---- 今日の目標 ---- */
 .goal{display:flex;align-items:center;justify-content:space-between;gap:12px;
   background:var(--raised);border:1px solid var(--line);border-radius:14px;
@@ -139,6 +194,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .lesson-now{border-color:var(--accent);border-width:2px;background:var(--accent-soft)}
 .lesson-now .lesson-mark,.lesson-now .lesson-t{color:var(--accent);font-weight:700}
 .lesson-todo{opacity:.72}
+.lesson-more{opacity:.55;border-style:dashed}
 
 /* ---- 練習 ---- */
 .practice{display:grid;gap:8px}
@@ -476,6 +532,19 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
     <button id="more-btn" class="icon-btn" type="button">その他</button>
   </div>
 
+  <!-- おかえりなさい。間が空いても責めない -->
+  <div class="mission" id="welcome-box" hidden>
+    <div class="mission-t" id="welcome-t"></div>
+    <div class="mission-n" id="welcome-n"></div>
+  </div>
+
+  <!-- 今日のミッション。「これができるようになる」を先に見せる -->
+  <div class="mission" id="mission-box" hidden>
+    <div class="mission-h">今日のミッション</div>
+    <div class="mission-t" id="mission-t"></div>
+    <div class="mission-n" id="mission-n"></div>
+  </div>
+
   <!-- 今日の目標。全部やらないと終われない、と思わせないためのもの -->
   <div class="goal" id="goal-box" hidden>
     <span class="goal-t" id="goal-t">今日の目標</span>
@@ -543,6 +612,9 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
     <button id="quit-btn" type="button">終了</button>
   </div>
   <div class="track"><i id="progress-bar" style="width:0%"></i></div>
+
+  <!-- 5問の中の位置。残りが少なくなったときだけ強める -->
+  <div class="step-hint" id="step-hint"></div>
 
   <div class="card">
     <!-- はじめて出す語だけに出す一言。想起させない -->
@@ -646,8 +718,18 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
       <div class="done-ok"><b id="done-ok">0</b><span>言えた</span></div>
       <div class="done-ng"><b id="done-ng">0</b><span>もう一度</span></div>
     </div>
+    <div class="perfect" id="done-perfect" hidden></div>
+    <div class="cheer-bar"><i id="done-bar"></i></div>
+    <div class="cheer-sub" id="done-sub"></div>
     <div class="cheer-streak" id="done-streak" hidden></div>
     <div class="cheer-note" id="done-note" hidden></div>
+
+    <!-- その日の分を終えたときだけ、任意で1タップ。答えなくてよい -->
+    <div class="ask" id="ask-box" hidden>
+      <div class="ask-q">今日の量は？（答えなくても大丈夫です）</div>
+      <div class="ask-row" id="ask-row"></div>
+      <div class="ask-done" id="ask-done" hidden></div>
+    </div>
   </div>
   <div class="dock-pad-2"></div>
 </main>
@@ -655,6 +737,8 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 <div class="dock" id="summary-dock" hidden>
   <div class="dock-inner">
     <button id="next-lesson" class="primary" type="button" hidden>次の5問</button>
+    <!-- その日の分を終えたあとだけ。押さなくても今日は成功 -->
+    <button id="extra-btn" class="ghost" type="button" hidden>もう5問チャレンジ</button>
     <button id="back-home" class="primary" type="button">ホームへ</button>
   </div>
 </div>
@@ -2384,6 +2468,299 @@ function shuffle(arr, rand) {
 __m["engine/practice.js"] = { mistakes, matchRound, matchIsCorrect, shuffle };
 })();
 
+// ===== engine/mission.js =====
+(() => {
+/**
+ * その日の目当てと、「できること」の一覧。
+ *
+ * 狙いは1つ: **カードを処理する作業ではなく、「今日はこれができるようになる」に変える。**
+ *
+ * ここは言語を知らない。分類そのもの (どのIDがどの場面か、何と呼ぶか) は
+ * 言語パックが持ち、この層は「今日の出題がどの分類に一番当たっているか」を数えるだけ。
+ * **新しい教材も、新しい言い回しも、ここでは作らない。**
+ */
+
+/**
+ * 「練習した」と言ってよい条件。
+ *
+ * わざと控えめにしてある。1回言えただけで「できる」と出すと、
+ * 画面の表示と実力が離れていき、いちばん見たい「本当にできるか」が見えなくなる。
+ *   - その分類の項目を PRACTICED_MIN_ITEMS 件以上、産出で正解している
+ *   - かつ、分類の項目数の PRACTICED_MIN_RATIO 以上
+ * どちらも満たしたときだけ「練習済み」。**「習得」「話せる」とは言わない。**
+ */
+const PRACTICED_MIN_ITEMS = 3;
+const PRACTICED_MIN_RATIO = 0.5;
+
+/**
+ * 今日の目当てを決める。
+ *
+ * その日の出題に一番多く含まれる分類を選ぶ。同数なら、まだ練習していないほうを優先する。
+ * 出題が空の日は null (無いものを作らない)。
+ *
+ * @param {object} p
+ *   steps        今日の手順 ({cardId})
+ *   categories   言語パックの分類
+ *   practiced    既に「練習済み」の分類ID の集合 (任意)
+ */
+function missionFor(p = {}) {
+  const { steps = [], categories = [], practiced = new Set() } = p;
+  if (!steps.length || !categories.length) return null;
+
+  const of = new Map();
+  for (const c of categories) for (const id of c.items) of.set(id, c.id);
+
+  const count = new Map();
+  for (const s of steps) {
+    const cid = of.get(s.cardId);
+    if (cid) count.set(cid, (count.get(cid) || 0) + 1);
+  }
+  if (!count.size) return null;
+
+  let best = null;
+  for (const c of categories) {
+    const n = count.get(c.id) || 0;
+    if (!n) continue;
+    const isNew = !practiced.has(c.id);
+    if (!best
+      || n > best.n
+      || (n === best.n && isNew && !best.isNew)) best = { c, n, isNew };
+  }
+  if (!best) return null;
+  return {
+    categoryId: best.c.id,
+    label: best.c.label,
+    title: best.c.mission,
+    count: best.n,
+    total: steps.length,
+  };
+}
+
+/**
+ * 「できること」の一覧。**練習した範囲を表すだけ。**
+ *
+ * @param {object} p
+ *   categories / events / cards
+ * @returns {Array} { id, label, canDo, correct, total, practiced }
+ */
+function collection(p = {}) {
+  const { categories = [], events = [], cards = {} } = p;
+
+  // 産出(recall)で正解した項目だけを数える。
+  // 「覚える」の接触や、組み合わせのような見て分かる練習は入れない
+  const ok = new Set();
+  for (const e of events || []) {
+    if (!e || !e.correct || !e.cardId) continue;
+    if (e.kind && e.kind !== 'recall') continue;
+    ok.add(e.cardId);
+  }
+
+  return categories.map(c => {
+    const items = c.items.filter(id => cards[id]);
+    const correct = items.filter(id => ok.has(id)).length;
+    const total = items.length || c.items.length;
+    const practiced = correct >= PRACTICED_MIN_ITEMS
+      && correct >= Math.ceil(total * PRACTICED_MIN_RATIO);
+    return { id: c.id, label: c.label, canDo: c.canDo, correct, total, practiced };
+  });
+}
+
+/** 「練習済み」の分類IDの集合。今日の目当てを選ぶときに使う。 */
+function practicedIds(p) {
+  return new Set(collection(p).filter(x => x.practiced).map(x => x.id));
+}
+
+
+__m["engine/mission.js"] = { missionFor, collection, practicedIds, PRACTICED_MIN_ITEMS, PRACTICED_MIN_RATIO };
+})();
+
+// ===== engine/weekly.js =====
+(() => {
+/**
+ * 今週の目当て。**「たくさん回すこと」を条件にしない。**
+ *
+ * 点数や通貨を配ると、点を稼ぐこと自体が目的になり、
+ * 「言えるようになったか」より「何問こなしたか」を見るようになる。
+ * ここで条件にするのは**良い学習の行動**だけにする:
+ *   - 何日か続けて手をつけた
+ *   - 間違えたものを見直した
+ *   - 商談で使う言い回しに目を通した
+ *
+ * 達成しても出るのは一言だけ。褒美は無い。
+ */
+
+/** 週の目当て。数を増やさない (3つまで)。 */
+const GOALS = [
+  { id: 'days', label: '5問レッスンを3日', need: 3 },
+  { id: 'mistakes', label: '間違い復習を1回', need: 1 },
+  { id: 'briefing', label: '商談フレーズを見る', need: 1 },
+];
+
+/** 週の始まり(月曜)。暦日の計算は呼び出し側の時間帯に従う。 */
+function weekStart(dayIso) {
+  const d = new Date(dayIso + 'T00:00:00Z');
+  const back = (d.getUTCDay() + 6) % 7;      // 月曜=0 になるようずらす
+  d.setUTCDate(d.getUTCDate() - back);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * 今週の進み具合。
+ *
+ * @param {object} p
+ *   todayIso   今日の暦日
+ *   studyDays  学習した暦日の一覧 (呼び出し側が events から作る)
+ *   counters   { mistakes:number, briefing:number } 端末内の利用記録
+ */
+function progress(p = {}) {
+  const { todayIso, studyDays = [], counters = {} } = p;
+  const from = weekStart(todayIso);
+  const inWeek = [...new Set(studyDays)].filter(d => d >= from && d <= todayIso);
+
+  const got = { days: inWeek.length, mistakes: counters.mistakes || 0, briefing: counters.briefing || 0 };
+  const goals = GOALS.map(g => ({
+    ...g, done: Math.min(got[g.id] || 0, g.need), met: (got[g.id] || 0) >= g.need,
+  }));
+  return { from, goals, allMet: goals.every(g => g.met), metCount: goals.filter(g => g.met).length };
+}
+
+
+__m["engine/weekly.js"] = { progress, weekStart, GOALS };
+})();
+
+// ===== engine/analytics.js =====
+(() => {
+/**
+ * 端末の中だけに置く利用の記録。**外へは送らない。**
+ *
+ * 目的は1つ: あとで「本当に使いやすくなったのか」を数字で見直すため。
+ * 作った本人の感想ではなく、実際に押された回数で判断できるようにしておく。
+ *
+ * **入れないもの (意図的):**
+ *   教材の本文 / 実使用の記録の中身 / 保存したフレーズの中身 /
+ *   カードのID / 個人を特定できるもの
+ * 入れるのは「何が何回起きたか」と「どこで止まったか」の数だけ。
+ * 貼り先の履歴に残ってよいものだけを持つ。
+ */
+
+/** 数えてよい出来事。ここに無い名前は捨てる (何でも入る箱にしない)。 */
+const EVENTS = [
+  'app_open',            // アプリを開いた
+  'lesson_start',        // 5問を始めた
+  'lesson_complete',     // 5問を終えた
+  'next_lesson',         // 「次の5問」を押した
+  'stop_here',           // 「今日はここまで」を押した
+  'day_complete',        // その日の分を終えた
+  'quit_mid',            // 途中で「終了」を押した
+  'practice_mistakes',   // 間違えた表現
+  'practice_sprint',     // 5分だけ復習
+  'practice_match',      // 組み合わせ
+  'practice_favorites',  // 保存したフレーズ
+  'practice_briefing',   // 商談の直前に見る
+  'extra_challenge',     // もう5問
+  'field_open',          // 実使用の記録を開いた
+];
+
+const MAX_DAYS = 60;          // 保持する日数。個人βの見直しに足りる範囲
+const MAX_POSITIONS = 200;    // 途中で止めた位置の記録の上限
+
+function emptyAnalytics() {
+  return { version: 1, days: {}, quitAt: [], durations: [] };
+}
+
+/**
+ * 1件数える。**渡された名前が一覧に無ければ何もしない。**
+ * @param {object} a 記録 (無ければ作る)
+ * @param {string} name 出来事
+ * @param {string} dayIso 暦日
+ */
+function count(a, name, dayIso) {
+  if (!EVENTS.includes(name)) return a || emptyAnalytics();
+  const s = a && a.days ? a : emptyAnalytics();
+  const d = s.days[dayIso] || (s.days[dayIso] = {});
+  d[name] = (d[name] || 0) + 1;
+  return trim(s);
+}
+
+/** 5問の途中で止めた位置。何問目で止まりやすいかを見るためだけの数。 */
+function recordQuit(a, index, total) {
+  const s = a && a.days ? a : emptyAnalytics();
+  s.quitAt.push({ i: index, n: total });
+  if (s.quitAt.length > MAX_POSITIONS) s.quitAt = s.quitAt.slice(-MAX_POSITIONS);
+  return trim(s);
+}
+
+/** 1回の学習にかかった秒数。中身は入れない。 */
+function recordDuration(a, seconds) {
+  const s = a && a.days ? a : emptyAnalytics();
+  if (Number.isFinite(seconds) && seconds > 0 && seconds < 3600) {
+    s.durations.push(Math.round(seconds));
+    if (s.durations.length > MAX_POSITIONS) s.durations = s.durations.slice(-MAX_POSITIONS);
+  }
+  return s;
+}
+
+function trim(s) {
+  const keys = Object.keys(s.days).sort();
+  while (keys.length > MAX_DAYS) delete s.days[keys.shift()];
+  return s;
+}
+
+/**
+ * 見直し用のまとめ。**そのまま貼れる数字だけ。**
+ * 「5問を終えた率」「次の5問を押した率」「翌日また開いた日数」を出す。
+ */
+function summary(a) {
+  const s = a && a.days ? a : emptyAnalytics();
+  const days = Object.keys(s.days).sort();
+  const sum = k => days.reduce((n, d) => n + (s.days[d][k] || 0), 0);
+
+  const starts = sum('lesson_start');
+  const completes = sum('lesson_complete');
+  const next = sum('next_lesson');
+  const opens = days.filter(d => (s.days[d].app_open || 0) > 0);
+
+  // 翌日も開いた回数
+  let returned = 0;
+  for (let i = 0; i < opens.length - 1; i++) {
+    const a1 = Date.parse(opens[i] + 'T00:00:00Z');
+    const b1 = Date.parse(opens[i + 1] + 'T00:00:00Z');
+    if (b1 - a1 === 86400000) returned += 1;
+  }
+
+  const dur = s.durations.slice().sort((x, y) => x - y);
+  return {
+    日数: days.length,
+    開いた日: opens.length,
+    翌日も開いた回数: returned,
+    '5問を始めた回数': starts,
+    '5問を終えた回数': completes,
+    '5問を終えた率': pct(completes, starts),
+    '次の5問を押した回数': next,
+    '終えたあと次に進んだ率': pct(next, completes),
+    '今日はここまでを押した回数': sum('stop_here'),
+    'その日の分を終えた回数': sum('day_complete'),
+    途中でやめた回数: sum('quit_mid'),
+    もう5問: sum('extra_challenge'),
+    練習: {
+      間違えた表現: sum('practice_mistakes'),
+      '5分だけ復習': sum('practice_sprint'),
+      組み合わせ: sum('practice_match'),
+      保存したフレーズ: sum('practice_favorites'),
+      商談の直前に見る: sum('practice_briefing'),
+    },
+    実使用の記録を開いた回数: sum('field_open'),
+    '1回の学習の秒数(中央値)': dur.length ? dur[Math.floor(dur.length / 2)] : null,
+    途中でやめた位置: s.quitAt.slice(-20),
+  };
+}
+
+function pct(a, b) { return b > 0 ? Math.round((a / b) * 100) + '%' : '—'; }
+
+
+__m["engine/analytics.js"] = { count, recordQuit, recordDuration, summary, emptyAnalytics, EVENTS, MAX_DAYS };
+})();
+
 // ===== engine/index.js =====
 (() => {
 /**
@@ -2404,6 +2781,9 @@ const exercise = __m["engine/exercise.js"];
 const progress = __m["engine/progress.js"];
 const lesson = __m["engine/lesson.js"];
 const practice = __m["engine/practice.js"];
+const mission = __m["engine/mission.js"];
+const weekly = __m["engine/weekly.js"];
+const analytics = __m["engine/analytics.js"];
 
 /**
  * @param {object} languagePack languages/<code>/pack.js
@@ -2579,6 +2959,32 @@ function createEngine(languagePack, profileInput) {
     fieldScoreOf: fieldReport.scoreOf,
     fieldReviewQueue: fieldReport.reviewQueue,
 
+    /**
+     * 今日の目当て。**分類そのものは言語パックが持つ。**
+     * 出題が無い日は null を返す (無いものを作らない)。
+     */
+    missionFor({ steps, practiced }) {
+      return mission.missionFor({ steps, categories: languagePack.categories || [], practiced });
+    },
+    /** 「できること」の一覧。練習した範囲を表すだけで、習得の意味では使わない。 */
+    collection({ events, cards }) {
+      return mission.collection({ categories: languagePack.categories || [], events, cards });
+    },
+    practicedIds({ events, cards }) {
+      return mission.practicedIds({ categories: languagePack.categories || [], events, cards });
+    },
+
+    /** 今週の目当て。点数ではなく、良い学習の行動を条件にする。 */
+    weeklyProgress: weekly.progress,
+    weekStartOf: weekly.weekStart,
+
+    /** 端末の中だけの利用記録。外へは送らない。 */
+    countUse: analytics.count,
+    recordQuit: analytics.recordQuit,
+    recordDuration: analytics.recordDuration,
+    useSummary: analytics.summary,
+    useEvents: analytics.EVENTS,
+
     /** 手順を短いまとまりに切る。中身は変えない (engine/lesson.js)。 */
     splitLessons: lesson.split,
     endOfLesson: lesson.endOfLesson,
@@ -2638,7 +3044,7 @@ function severityOf(grade, card) {
 }
 
 
-__m["engine/index.js"] = { createEngine, schema, scheduler, selector, session, profile, checkpoint, fieldReport, exercise, progress, lesson, practice };
+__m["engine/index.js"] = { createEngine, schema, scheduler, selector, session, profile, checkpoint, fieldReport, exercise, progress, lesson, practice, mission, weekly, analytics };
 })();
 
 // ===== engine/clock.js =====
@@ -3224,6 +3630,51 @@ const pack = {
     ],
   },
 
+  /**
+   * 場面ごとの分類。**新しい教材は作らない。**既にある140件を、
+   * 「これができるようになる」という単位で並べ替えただけのもの。
+   * ここに新しいモンゴル語を書き足してはいけない (IDだけを並べる)。
+   *
+   *   label   一覧に出す名前
+   *   mission その日の目当てとして出す一文 (「今日はこれができるようになる」)
+   *   canDo   「できること」の一覧に出す言い方
+   *
+   * canDo は**練習した範囲**を表すだけで、「習得した」「話せる」の意味では使わない。
+   * 140件すべてがちょうど1つの分類に入る (test/app12-test.js が検査する)。
+   */
+  categories: [
+    { id: 'greet', label: 'あいさつ', mission: 'あいさつとお礼を言う', canDo: 'あいさつをする',
+      items: ['g_hello', 'g_thanks', 'g_yes', 'g_no', 's_goodbye', 's_sorry', 's_thanks_much',
+        's_thank_you_today', 's_thanks_time', 's_see_you'] },
+    { id: 'intro', label: '自己紹介', mission: '初対面で自己紹介する', canDo: '自己紹介をする',
+      items: ['p_i', 'p_you_pol', 'p_you_casual', 'p_he_she', 'p_we', 'n_name', 'n_japan', 'n_mongolia',
+        's_iam_from_jp', 's_my_name_is', 's_nice_to_meet', 's_card_exchange', 'n_businesscard',
+        's_i_sell_cars', 'n_company', 'n_person', 'n_family', 'n_child', 'n_wife', 's_i_have_family'] },
+    { id: 'price', label: '数と値段', mission: '値段を聞けるようになる', canDo: '値段を聞く',
+      items: ['num_1', 'num_2', 'num_3', 'num_4', 'num_5', 'num_6', 'num_7', 'num_8', 'num_9', 'num_10',
+        'num_100', 'num_1000', 'n_price', 's_how_much', 'n_dollar', 'n_money', 's_ill_send_quote', 'q_howmany'] },
+    { id: 'car', label: '車のこと', mission: '車の状態を伝える', canDo: '車の状態を話す',
+      items: ['n_car', 'n_usedcar', 's_i_have_car', 's_no_accident', 'n_accident', 's_how_many_km', 'n_km',
+        's_what_year', 'n_engine', 'n_part', 'n_color', 'c_white', 'c_black', 'c_red', 'q_whichmodel'] },
+    { id: 'trade', label: '買う・売る', mission: '売り買いの話をする', canDo: '売り買いの話をする',
+      items: ['v_buy', 'v_sell', 's_i_buy_this', 's_i_sell_this', 's_show_me', 'n_shop', 'n_document',
+        'n_photo', 'v_send', 's_send_to_you', 'n_market', 'n_partner', 's_lets_work_together',
+        'v_look_for', 'v_find', 'v_take', 'v_give', 's_do_you_have', 's_i_dont_have'] },
+    { id: 'place', label: '場所と移動', mission: '場所をたずねる', canDo: '場所をたずねる',
+      items: ['q_where', 's_where_is', 'n_road', 'n_city', 'n_country', 'n_ub', 's_i_am_in_ub', 'n_airport',
+        'n_hotel', 'n_restaurant', 'n_office', 'n_bank', 'n_port', 'n_customs', 's_where_is_toilet',
+        'adv_here', 'adv_there', 'v_go', 'v_come', 'n_house'] },
+    { id: 'contact', label: '連絡と次回', mission: '連絡先と次の約束をする', canDo: '連絡先を交換する',
+      items: ['n_phone', 'v_contact', 's_can_i_contact', 's_ill_contact', 's_lets_meet_here', 'n_meeting',
+        'n_today', 'n_tomorrow', 'n_time', 'n_day', 'n_month', 'n_year', 'n_morning', 'n_evening'] },
+    { id: 'repair', label: '聞き返す', mission: '聞き取れない時に切り抜ける', canDo: '聞き返す',
+      items: ['s_say_again', 's_slowly', 's_i_dont_get', 's_do_you_speak_en', 'v_understand', 's_are_you_ok',
+        's_is_this_ok', 's_please_wait', 'v_speak', 'n_language'] },
+    { id: 'daily', label: '日常のことば', mission: '基本のことばを使う', canDo: '基本のことばを使う',
+      items: ['v_be_now', 'q_what', 'q_who', 'q_when', 'q_how', 's_whats_this', 'n_work', 'n_water', 'n_food',
+        'v_see', 'v_know', 'v_do', 'pn_this', 'pn_that'] },
+  ],
+
   /** 参考音声の目録。読み込みは呼び出し側 (Node は fs、ブラウザは埋め込み)。 */
   audioManifestUrl: new URL('./audio/manifest.json', import.meta.url).href,
 
@@ -3682,9 +4133,11 @@ let busy = false;        // 合図の表示中。二重に判定を受け付け�
 let sessionStats = { answered: 0, correct: 0, wrong: 0, relearn: 0 };
 // 'daily' = その日の予定 / 'practice' = 練習。練習は途中経過を保存しない
 let sessionKind = 'daily';
-// このミニレッスンの終わり。ここまで来たら、いったん切り上げられる
+// このミニレッスンの範囲。ここまで来たら、いったん切り上げられる
+let lessonStart = 0;
 let lessonEnd = 0;
 let lessonStats = { steps: 0, answered: 0, correct: 0, wrong: 0, introduced: 0 };
+let sessionStartedAt = 0;
 let updateReady = false; // 新しい版が待機中か
 
 // ---------- 起動 ----------
@@ -3728,6 +4181,8 @@ async function startApp() {
   today = clock.programDay(new Date(), state.settings.startDayIso, tz, TOTAL_DAYS);
   engine = createEngine(mnPack, state.profile);
   dropStaleSession();
+  track('app_open');
+  storage.save(state);
   // 節目の日はチェックポイントを先に見せる。表示したらホームは描かない
   if (maybeShowCheckpoint()) return;
   goHome();
@@ -3822,6 +4277,8 @@ function renderHome() {
   const plan = todayPlan();
 
   renderTopBar();
+  renderWelcome();
+  renderMission(plan);
   renderGoal();
   renderPath();
   renderLessons(plan);
@@ -3851,6 +4308,68 @@ function renderTopBar() {
     chip.appendChild(el('span', { text: `連続 ${st.count}日` }));
     chip.hidden = false;
   } else { chip.hidden = true; }
+}
+
+/**
+ * 間が空いたときの一言。**責めない。**
+ *
+ * 「昨日やっていません」と言われて再開したくなる人はいない。
+ * 続けられなかった事実は連続日数がすでに表しているので、
+ * ここでは戻ってきたことだけを受け止めて、いちばん軽い入口を出す。
+ * **連続日数の値そのものには手を触れない。**
+ */
+function renderWelcome() {
+  const box = $('welcome-box');
+  const last = lastStudyDay();
+  const gap = last ? daysBetweenIso(last, today.today) : null;
+  // 前回から2日以上あいた日の、まだ何もしていないときだけ
+  if (today.state === 'before_start' || !last || gap < 2 || dailyProgress() > 0) {
+    box.hidden = true; return;
+  }
+  $('welcome-t').textContent = 'おかえりなさい';
+  $('welcome-n').textContent = '今日は5問から。少しでも進めば十分です。';
+  box.hidden = false;
+}
+
+/** 最後に学習した暦日。 */
+function lastStudyDay() {
+  const ev = state.events || [];
+  for (let i = ev.length - 1; i >= 0; i--) {
+    if (ev[i] && ev[i].at) return localDayOf(ev[i].at);
+  }
+  return null;
+}
+/** 暦日の差。日付の計算は engine が持つものを使う (UI が期日を計算しない)。 */
+function daysBetweenIso(a, b) {
+  let n = 0;
+  while (n < 400 && engine.shiftDays(a, n) < b) n += 1;
+  return n;
+}
+
+/**
+ * 今日のミッション。**新しいモンゴル語は作らない。**
+ * 今日の出題がどの場面に一番当たっているかを engine が数え、
+ * 言語パックが持っている言い方をそのまま出すだけ。
+ */
+let missionCache = null;
+function currentMission(plan) {
+  if (!plan || !plan.split || !plan.steps) return null;
+  if (missionCache && missionCache.day === today.today) return missionCache.mission;
+  const m = engine.missionFor({
+    steps: plan.steps,
+    practiced: engine.practicedIds({ events: state.events || [], cards: state.cards }),
+  });
+  missionCache = { day: today.today, mission: m };
+  return m;
+}
+
+function renderMission(plan) {
+  const box = $('mission-box');
+  const m = currentMission(plan);
+  if (!m || plan.remaining === 0) { box.hidden = true; return; }
+  $('mission-t').textContent = `「${m.title}」`;
+  $('mission-n').textContent = `${m.label} の表現が ${m.count}問 入っています`;
+  box.hidden = false;
 }
 
 /**
@@ -3953,7 +4472,14 @@ function renderLessons(plan) {
     return;
   }
 
-  for (const l of plan.split.lessons) {
+  // 全部並べるとホームが縦に長くなり、いちばん大事な開始ボタンが遠くなる。
+  // 済んだもの・いまのもの・次の2つ までを出し、残りは1行にまとめる
+  const all = plan.split.lessons;
+  const cur = Math.max(0, all.findIndex(l => l.state === 'current'));
+  const from = Math.max(0, Math.min(cur - 1, all.length - LESSONS_SHOWN));
+  const shown = all.slice(from, from + LESSONS_SHOWN);
+
+  for (const l of shown) {
     const cls = 'lesson ' + (l.state === 'done' ? 'lesson-done'
       : l.state === 'current' ? 'lesson-now' : 'lesson-todo');
     root.appendChild(el('div', { class: cls }, [
@@ -3966,7 +4492,18 @@ function renderLessons(plan) {
           : `${l.size}問` }),
     ]));
   }
+  const rest = all.length - (from + shown.length);
+  if (rest > 0) {
+    root.appendChild(el('div', { class: 'lesson lesson-todo lesson-more' }, [
+      el('span', { class: 'lesson-mark', text: '⋯' }),
+      el('span', { class: 'lesson-t', text: `ほか ${rest} レッスン` }),
+      el('span', { class: 'lesson-sub', text: `${plan.remaining}問` }),
+    ]));
+  }
 }
+
+/** ホームに並べるレッスンの数。増やすほど開始ボタンが遠くなる。 */
+const LESSONS_SHOWN = 4;
 
 /** 下の大きなボタン。開いてから学習開始まで2タップ以内にする。 */
 function renderHomeDock(plan) {
@@ -3999,7 +4536,7 @@ function dueOrRelearnCount() {
  */
 let planCache = null;
 function todayPlan() {
-  const empty = { remaining: 0, minutes: null, resumed: false, split: null, inLesson: 0, index: 0, total: 0 };
+  const empty = { remaining: 0, minutes: null, resumed: false, steps: null, split: null, inLesson: 0, index: 0, total: 0 };
   if (today.state === 'before_start') return empty;
 
   const resume = resumableSession();
@@ -4010,6 +4547,7 @@ function todayPlan() {
       remaining: rest.length,
       minutes: rest.length ? engine.estimateMinutes(rest) : null,
       resumed: true,
+      steps: resume.cardIds.map(id => ({ cardId: id })),
       split: engine.splitLessons(resume.cardIds.map(id => ({ cardId: id })), resume.index),
       inLesson: engine.remainingInLesson(resume.index, total),
       index: resume.index, total,
@@ -4022,6 +4560,7 @@ function todayPlan() {
   if (!plan || !plan.ok) return empty;
   return {
     remaining: plan.steps.length, minutes: plan.estimatedMinutes, resumed: false,
+    steps: plan.steps,
     split: engine.splitLessons(plan.steps, 0),
     inLesson: 0, index: 0, total: plan.steps.length,
   };
@@ -4049,8 +4588,11 @@ function defaultModeId() {
 function moreMenu() {
   const favCount = Object.keys(favorites()).length;
   const fieldCount = (state.fieldReports || []).length;
+  const can = engine.collection({ events: state.events || [], cards: state.cards });
+  const done = can.filter(c => c.practiced).length;
   return [
     ['練習', () => openSheet('practice'), ''],
+    ['できること', () => openSheet('cando'), `${done} / ${can.length}`],
     ['学習状況', () => openSheet('stats'), ''],
     ['保存したフレーズ', () => openSheet('favorites'), favCount ? `${favCount} 件` : ''],
     ['商談の直前に見る', () => openSheet('briefing'), '5分'],
@@ -4058,6 +4600,7 @@ function moreMenu() {
     ['記録を書き出す', () => openSheet('export'), ''],
     ['90日ロードマップ', () => openSheet('roadmap'), ''],
     ['表示設定', () => openSheet('display'), ''],
+    ['利用状況を書き出す', () => openSheet('usage'), ''],
     ['このβ版について', () => openSheet('about'), ''],
     ['バージョン', () => openSheet('version'), BETA_VERSION],
   ];
@@ -4078,6 +4621,8 @@ function renderMore() {
 // ---------- 「その他」の中の各画面 ----------
 const SHEETS = {
   practice: { title: '練習', render: renderPractice },
+  cando: { title: 'できること', render: renderCanDo },
+  usage: { title: '利用状況を書き出す', render: renderUsage },
   mistakes: { title: '間違えた表現', render: renderMistakes },
   stats: { title: '学習状況', render: renderStats },
   favorites: { title: '保存したフレーズ', render: () => renderPhrases('favorites') },
@@ -4133,6 +4678,107 @@ function renderWeek(root) {
   root.appendChild(row);
 }
 
+/**
+ * 「できること」。**点数の代わりに、現実で何ができるかを出す。**
+ *
+ * ✓ が付くのは**練習した範囲**を表すだけで、「習得した」「話せる」ではない。
+ * 条件は engine が持つ (何件正解したか / 分類の何割か)。
+ * 実際に通じるかどうかは、実使用の記録でしか分からない。
+ */
+function renderCanDo(root) {
+  const can = engine.collection({ events: state.events || [], cards: state.cards });
+  const done = can.filter(c => c.practiced).length;
+
+  root.appendChild(el('p', { class: 'ph-lead',
+    text: `${can.length}種類のうち ${done}種類を練習しました。`
+      + '✓ は「その場面の表現を練習した」という意味で、'
+      + '実際に通じるかどうかは、商談で使って記録すると分かります。' }));
+
+  const list = el('div', { class: 'can' });
+  for (const c of can) {
+    list.appendChild(el('div', { class: c.practiced ? 'can-row on' : 'can-row' }, [
+      el('span', { class: 'can-m', text: c.practiced ? '✓' : '□' }),
+      el('span', { class: 'can-t', text: c.canDo }),
+      el('span', { class: 'can-n', text: `${c.correct} / ${c.total}` }),
+    ]));
+  }
+  root.appendChild(list);
+  root.appendChild(el('p', { class: 'ph-lead',
+    text: '教材があるのは Day1〜14 の範囲です。ここに無い場面は、まだ教材がありません。' }));
+}
+
+/**
+ * 今週の目当て。**点数ではなく、良い学習の行動を条件にする。**
+ * たくさん回すことを条件にすると、こなす量が目的になってしまう。
+ */
+function renderWeekly(root) {
+  const days = new Set();
+  for (const e of state.events || []) if (e && e.at) days.add(localDayOf(e.at));
+  const use = state.use || {};
+  const counters = weekCounters(use);
+  const w = engine.weeklyProgress({ todayIso: today.today, studyDays: [...days], counters });
+
+  root.appendChild(el('div', { class: 'grp-h', text: '今週' }));
+  const list = el('div', { class: 'wk' });
+  for (const g of w.goals) {
+    list.appendChild(el('div', { class: g.met ? 'wk-row met' : 'wk-row' }, [
+      el('span', { class: 'wk-m', text: g.met ? '✓' : '□' }),
+      el('span', { text: g.label }),
+      el('span', { class: 'wk-n', text: `${g.done} / ${g.need}` }),
+    ]));
+  }
+  root.appendChild(list);
+  if (w.allMet) {
+    root.appendChild(el('p', { class: 'ph-lead', text: '✓ 今週も継続できました。' }));
+  }
+}
+
+/** 今週ぶんの利用回数。週の始まりから今日まで。 */
+function weekCounters(use) {
+  const from = engine.weekStartOf(today.today);
+  const days = Object.keys((use && use.days) || {}).filter(d => d >= from && d <= today.today);
+  const sum = k => days.reduce((n, d) => n + (use.days[d][k] || 0), 0);
+  return { mistakes: sum('practice_mistakes'), briefing: sum('practice_briefing') };
+}
+
+/**
+ * 利用状況の書き出し。**外へは送らない。**
+ * 入っているのは「何が何回起きたか」だけで、教材の本文も実使用の記録も入らない。
+ */
+function renderUsage(root) {
+  const text = JSON.stringify({
+    _format: 'lang90/usage',
+    _exportedAt: new Date().toISOString(),
+    summary: engine.useSummary(state.use),
+    dayFeedback: state.dayFeedback || {},
+  }, null, 2);
+
+  const box = el('div', { class: 'copybox' });
+  box.appendChild(el('p', { class: 'copy-lead',
+    text: 'この版が実際に使いやすかったかを見直すための数字です。'
+      + '学習した内容や、実際に使った記録は入りません。外へも送っていません。' }));
+
+  const done = el('div', { class: 'copy-done' });
+  done.hidden = true;
+  const ta = el('textarea', { attrs: { id: 'usage-text', readonly: 'readonly', rows: '12', spellcheck: 'false' } });
+  ta.value = text;
+
+  box.appendChild(el('button', {
+    class: 'primary', attrs: { type: 'button' }, text: 'コピー',
+    on: { click: async () => {
+      const ok = await copyText(ta);
+      done.hidden = false;
+      done.textContent = ok ? 'コピーしました' : '下の枠を長押しして「すべてを選択」→「コピー」してください';
+    } },
+  }));
+  box.appendChild(done);
+  const details = el('details', { class: 'copy-detail' });
+  details.appendChild(el('summary', { text: 'データを見る（普段は開かなくて大丈夫です）' }));
+  details.appendChild(ta);
+  box.appendChild(details);
+  root.appendChild(box);
+}
+
 function renderStats(root) {
   const cards = Object.values(state.cards);
   const s = engine.statsFor({
@@ -4145,6 +4791,8 @@ function renderStats(root) {
     el('div', {}, [el('span', { text: label }), note ? el('div', {}, [el('i', { text: note })]) : null]),
     el('b', { text: String(n) }),
   ]));
+
+  renderWeekly(root);
 
   root.appendChild(el('div', { class: 'grp-h', text: 'この7日間' }));
   renderWeek(root);
@@ -4446,20 +5094,20 @@ function renderPractice(root) {
       : m.waiting.length ? 'いま出せるものはありません'
       : 'まだありません',
     m.ready.length ? `${m.ready.length}` : (m.waiting.length ? '待機中' : ''),
-    () => openSheet('mistakes'), m.ready.length === 0);
+    () => { track('practice_mistakes'); openSheet('mistakes'); }, m.ready.length === 0);
 
   row('5分だけ復習', '期日の来ているものだけ。新しい語は入りません',
     dueNow ? `${dueNow}` : '',
-    () => { if (dueNow) startSession('sprint5'); }, dueNow === 0);
+    () => { if (dueNow) { track('practice_sprint'); startSession('sprint5'); } }, dueNow === 0);
 
   row('組み合わせ', '日本語とモンゴル語を合わせる。覚え具合には影響しません', '',
-    () => startMatch(), false);
+    () => { track('practice_match'); startMatch(); }, false);
 
   row('保存したフレーズ', '☆ を付けたもの', favCount ? `${favCount}` : '',
-    () => openSheet('favorites'), favCount === 0);
+    () => { track('practice_favorites'); openSheet('favorites'); }, favCount === 0);
 
   row('商談の直前に見る', '商談で話す順に並べた35表現', '5分',
-    () => openSheet('briefing'), false);
+    () => { track('practice_briefing'); openSheet('briefing'); }, false);
 
   root.appendChild(list);
 }
@@ -4721,6 +5369,7 @@ function startSession(modeId) {
     qIndex = resume.index;
     sessionStats = resume.stats || { answered: 0, correct: 0, wrong: 0, relearn: 0 };
     beginLesson();
+    storage.save(state);
     showScreen('session');
     return nextItem();
   }
@@ -4736,7 +5385,8 @@ function startSession(modeId) {
   // 5分だけ復習は、それ自体が1回分なので途中で切らない
   sessionKind = modeId === 'sprint5' ? 'practice' : 'daily';
   beginLesson();
-  if (sessionKind === 'daily') { saveSession(); storage.save(state); }
+  if (sessionKind === 'daily') { saveSession(); }
+  storage.save(state);
   showScreen('session');
   nextItem();
 }
@@ -4744,6 +5394,11 @@ function startSession(modeId) {
 /** いまのミニレッスンの区切りを決める。切り方の計算は engine が持つ。 */
 function beginLesson() {
   lessonStats = { steps: 0, answered: 0, correct: 0, wrong: 0, introduced: 0 };
+  lessonStart = qIndex;
+  sessionStartedAt = Date.now();
+  // 「始めた回数」と「終えた回数」はレッスン単位で数える。
+  // セッション単位で数えると、1回の中で6レッスン終えたときに率が600%になる
+  track('lesson_start');
   lessonEnd = sessionKind === 'daily'
     ? engine.endOfLesson(qIndex, queue.length)
     : queue.length;
@@ -4815,6 +5470,8 @@ function nextItem() {
     audio.play(card.id);
   }
 
+  renderStepHint(introduce);
+
   $('keyhint').textContent = introduce
     ? 'Space = 次へ' : 'Space = 答え / ← 言えなかった / → 言えた';
 
@@ -4823,6 +5480,29 @@ function nextItem() {
 
   // T2: 表示時刻を実測する
   shownAt = performance.now();
+}
+
+/**
+ * 5問の中の位置を、短く一言で出す。
+ *
+ * **常に煽らない。**残りが1〜2問になったときだけ少し強める。
+ * ずっと「あと◯問！」と出していると、ただの背景になって効かなくなる。
+ * 出題の中身は変えていない (engine が決めた順のまま、言い方だけ添える)。
+ */
+function renderStepHint(introduce) {
+  const hint = $('step-hint');
+  const left = lessonEnd - qIndex;      // このレッスンの残り
+  const pos = qIndex - lessonStart;     // このレッスンの何問目か (0始まり)
+
+  let text = '', near = false;
+  if (left === 1) { text = '最後の1問'; near = true; }
+  else if (left === 2) { text = 'あと2問'; near = true; }
+  else if (pos === 0) text = introduce ? 'まずは覚えるところから' : 'ウォームアップ';
+  else if (introduce) text = '覚える';
+  else text = '思い出してみよう';
+
+  hint.textContent = text;
+  hint.className = near ? 'step-hint near' : 'step-hint';
 }
 
 /**
@@ -5046,6 +5726,7 @@ function fieldButtons(labels, order, cls, onPick) {
 function openFieldRow() {
   const card = currentCard();
   if (!card) return;
+  track('field_open');
   renderFieldRow(card);
   $('field-open').hidden = true;
   $('field-row').scrollIntoView({ block: 'nearest' });
@@ -5130,11 +5811,16 @@ function endLesson() {
     ok: lessonStats.correct,
     ng: lessonStats.wrong,
     note: goalNote(),
-    streak: null,
+    streak: milestoneNote(),
+    perfect: perfectLabel(lessonStats),
+    progress: { done: qIndex, total: queue.length },
     next: '次の5問',
   });
-  if (sessionKind === 'daily') { saveSession(); storage.save(state); }
+  track('lesson_complete');
+  trackDuration((Date.now() - sessionStartedAt) / 1000);
+  if (sessionKind === 'daily') saveSession();
   bumpStreak();
+  storage.save(state);
   planCache = null;
 }
 
@@ -5170,11 +5856,16 @@ function endSession() {
   busy = false;
 
   const finished = qIndex >= queue.length;
+  if (finished) { track('lesson_complete'); if (sessionKind === 'daily') track('day_complete'); }
+  else { track('quit_mid'); trackQuit(qIndex - lessonStart, lessonEnd - lessonStart); }
+  trackDuration((Date.now() - sessionStartedAt) / 1000);
+
   // 最後まで終わったら続きは無い。途中で終了した場合は残しておく
   if (sessionKind === 'daily') {
     if (finished) clearSession(); else saveSession();
   }
   bumpStreak();
+  storage.save(state);
   planCache = null;
 
   if (sessionKind === 'practice') {
@@ -5197,9 +5888,68 @@ function endSession() {
     note: finished
       ? (today.day != null && today.day < TOTAL_DAYS ? `明日は Day ${today.day + 1}` : '')
       : `今日の残り ${Math.max(0, queue.length - qIndex)}問`,
-    streak: finished && st.count > 0 ? `🔥 ${st.count}日連続` : null,
+    streak: finished && st.count > 0 ? (milestoneNote() || `🔥 ${st.count}日連続`) : milestoneNote(),
+    // 1日の完了ではその日ぶん全体で見る (直前のレッスンの数だと画面の数字と合わない)
+    perfect: perfectLabel(sessionStats),
+    improved: finished ? improvedNote() : null,
+    progress: { done: qIndex, total: queue.length },
+    // その日の分を終えたときだけ。押さなくても今日は成功
+    extra: finished && extraAvailable() > 0,
+    ask: finished,
     next: finished ? null : '続きの5問',
   });
+}
+
+/**
+ * 全部言えた回の一言。**褒美は出さない。**
+ *
+ * 点数も通貨もSRSの上乗せも無い。ただ「全部言えた」という事実だけを出す。
+ * **判定のある問題が1問も無い回では出さない。**「覚える」しか無かった回に
+ * 「全部言えた」と出ると、言えたかどうかを確かめていないのに褒めることになる。
+ */
+function perfectLabel(stats) {
+  const answered = stats.answered;
+  if (answered < 2) return null;                 // 1問だけで「全部」とは言わない
+  if (stats.wrong > 0) return null;
+  return `✓ ${answered}問すべて言えました`;
+}
+
+/**
+ * 「前より言えた」。**比べられるときだけ出す。**
+ * 前に間違えて今日は言えたものを engine が数える。0件なら何も出さない
+ * (作り話の励ましは書かない)。
+ */
+function improvedNote() {
+  const up = engine.improvedOn(state.events || [], today.today, localDayOf);
+  if (!up.count) return null;
+  return `前に言えなかった ${up.count}件が、今日は言えました`;
+}
+
+/**
+ * 節目の一言。**毎日は出さない。**
+ * 毎日祝うと、節目であることの意味が無くなる。
+ * 連続日数の値そのものは engine/streak.js のまま、ここでは読むだけ。
+ */
+const MILESTONES = [3, 7, 14, 30, 60, 90];
+function milestoneNote() {
+  const st = engine.displayStreak(state.streak, today.today);
+  if (!st.activeToday || !MILESTONES.includes(st.count)) return null;
+  return st.count === 7 ? '🔥 1週間続きました'
+    : st.count === 14 ? '🔥 2週間続きました'
+    : `🔥 ${st.count}日続きました`;
+}
+
+/**
+ * 「もう5問」で出せる数。
+ * **新しい語は1語も足さない。**その日の残りと、期日の来ている復習だけ。
+ * 1日の新規語の上限を後ろから破らないようにする。
+ */
+function extraAvailable() {
+  if (today.day == null) return 0;
+  const cards = Object.values(state.cards);
+  const nowIso = new Date().toISOString();
+  return engine.dueCards(cards, today.today).length
+       + engine.relearnCards(cards, nowIso, today.today).length;
 }
 
 /** 完了画面。レッスンの区切りも1日の完了も、同じ場所を使い分ける。 */
@@ -5216,28 +5966,112 @@ function showCheer(p) {
   learned.parentElement.hidden = !(p.learned > 0);
   learned.textContent = String(p.learned || 0);
 
+  const perfect = $('done-perfect');
+  perfect.textContent = p.perfect || '';
+  perfect.hidden = !p.perfect;
+
+  // 今日の中でどこまで来たか。バーは描いたあとに伸ばす (止まって見えないように)
+  const bar = $('done-bar');
+  const pr = p.progress || { done: 0, total: 0 };
+  const pctNow = pr.total ? Math.round((pr.done / pr.total) * 100) : 0;
+  bar.style.width = '0%';
+  $('done-sub').textContent = pr.total ? `今日 ${pr.done} / ${pr.total} 問` : '';
+  requestAnimationFrame(() => { bar.style.width = `${pctNow}%`; });
+
   const streak = $('done-streak');
   streak.textContent = p.streak || '';
   streak.hidden = !p.streak;
 
+  // 「前より言えた」があればそちらを優先して出す (事実のほうが励ましより効く)
   const note = $('done-note');
-  note.textContent = p.note || '';
-  note.hidden = !p.note;
+  const text = p.improved || p.note || '';
+  note.textContent = text;
+  note.hidden = !text;
 
   $('next-lesson').hidden = !p.next;
   if (p.next) $('next-lesson').textContent = p.next;
+  $('extra-btn').hidden = !p.extra;
+
   // 続きがあるときは「次の5問」を主役にし、切り上げるほうは控えめにする。
   // 同じ見た目のボタンを2つ並べると、どちらを押すのか毎回考えることになる
   const back = $('back-home');
   back.textContent = p.next ? '今日はここまで' : 'ホームへ';
   back.className = p.next ? 'ghost' : 'primary';
 
+  renderAsk(!!p.ask);
   showScreen('summary');
+}
+
+/**
+ * 1タップの感想。**任意。答えなくても先へ進める。**
+ *
+ * この答えだけで翌日の出題や新規語の上限を自動で変えない。
+ * 1日の量は復習の負荷から決まるもので、その日の気分で動かすと
+ * 復習が溜まったときに破綻する。まずは記録として貯める。
+ */
+const ASK_CHOICES = [['few', '少ない'], ['ok', 'ちょうどいい'], ['many', '多い']];
+
+function renderAsk(show) {
+  const box = $('ask-box');
+  if (!show) { box.hidden = true; return; }
+  const answered = (state.dayFeedback || {})[today.today];
+  const row = $('ask-row');
+  clear(row);
+  for (const [v, label] of ASK_CHOICES) {
+    row.appendChild(el('button', {
+      text: label,
+      attrs: { type: 'button', 'aria-pressed': String(answered === v) },
+      on: { click: () => saveAsk(v) },
+    }));
+  }
+  const done = $('ask-done');
+  done.textContent = answered ? 'ありがとうございます。記録しました' : '';
+  done.hidden = !answered;
+  box.hidden = false;
+}
+
+function saveAsk(value) {
+  state.dayFeedback = state.dayFeedback || {};
+  state.dayFeedback[today.today] = value;
+  // 古いものは残さない (30日ぶんで十分)
+  const days = Object.keys(state.dayFeedback).sort();
+  while (days.length > 30) delete state.dayFeedback[days.shift()];
+  storage.save(state);
+  renderAsk(true);
 }
 
 /** 続きの5問へ。区切り直して同じセッションを続ける。 */
 function continueLesson() {
   if (qIndex >= queue.length) return goHome();
+  track('next_lesson');
+  beginLesson();
+  showScreen('session');
+  nextItem();
+}
+
+/**
+ * 「もう5問チャレンジ」。**その日の分を終えたあとだけ。**
+ *
+ * 出すのは期日の来ている復習と、当日の再学習だけ。
+ * **新しい語は1語も足さない**ので、1日の新規語の上限を後ろから破ることはない。
+ * 押さなくても今日は成功。押した人だけが少し多くやる。
+ */
+function startExtra() {
+  const cards = Object.values(state.cards);
+  const nowIso = new Date().toISOString();
+  const pool = [
+    ...engine.relearnCards(cards, nowIso, today.today),
+    ...engine.dueCards(cards, today.today),
+  ];
+  const seen = new Set();
+  const picked = pool.filter(c => !seen.has(c.id) && seen.add(c.id)).slice(0, engine.lessonSize);
+  if (!picked.length) { showNotice('いま復習できるものはありません'); return; }
+
+  track('extra_challenge');
+  queue = picked.map(c => ({ cardId: c.id, source: 'review', exercise: 'recall', graded: true }));
+  qIndex = 0;
+  sessionStats = { answered: 0, correct: 0, wrong: 0, relearn: 0 };
+  sessionKind = 'practice';   // 今日の予定とは別枠。途中経過を上書きしない
   beginLesson();
   showScreen('session');
   nextItem();
@@ -5466,6 +6300,23 @@ function renderCheckpoint(cp, saved) {
 }
 
 
+// ---------- 端末の中だけの利用の記録 ----------
+/**
+ * 何が何回起きたかだけを数える。**外へは送らない。**
+ * 教材の本文・実使用の記録の中身・カードのIDは1つも入れない
+ * (あとで貼って見直すものなので、貼り先の履歴に残ってよいものだけを持つ)。
+ */
+function track(name) {
+  if (!today) return;
+  state.use = engine.countUse(state.use, name, today.today);
+}
+function trackQuit(index, total) {
+  state.use = engine.recordQuit(state.use, index, total);
+}
+function trackDuration(sec) {
+  state.use = engine.recordDuration(state.use, sec);
+}
+
 // ---------- 入力 ----------
 function goHome() {
   audio.stop();
@@ -5497,7 +6348,11 @@ function wire() {
     const card = currentCard();
     if (card) { toggleFav(card.id); renderFav(card); }
   });
-  $('back-home').addEventListener('click', goHome);
+  $('back-home').addEventListener('click', () => {
+    if (!$('next-lesson').hidden) track('stop_here');
+    goHome();
+  });
+  $('extra-btn').addEventListener('click', startExtra);
   $('more-btn').addEventListener('click', () => { showScreen('more'); renderMore(); });
   $('more-back').addEventListener('click', goHome);
   $('sheet-back').addEventListener('click', () => { showScreen('more'); renderMore(); });
