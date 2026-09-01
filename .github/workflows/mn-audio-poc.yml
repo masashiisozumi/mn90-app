@@ -37,7 +37,8 @@ jobs:
               sp = hf_hub_download(repo, "speakers.pth")
               print("download_sec: %.1f  checkpoint_MB: %.1f" % (time.time() - t0, os.path.getsize(mp) / 1e6))
               t1 = time.time()
-              syn = Synthesizer(mp, cp, sp, use_cuda=False)
+              syn = Synthesizer(tts_checkpoint=mp, tts_config_path=cp,
+                                tts_speakers_file=sp, use_cuda=False)
               print("init_sec: %.1f" % (time.time() - t1))
               names = list(syn.tts_model.speaker_manager.speaker_names)
               print("speakers:", len(names))
