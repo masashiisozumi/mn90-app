@@ -1,0 +1,120 @@
+name: mn-audio-poc
+
+on:
+  push:
+    branches: [audio-poc]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: 候補を探す（Hugging Face 検索）
+        run: |
+          mkdir -p out
+          for q in "mongolian tts" "mongolian text-to-speech" "khalkha tts" "mn tts"; do
+            echo "=== search: $q ===" >> out/00-search.txt
+            curl -sS -G "https://huggingface.co/api/models" \
+              --data-urlencode "search=$q" \
+              --data-urlencode "filter=text-to-speech" \
+              --data-urlencode "limit=25" \
+              | python3 -c "import sys,json;[print(m.get('modelId'),'| license:',[t for t in m.get('tags',[]) if t.startswith('license:')],'| dl:',m.get('downloads')) for m in json.load(sys.stdin)]" >> out/00-search.txt 2>&1 || echo "(failed)" >> out/00-search.txt
+          done
+          echo "=== filter mn + text-to-speech ===" >> out/00-search.txt
+          curl -sS -G "https://huggingface.co/api/models" \
+            --data-urlencode "filter=mn" \
+            --data-urlencode "filter=text-to-speech" \
+            --data-urlencode "limit=50" \
+            | python3 -c "import sys,json;[print(m.get('modelId'),'| license:',[t for t in m.get('tags',[]) if t.startswith('license:')],'| dl:',m.get('downloads')) for m in json.load(sys.stdin)]" >> out/00-search.txt 2>&1 || echo "(failed)" >> out/00-search.txt
+          cat out/00-search.txt
+
+      - name: license を実物で読む
+        run: |
+          python3 - <<'PY' 2>&1 | tee out/01-licenses.txt
+          import json, urllib.request, urllib.parse
+
+          def get(url, raw=False):
+              try:
+                  with urllib.request.urlopen(url, timeout=30) as r:
+                      b = r.read()
+                      return b.decode('utf-8', 'replace') if raw else json.loads(b)
+              except Exception as e:
+                  return None if not raw else "(ERR %s)" % e
+
+          ids = set([
+              "Bokhbat/mongolian-vits-tts",
+              "btseee/oron-tts",
+              "facebook/mms-tts-mon",
+          ])
+          for q in ["mongolian tts", "mongolian text-to-speech", "khalkha tts", "mn tts"]:
+              u = "https://huggingface.co/api/models?" + urllib.parse.urlencode(
+                  {"search": q, "filter": "text-to-speech", "limit": 25})
+              d = get(u)
+              if isinstance(d, list):
+                  for m in d:
+                      if m.get("modelId"):
+                          ids.add(m["modelId"])
+          u = "https://huggingface.co/api/models?" + urllib.parse.urlencode(
+              [("filter", "mn"), ("filter", "text-to-speech"), ("limit", 50)])
+          d = get(u)
+          if isinstance(d, list):
+              for m in d:
+                  if m.get("modelId"):
+                      ids.add(m["modelId"])
+
+          print("candidates:", len(ids))
+          for i in sorted(ids):
+              print("\n" + "=" * 70)
+              print("MODEL:", i)
+              info = get("https://huggingface.co/api/models/" + i)
+              if not isinstance(info, dict):
+                  print("  (api unreachable)")
+                  continue
+              tags = info.get("tags", [])
+              cd = info.get("cardData") or {}
+              print("  license-tag :", [t for t in tags if t.startswith("license:")])
+              print("  cardData.license:", cd.get("license"))
+              print("  cardData.datasets:", cd.get("datasets"))
+              print("  downloads   :", info.get("downloads"))
+              sib = [s.get("rfilename") for s in (info.get("siblings") or [])]
+              print("  files       :", sib[:40])
+              rd = get("https://huggingface.co/%s/raw/main/README.md" % i, raw=True) or ""
+              print("  --- README (first 1500) ---")
+              print(rd[:1500])
+              lic = get("https://huggingface.co/%s/raw/main/LICENSE" % i, raw=True) or ""
+              print("  --- LICENSE (first 600) ---")
+              print(lic[:600])
+          PY
+
+      - name: 音を1つ作れるか
+        run: |
+          {
+            echo "### piper voices (mn?) ###"
+            curl -sS "https://huggingface.co/api/models/rhasspy/piper-voices" \
+              | python3 -c "import sys,json;d=json.load(sys.stdin);print([s['rfilename'] for s in d.get('siblings',[]) if '/mn' in s['rfilename'] or s['rfilename'].startswith('mn')][:60])" 2>&1 || true
+            echo
+            echo "### pip install piper-tts ###"
+            pip install piper-tts 2>&1 | tail -5 || true
+            echo
+            echo "### espeak-ng mongolian voice? ###"
+            sudo apt-get -qq update >/dev/null 2>&1 || true
+            sudo apt-get -qq install -y espeak-ng >/dev/null 2>&1 || true
+            espeak-ng --voices 2>&1 | grep -iE " mn | mongol" || echo "(no mongolian voice in espeak-ng)"
+            echo
+            echo "### synth attempt (existing production_ready phrase only) ###"
+            python3 - <<'PY' 2>&1 || true
+          TEXT = "Баярлалаа"
+          print("text:", TEXT)
+          PY
+          } | tee out/02-synth.txt
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mn-audio-poc
+          path: out/
+          retention-days: 7
