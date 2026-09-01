@@ -13,7 +13,7 @@
  */
 
 // 中身が変わるたびに上げる。古い保管庫はここを見て捨てる
-const CACHE = 'mn90-v32';
+const CACHE = 'mn90-v39';
 
 // 最初に取り込むもの。1枚のHTMLに全部入っているので、これだけで動く
 const SHELL = ['./', './index.html', './manifest.webmanifest', './apple-touch-icon.png'];
