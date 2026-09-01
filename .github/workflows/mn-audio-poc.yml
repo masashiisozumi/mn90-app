@@ -131,6 +131,12 @@ jobs:
               print("  %-42s license=%s gated=%s" % (d, cd.get("license"), info.get("gated")))
           PY
 
+      - name: 合成の結果をもう一度、最後に出す
+        if: always()
+        run: |
+          echo "===== 30-synth.txt ====="
+          cat out/30-synth.txt 2>/dev/null || echo "(無し)"
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
