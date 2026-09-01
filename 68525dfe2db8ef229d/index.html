@@ -32,6 +32,16 @@
   --vh:1vh;
   --fs:1;                  /* 文字の倍率。表示設定で変える。押す場所の大きさは変えない */
   --tap:48px;              /* 44pt 以上。実測で余裕を持たせる */
+
+  /* 文字の大きさ。iPhone で読みやすい実寸から決める。
+     ここを1か所にまとめておき、画面ごとに勝手な値を置かない */
+  --t-prompt:30px;         /* 日本語の問題 */
+  --t-answer:34px;         /* モンゴル語の答え。いちばん目立たせる */
+  --t-mission:18px;        /* 今日のミッション。大きさでも CTA を超えない */
+  --t-btn:18px;            /* ボタン。主役なので小さくしない */
+  --t-body:16px;
+  --t-sub:14px;            /* 補助。これより小さくしない */
+  --t-tiny:12px;           /* 最小。数字や注記だけ */
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --paper:#101418; --raised:#191f24; --sunk:#151b20; --ink:#e4ebee; --dim:#95a3ab; --faint:#6d7b83;
@@ -49,7 +59,7 @@ html,body{margin:0;padding:0}
 body{
   background:var(--paper); color:var(--ink);
   font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",system-ui,sans-serif;
-  font-size:calc(16px * var(--fs)); line-height:1.6;
+  font-size:calc(var(--t-body) * var(--fs)); line-height:1.65;
   min-height:100vh; min-height:calc(var(--vh,1vh)*100);
   padding-top:env(safe-area-inset-top);
   overscroll-behavior-y:contain;
@@ -89,10 +99,13 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 
 /* ---- 今日のミッション ---- */
 /* 「カードを処理する」ではなく「これができるようになる」を先に見せる */
-.mission{background:var(--accent-soft);border:1px solid var(--accent);border-radius:14px;
-  padding:14px 16px;margin-bottom:12px}
-.mission-h{font-size:.75rem;color:var(--accent);letter-spacing:.06em;font-weight:700}
-.mission-t{font-size:1.2rem;font-weight:800;line-height:1.4;margin-top:4px;text-wrap:balance}
+/* 枠で囲まず、面の色だけで区切る。小さい箱を並べると業務アプリに見える */
+.mission{background:var(--accent-soft);border-radius:16px;
+  padding:16px 18px;margin-bottom:14px}
+.mission-h{font-size:calc(var(--t-tiny) * var(--fs));color:var(--accent);
+  letter-spacing:.08em;font-weight:700}
+.mission-t{font-size:calc(var(--t-mission) * var(--fs));font-weight:700;line-height:1.5;
+  margin-top:3px;text-wrap:balance}
 .mission-n{font-size:.8rem;color:var(--dim);margin-top:6px;font-variant-numeric:tabular-nums}
 
 /* ---- 今週の目当て ---- */
@@ -106,18 +119,23 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .wk-row.met .wk-n{color:var(--ok)}
 
 /* ---- できること ---- */
-.can{display:grid;gap:7px}
-.can-row{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:10px;
-  background:var(--raised);border:1px solid var(--line);border-radius:12px;
-  padding:12px 14px;font-size:.94rem}
-.can-row.on{background:var(--ok-soft);border-color:var(--ok-soft)}
-.can-row.on .can-t{color:var(--ok);font-weight:700}
-.can-m{text-align:center;color:var(--faint)}
+.can{display:grid;gap:10px}
+.can-row{background:var(--raised);border-radius:14px;padding:14px 16px}
+.can-head{display:flex;align-items:center;gap:8px}
+.can-m{color:var(--faint);font-weight:800}
 .can-row.on .can-m{color:var(--ok)}
-.can-n{font-size:.78rem;color:var(--faint);font-variant-numeric:tabular-nums}
+.can-t{font-size:calc(var(--t-body) * var(--fs));font-weight:700}
+.can-row.on .can-t{color:var(--ok)}
+.can-bar{height:8px;background:var(--sunk);border-radius:99px;overflow:hidden;margin:10px 0 8px}
+.can-bar>i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.can-row.on .can-bar>i{background:var(--ok)}
+.can-foot{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.can-n{font-size:calc(var(--t-sub) * var(--fs));color:var(--dim);font-variant-numeric:tabular-nums}
+.can-used{font-size:calc(var(--t-sub) * var(--fs));color:var(--accent);font-weight:700}
 
 /* ---- 学習中の小さな案内 ---- */
-.step-hint{font-size:.78rem;color:var(--faint);letter-spacing:.04em;margin-bottom:10px}
+.step-hint{font-size:calc(var(--t-sub) * var(--fs));letter-spacing:.04em;
+  margin-bottom:8px;text-align:center;font-weight:700}
 .step-hint.near{color:var(--accent);font-weight:700}
 
 /* ---- 完了画面の飾り ---- */
@@ -143,18 +161,19 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .ask-done{font-size:.85rem;color:var(--ok);margin-top:10px}
 
 /* ---- 今日の目標 ---- */
-.goal{display:flex;align-items:center;justify-content:space-between;gap:12px;
-  background:var(--raised);border:1px solid var(--line);border-radius:14px;
-  padding:12px 15px;margin-bottom:18px}
-.goal.met{background:var(--ok-soft);border-color:var(--ok)}
-.goal-t{font-size:.85rem;color:var(--dim)}
-.goal.met .goal-t{color:var(--ok);font-weight:700}
-.goal-n{font-size:.9rem;font-variant-numeric:tabular-nums;color:var(--dim)}
+/* 今日どこまで来たか。枠を持たせず、一行として置く */
+.goal{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  padding:0 4px;margin:0 0 26px}
+.goal.met .goal-t{color:var(--ok)}
+.goal-t{font-size:calc(var(--t-sub) * var(--fs));color:var(--dim)}
+.goal-n{font-size:calc(var(--t-body) * var(--fs));font-variant-numeric:tabular-nums;
+  color:var(--ink);font-weight:700}
 .goal.met .goal-n{color:var(--ok)}
 
 /* ---- 90日の道すじ ---- */
 /* いる場所が一目で分かることだけを狙う。前後数日しか出さない */
 .path{display:grid;gap:0;margin-bottom:8px}
+.path-h{margin-top:30px}
 .node{display:grid;grid-template-columns:44px 1fr;align-items:center;gap:14px;
   padding:6px 0;position:relative}
 .node-mark{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;
@@ -182,16 +201,16 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .node-soon .node-t{font-style:normal}
 
 /* ---- ミニレッスンの一覧 ---- */
-.lessons{display:grid;gap:7px;margin:4px 0 18px}
-.lesson{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:12px;
-  min-height:52px;padding:8px 14px;border-radius:12px;text-align:left;
-  background:var(--raised);border:1px solid var(--line);font-size:.9rem}
+.lessons{display:grid;gap:2px;margin:6px 0 8px}
+.lesson{display:grid;grid-template-columns:26px 1fr auto;align-items:center;gap:12px;
+  min-height:48px;padding:6px 10px;border-radius:12px;text-align:left;
+  background:transparent;font-size:calc(var(--t-sub) * var(--fs))}
 .lesson-mark{font-size:1rem;text-align:center;color:var(--faint)}
 .lesson-sub{font-size:.78rem;color:var(--faint);font-variant-numeric:tabular-nums}
-.lesson-done{background:var(--ok-soft);border-color:var(--ok-soft)}
+.lesson-done{background:transparent}
 .lesson-done .lesson-mark{color:var(--ok)}
 .lesson-done .lesson-t{color:var(--ok)}
-.lesson-now{border-color:var(--accent);border-width:2px;background:var(--accent-soft)}
+.lesson-now{background:var(--accent-soft)}
 .lesson-now .lesson-mark,.lesson-now .lesson-t{color:var(--accent);font-weight:700}
 .lesson-todo{opacity:.72}
 .lesson-more{opacity:.55;border-style:dashed}
@@ -213,7 +232,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 /* ---- 7日カレンダー ---- */
 .week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:10px}
 .wd{text-align:center}
-.wd-l{font-size:.72rem;color:var(--faint);margin-bottom:5px}
+.wd-l{font-size:calc(var(--t-tiny) * var(--fs));color:var(--faint);margin-bottom:5px}
 .wd-m{height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;
   font-size:.85rem;background:var(--sunk);color:var(--faint)}
 .wd-on .wd-m{background:var(--ok-soft);color:var(--ok);font-weight:700}
@@ -285,11 +304,11 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .dock-inner{max-width:640px;margin:0 auto;display:grid;gap:8px}
 .primary{
   min-height:56px;border-radius:14px;background:var(--accent);color:var(--on-accent);
-  font-size:1.06rem;font-weight:700;padding:8px 16px;
+  font-size:calc(var(--t-btn) * var(--fs));font-weight:700;padding:8px 16px;
 }
 .primary:disabled{opacity:.45}
 .ghost{min-height:56px;border-radius:12px;background:var(--sunk);color:var(--dim);
-  font-size:.9rem;padding:8px 16px}
+  font-size:calc(var(--t-sub) * var(--fs));padding:8px 16px}
 
 /* 押した瞬間に必ず見た目が変わる。「押せたか分からない」を無くす。
    端末の振動は iPhone Safari で動かないので当てにしない */
@@ -321,23 +340,32 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
   display:flex;flex-direction:column;justify-content:center;text-align:center;
 }
 .step-lead{font-size:.85rem;color:var(--accent);font-weight:700;margin-bottom:14px}
-#prompt{font-size:1.9rem;font-weight:700;line-height:1.4;text-wrap:balance;word-break:break-word}
+#prompt{font-size:calc(var(--t-prompt) * var(--fs));font-weight:700;line-height:1.45;
+  text-wrap:balance;word-break:break-word}
 #answer-box{margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
-#answer{font-size:2.1rem;font-weight:800;line-height:1.32;word-break:break-word;letter-spacing:-.01em}
+#answer{font-size:calc(var(--t-answer) * var(--fs));font-weight:800;line-height:1.35;
+  word-break:break-word;letter-spacing:-.01em}
 .answer-row{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
 .answer-ja{font-size:1.06rem;color:var(--dim);margin-top:12px;line-height:1.5;text-wrap:balance}
 .listen-lead{font-size:.94rem;color:var(--dim);margin-bottom:18px;text-wrap:balance}
 
 /* 実使用の記録は、押さない限り邪魔をしない小さなリンク */
-.field-open{margin-top:22px;font-size:.84rem;color:var(--dim);
-  min-height:var(--tap);padding:0 12px;border-radius:10px;text-decoration:underline}
-.field-open:active{background:var(--sunk)}
+/* 答えの下の操作。どちらも同じ弱さにする。
+   片方だけボタンらしく見せると、そちらが答えと同じ強さで目に入る */
+.sub-actions{display:flex;align-items:center;justify-content:center;gap:4px;
+  flex-wrap:wrap;margin-top:24px}
+.field-open,.fav{min-height:var(--tap);padding:0 12px;border-radius:10px;
+  font-size:calc(var(--t-sub) * var(--fs));color:var(--faint);
+  background:none;border:0;text-decoration:underline}
+.field-open:active,.fav:active{background:var(--sunk)}
+.fav[aria-pressed="true"]{color:var(--warn);font-weight:700;text-decoration:none}
 
 .judge{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.judge button{min-height:56px;border-radius:14px;font-size:1rem;font-weight:700;padding:8px 6px}
+.judge button{min-height:56px;border-radius:14px;font-weight:700;padding:8px 6px;
+  font-size:calc(var(--t-btn) * var(--fs))}
 #judge-wrong{background:var(--crit-soft);color:var(--crit)}
 #judge-ok{background:var(--ok-soft);color:var(--ok)}
-.keyhint{font-size:.7rem;color:var(--faint);text-align:center;margin-top:8px}
+.keyhint{font-size:calc(var(--t-tiny) * var(--fs));color:var(--faint);text-align:center;margin-top:8px}
 @media (hover:none){.keyhint{display:none}}
 
 /* 押したことが分かる短い合図。ゲーム的な演出はしない */
@@ -372,13 +400,25 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .spk-big svg{width:2em;height:2em}
 .spk-again{background:var(--sunk);color:var(--dim);border-color:var(--line);
   min-height:var(--tap);font-size:.84rem;font-weight:600}
-.audio-note{font-size:.72rem;color:var(--faint);margin-top:8px}
+.audio-note{font-size:calc(var(--t-tiny) * var(--fs));color:var(--faint);margin-top:8px}
 .sess-actions{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:20px}
 
 /* 保存(お気に入り)。学習の判定とは別物なので、色も位置も分ける */
-.fav{min-height:var(--tap);padding:0 14px;border-radius:12px;font-size:.82rem;
-  background:var(--sunk);color:var(--dim);border:1px solid var(--line)}
-.fav[aria-pressed="true"]{background:var(--warn-soft);color:var(--warn);border-color:var(--warn)}
+/* 一覧の中の ☆ はボタンとして見せる (押せることが分かる必要があるため) */
+.ph-item .fav{background:var(--sunk);color:var(--dim);border:1px solid var(--line);
+  border-radius:12px;text-decoration:none;padding:0 14px}
+.ph-item .fav[aria-pressed="true"]{background:var(--warn-soft);color:var(--warn);border-color:var(--warn)}
+
+/* ---- 商談中に数秒で探すための見出しジャンプ ---- */
+/* 横に並べて上に貼り付ける。スクロールして探す時間を無くす */
+.jump{position:sticky;top:0;z-index:5;display:flex;gap:6px;overflow-x:auto;
+  padding:10px 0 12px;margin-bottom:6px;background:var(--paper);
+  -webkit-overflow-scrolling:touch;scrollbar-width:none}
+.jump::-webkit-scrollbar{display:none}
+.jump button{flex:none;min-height:44px;padding:0 14px;border-radius:99px;
+  font-size:calc(var(--t-sub) * var(--fs));font-weight:600;white-space:nowrap;
+  background:var(--sunk);color:var(--dim)}
+.jump button[aria-current="true"]{background:var(--accent);color:var(--on-accent)}
 
 /* ---- 保存したフレーズ / 商談の直前に見る ---- */
 .ph-topic{font-size:1.06rem;font-weight:700;margin:26px 0 10px;padding-bottom:6px;
@@ -494,7 +534,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .cp-row{display:flex;align-items:center;justify-content:space-between;gap:12px;
   background:var(--raised);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
 .cp-txt{font-size:.9rem}
-.cp-judge{font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap}
+.cp-judge{font-size:calc(var(--t-tiny) * var(--fs));font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap}
 .cp-tutor{background:var(--warn-soft);color:var(--warn)}
 .cp-auto{background:var(--sunk);color:var(--dim)}
 .cp-verdict{border-radius:12px;padding:14px 16px;margin-bottom:14px}
@@ -538,26 +578,28 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
     <div class="mission-n" id="welcome-n"></div>
   </div>
 
-  <!-- 今日のミッション。「これができるようになる」を先に見せる -->
+  <!-- 今日のミッション。「これができるようになる」を先に見せる。
+       ただし主役は下の大きなボタンなので、文字はそれより弱くする -->
   <div class="mission" id="mission-box" hidden>
     <div class="mission-h">今日のミッション</div>
     <div class="mission-t" id="mission-t"></div>
-    <div class="mission-n" id="mission-n"></div>
   </div>
 
-  <!-- 今日の目標。全部やらないと終われない、と思わせないためのもの -->
+  <!-- 今日どこまで来たか。1行だけ -->
   <div class="goal" id="goal-box" hidden>
-    <span class="goal-t" id="goal-t">今日の目標</span>
+    <span class="goal-t" id="goal-t">今日</span>
     <span class="goal-n" id="goal-n"></span>
   </div>
 
-  <!-- 90日の道すじ。前後数日だけ見せ、今日を一番大きくする -->
-  <div class="path" id="path"></div>
-
-  <!-- 今日を5問ずつに分けたもの -->
+  <!-- 今日を5問ずつに分けたもの。開始ボタンのすぐ上に置く -->
   <div class="lessons" id="lessons"></div>
 
   <div class="hero-note" id="today-note" hidden></div>
+
+  <!-- 90日の道すじ。いちばん下。毎日見る必要はないが、いる場所は分かる -->
+  <div class="grp-h path-h" id="path-h" hidden>90日の道すじ</div>
+  <div class="path" id="path"></div>
+
   <div class="dock-pad-2"></div>
 </main>
 
@@ -614,11 +656,11 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
   <div class="track"><i id="progress-bar" style="width:0%"></i></div>
 
   <!-- 5問の中の位置。残りが少なくなったときだけ強める -->
-  <div class="step-hint" id="step-hint"></div>
+  <div class="step-hint" id="step-hint" hidden></div>
 
   <div class="card">
-    <!-- はじめて出す語だけに出す一言。想起させない -->
-    <div class="step-lead" id="intro-lead" hidden>覚える</div>
+    <!-- いま何をする問題か。「覚える」は毎回、「思い出す」はその回の1問目だけ -->
+    <div class="step-lead" id="step-label" hidden>覚える</div>
 
     <!-- 聞き取りの問題。音声が入るまで、この一式は一度も表示されない -->
     <div id="listen-prompt" hidden>
@@ -638,12 +680,14 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 
       <div class="sess-actions">
         <button id="replay-btn" class="spk spk-again" type="button" hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z"/></svg><span>もう一度聞く</span></button>
-        <button id="fav-btn" class="fav" type="button" aria-pressed="false">☆ 保存</button>
       </div>
       <div class="audio-note" id="audio-note" hidden></div>
 
       <!-- 押さない限り、通常の学習の邪魔をしない -->
-      <button id="field-open" class="field-open" type="button">実際の会話で使った</button>
+      <div class="sub-actions">
+        <button id="fav-btn" class="fav" type="button" aria-pressed="false">☆ 保存</button>
+        <button id="field-open" class="field-open" type="button">実際の会話で使った</button>
+      </div>
 
       <div class="field" id="field-row" hidden>
         <div class="field-h">実際の会話で、この表現はどうでしたか？</div>
@@ -4138,6 +4182,8 @@ let lessonStart = 0;
 let lessonEnd = 0;
 let lessonStats = { steps: 0, answered: 0, correct: 0, wrong: 0, introduced: 0 };
 let sessionStartedAt = 0;
+// その回で「思い出す」のラベルを一度出したか
+let sawRecallLabel = false;
 let updateReady = false; // 新しい版が待機中か
 
 // ---------- 起動 ----------
@@ -4279,14 +4325,14 @@ function renderHome() {
   renderTopBar();
   renderWelcome();
   renderMission(plan);
-  renderGoal();
+  renderGoal(plan);
   renderPath();
   renderLessons(plan);
 
   const cd = curriculumDay(today.day);
   const note = $('today-note');
   if (cd && cd.vocab && cd.vocab.newCount === 0 && !cd.milestone) {
-    note.textContent = '今日は本来キリル文字の練習日です。文字は手元の資料で進めてください。';
+    note.textContent = '文字の練習はこの版に入っていません。手元の資料で進めてください。';
     note.hidden = false;
   } else { note.hidden = true; }
 
@@ -4367,8 +4413,7 @@ function renderMission(plan) {
   const box = $('mission-box');
   const m = currentMission(plan);
   if (!m || plan.remaining === 0) { box.hidden = true; return; }
-  $('mission-t').textContent = `「${m.title}」`;
-  $('mission-n').textContent = `${m.label} の表現が ${m.count}問 入っています`;
+  $('mission-t').textContent = m.title;
   box.hidden = false;
 }
 
@@ -4399,17 +4444,17 @@ function bumpDailyProgress() {
  * 同じものとして見せると「目標を達成したのに連続日数が増えない」理由が
  * 説明できなくなるので、足りないぶんはそのまま書く。
  */
-function renderGoal() {
+function renderGoal(plan) {
   const box = $('goal-box');
   if (today.state === 'before_start') { box.hidden = true; return; }
   const steps = dailyProgress();
   const met = engine.goalMet(steps);
   box.className = met ? 'goal met' : 'goal';
-  $('goal-t').textContent = met ? '✓ 今日の目標を達成' : '今日の目標';
+  const remaining = plan ? plan.remaining : 0;
+  $('goal-t').textContent = met ? '✓ 今日の目標を達成' : '今日';
   const need = engine.streakMinAnswers - answeredOnDay(today.today);
-  $('goal-n').textContent = met
-    ? (need > 0 ? `連続記録まで あと ${need}問` : `${steps}問`)
-    : `${steps} / ${engine.dailyGoal} 問`;
+  // 今日どこまで来たか。目標(5問)ではなく、今日の全体に対して出す
+  $('goal-n').textContent = `${steps} / ${steps + remaining} 問`;
   box.hidden = false;
 }
 
@@ -4426,6 +4471,7 @@ const CONTENT_LAST_DAY = 14;
 function renderPath() {
   const root = $('path');
   clear(root);
+  $('path-h').hidden = today.day == null;
   if (today.day == null) return;
 
   const from = Math.max(1, today.day - PATH_BEFORE);
@@ -4492,12 +4538,14 @@ function renderLessons(plan) {
           : `${l.size}問` }),
     ]));
   }
-  const rest = all.length - (from + shown.length);
-  if (rest > 0) {
+  const hidden = all.slice(from + shown.length);
+  if (hidden.length) {
+    // 数えるのは隠したレッスンぶんだけ。今日の残り全体を出すと開始ボタンと重複する
+    const n = hidden.reduce((sum, l) => sum + l.size, 0);
     root.appendChild(el('div', { class: 'lesson lesson-todo lesson-more' }, [
       el('span', { class: 'lesson-mark', text: '⋯' }),
-      el('span', { class: 'lesson-t', text: `ほか ${rest} レッスン` }),
-      el('span', { class: 'lesson-sub', text: `${plan.remaining}問` }),
+      el('span', { class: 'lesson-t', text: `ほか ${hidden.length} レッスン` }),
+      el('span', { class: 'lesson-sub', text: `${n}問` }),
     ]));
   }
 }
@@ -4588,21 +4636,18 @@ function defaultModeId() {
 function moreMenu() {
   const favCount = Object.keys(favorites()).length;
   const fieldCount = (state.fieldReports || []).length;
-  const can = engine.collection({ events: state.events || [], cards: state.cards });
-  const done = can.filter(c => c.practiced).length;
+  // **7項目まで。**保存したフレーズ・商談の直前に見る は「練習」の中にあるので
+  // ここには重ねない。書き出しは3つに分かれていたのを1つにまとめた。
+  // 90日ロードマップはホームの道すじと同じことを言っていたので、
+  // 「このアプリについて」へ移した。
   return [
-    ['練習', () => openSheet('practice'), ''],
-    ['できること', () => openSheet('cando'), `${done} / ${can.length}`],
+    ['練習', () => openSheet('practice'), '間違い復習・商談前'],
+    ['できること', () => openSheet('cando'), ''],
     ['学習状況', () => openSheet('stats'), ''],
-    ['保存したフレーズ', () => openSheet('favorites'), favCount ? `${favCount} 件` : ''],
-    ['商談の直前に見る', () => openSheet('briefing'), '5分'],
     ['実使用の記録', () => { showScreen('fieldlog'); renderFieldLog(); }, fieldCount ? `${fieldCount} 件` : ''],
-    ['記録を書き出す', () => openSheet('export'), ''],
-    ['90日ロードマップ', () => openSheet('roadmap'), ''],
+    ['書き出す', () => openSheet('export'), 'Claude に貼る'],
     ['表示設定', () => openSheet('display'), ''],
-    ['利用状況を書き出す', () => openSheet('usage'), ''],
-    ['このβ版について', () => openSheet('about'), ''],
-    ['バージョン', () => openSheet('version'), BETA_VERSION],
+    ['このアプリについて', () => openSheet('about'), BETA_VERSION],
   ];
 }
 
@@ -4622,17 +4667,14 @@ function renderMore() {
 const SHEETS = {
   practice: { title: '練習', render: renderPractice },
   cando: { title: 'できること', render: renderCanDo },
-  usage: { title: '利用状況を書き出す', render: renderUsage },
   mistakes: { title: '間違えた表現', render: renderMistakes },
   stats: { title: '学習状況', render: renderStats },
   favorites: { title: '保存したフレーズ', render: () => renderPhrases('favorites') },
   briefing: { title: '商談の直前に見る', render: () => renderPhrases('briefing') },
-  export: { title: '記録を書き出す', render: renderExport },
-  roadmap: { title: '90日ロードマップ', render: renderRoadmap },
+  // 3つに分かれていた書き出しを1つにまとめた (何を貼ればよいか迷わせない)
+  export: { title: '書き出す', render: renderExport },
   display: { title: '表示設定', render: renderDisplay },
-  about: { title: 'このβ版について', render: renderAbout },
-  version: { title: 'バージョン', render: renderVersion },
-  bug: { title: '不具合を報告する', render: renderBugReport },
+  about: { title: 'このアプリについて', render: renderAbout },
 };
 
 function openSheet(id) {
@@ -4685,6 +4727,25 @@ function renderWeek(root) {
  * 条件は engine が持つ (何件正解したか / 分類の何割か)。
  * 実際に通じるかどうかは、実使用の記録でしか分からない。
  */
+/**
+ * 実使用の記録の件数を、場面ごとに数える。
+ *
+ * **「練習した範囲」とは意味が違う**ので、同じ数字に混ぜない。
+ * ここに出るのは「その場面・その相手には意図が伝わった」という記録の回数だけで、
+ * 表現が正しいことの証拠でも、話せるようになったことの証拠でもない。
+ */
+function fieldUseByCategory() {
+  const of = new Map();
+  for (const c of (mnPack.categories || [])) for (const id of c.items) of.set(id, c.id);
+  const out = {};
+  for (const r of state.fieldReports || []) {
+    if (!r || r.spokenOutcome !== 'understood') continue;
+    const cid = of.get(r.itemId);
+    if (cid) out[cid] = (out[cid] || 0) + 1;
+  }
+  return out;
+}
+
 function renderCanDo(root) {
   const can = engine.collection({ events: state.events || [], cards: state.cards });
   const done = can.filter(c => c.practiced).length;
@@ -4694,12 +4755,26 @@ function renderCanDo(root) {
       + '✓ は「その場面の表現を練習した」という意味で、'
       + '実際に通じるかどうかは、商談で使って記録すると分かります。' }));
 
+  // 実使用の記録は**別枠**で出す。練習した範囲と、実際に通じた記録は意味が違う
+  const used = fieldUseByCategory();
+
   const list = el('div', { class: 'can' });
   for (const c of can) {
+    const bar = el('div', { class: 'can-bar' }, [
+      el('i', { attrs: { style: `width:${c.total ? Math.round((c.correct / c.total) * 100) : 0}%` } }),
+    ]);
+    const n = used[c.id] || 0;
     list.appendChild(el('div', { class: c.practiced ? 'can-row on' : 'can-row' }, [
-      el('span', { class: 'can-m', text: c.practiced ? '✓' : '□' }),
-      el('span', { class: 'can-t', text: c.canDo }),
-      el('span', { class: 'can-n', text: `${c.correct} / ${c.total}` }),
+      el('div', { class: 'can-head' }, [
+        el('span', { class: 'can-m', text: c.practiced ? '✓' : '□' }),
+        el('span', { class: 'can-t', text: c.label }),
+      ]),
+      bar,
+      el('div', { class: 'can-foot' }, [
+        el('span', { class: 'can-n',
+          text: c.correct ? `${c.correct}表現を練習` : 'まだ練習していません' }),
+        n ? el('span', { class: 'can-used', text: `実際の会話で ${n}回` }) : null,
+      ]),
     ]));
   }
   root.appendChild(list);
@@ -4739,44 +4814,6 @@ function weekCounters(use) {
   const days = Object.keys((use && use.days) || {}).filter(d => d >= from && d <= today.today);
   const sum = k => days.reduce((n, d) => n + (use.days[d][k] || 0), 0);
   return { mistakes: sum('practice_mistakes'), briefing: sum('practice_briefing') };
-}
-
-/**
- * 利用状況の書き出し。**外へは送らない。**
- * 入っているのは「何が何回起きたか」だけで、教材の本文も実使用の記録も入らない。
- */
-function renderUsage(root) {
-  const text = JSON.stringify({
-    _format: 'lang90/usage',
-    _exportedAt: new Date().toISOString(),
-    summary: engine.useSummary(state.use),
-    dayFeedback: state.dayFeedback || {},
-  }, null, 2);
-
-  const box = el('div', { class: 'copybox' });
-  box.appendChild(el('p', { class: 'copy-lead',
-    text: 'この版が実際に使いやすかったかを見直すための数字です。'
-      + '学習した内容や、実際に使った記録は入りません。外へも送っていません。' }));
-
-  const done = el('div', { class: 'copy-done' });
-  done.hidden = true;
-  const ta = el('textarea', { attrs: { id: 'usage-text', readonly: 'readonly', rows: '12', spellcheck: 'false' } });
-  ta.value = text;
-
-  box.appendChild(el('button', {
-    class: 'primary', attrs: { type: 'button' }, text: 'コピー',
-    on: { click: async () => {
-      const ok = await copyText(ta);
-      done.hidden = false;
-      done.textContent = ok ? 'コピーしました' : '下の枠を長押しして「すべてを選択」→「コピー」してください';
-    } },
-  }));
-  box.appendChild(done);
-  const details = el('details', { class: 'copy-detail' });
-  details.appendChild(el('summary', { text: 'データを見る（普段は開かなくて大丈夫です）' }));
-  details.appendChild(ta);
-  box.appendChild(details);
-  root.appendChild(box);
 }
 
 function renderStats(root) {
@@ -4827,29 +4864,6 @@ function renderStats(root) {
   root.appendChild(box3);
 }
 
-/** 90日ロードマップ。**未完成の部分を完成済みに見せない。** */
-function renderRoadmap(root) {
-  root.appendChild(el('p', { class: 'ph-lead',
-    text: 'いま教材があるのは Day1〜14 の140表現です。'
-      + 'Day15以降は、この140表現が実際の商談で通じるかを確かめてから作ります。' }));
-  const list = el('div', { class: 'road' });
-  const rows = [
-    ['Day 1 〜 14', '教材あり（140表現）', 'road-ready'],
-    ['Day 15 〜 30', '準備中', 'road-soon'],
-    ['Day 31 〜 90', '準備中', 'road-soon'],
-  ];
-  for (const [d, s, cls] of rows) {
-    list.appendChild(el('div', { class: 'road-row' }, [
-      el('span', { class: 'road-d', text: d }),
-      el('span', { class: `road-s ${cls}`, text: s }),
-    ]));
-  }
-  root.appendChild(list);
-  root.appendChild(el('p', { class: 'ph-lead',
-    text: `いまは Day ${today.day == null ? '—' : today.day} です。`
-      + 'Day14 を過ぎたあとも、それまでの表現の復習は続きます。' }));
-}
-
 /** 表示設定。文字の大きさと明るさだけ。 */
 function renderDisplay(root) {
   const cur = display.get();
@@ -4874,24 +4888,6 @@ function renderDisplay(root) {
   group('明るさ', display.THEMES, 'theme');
   root.appendChild(el('p', { class: 'ph-lead',
     text: 'この設定は学習の記録とは別に保存されます。設定を変えても記録は消えません。' }));
-}
-
-/** バージョンと、不具合報告への入口。 */
-function renderVersion(root) {
-  const box = el('div', { class: 'stats' });
-  const row = (label, value) => box.appendChild(el('div', { class: 'stat' }, [
-    el('span', { text: label }), el('i', { text: value }),
-  ]));
-  row('版', BETA_VERSION);
-  row('教材', `${Object.keys(state.cards).length} 件`);
-  row('参考音声', caps.audio ? `${caps.audioCount} 件` : 'まだ入っていません');
-  root.appendChild(box);
-
-  root.appendChild(el('div', { class: 'grp-h', text: '困ったとき' }));
-  const menu = el('div', { class: 'menu' });
-  menu.appendChild(el('button', { attrs: { type: 'button' }, on: { click: () => openSheet('bug') } },
-    [el('span', { text: '不具合を報告する' })]));
-  root.appendChild(menu);
 }
 
 /**
@@ -4925,11 +4921,41 @@ function aboutSections() {
 }
 
 function renderAbout(root) {
+  // 教材がどこまであるか。ホームの道すじと同じことなので、別画面は作らない
+  root.appendChild(el('div', { class: 'grp-h', text: '教材のある範囲' }));
+  const road = el('div', { class: 'road' });
+  for (const [d, label, cls] of [
+    ['Day 1 〜 14', '教材あり（140表現）', 'road-ready'],
+    ['Day 15 〜 30', '準備中', 'road-soon'],
+    ['Day 31 〜 90', '準備中', 'road-soon'],
+  ]) {
+    road.appendChild(el('div', { class: 'road-row' }, [
+      el('span', { class: 'road-d', text: d }),
+      el('span', { class: `road-s ${cls}`, text: label }),
+    ]));
+  }
+  root.appendChild(road);
+
+  root.appendChild(el('div', { class: 'grp-h', text: 'この版について' }));
   const box = el('div', { class: 'about', attrs: { id: 'about-box' } });
   for (const [h, body] of aboutSections()) {
     box.appendChild(el('p', {}, [el('b', { text: h + ' ' }), el('span', { text: body })]));
   }
   root.appendChild(box);
+
+  root.appendChild(el('div', { class: 'grp-h', text: '版' }));
+  const info = el('div', { class: 'stats' });
+  for (const [label, value] of [
+    ['版', BETA_VERSION],
+    ['教材', `${Object.keys(state.cards).length} 件`],
+    ['参考音声', caps.audio ? `${caps.audioCount} 件` : 'まだ入っていません'],
+  ]) {
+    info.appendChild(el('div', { class: 'stat' }, [el('span', { text: label }), el('i', { text: value })]));
+  }
+  root.appendChild(info);
+  root.appendChild(el('p', { class: 'ph-lead',
+    text: 'うまく動かないときは「その他 → 書き出す → うまく動かないとき」の内容を'
+      + 'コピーして、Claude か ChatGPT に貼ってください。' }));
 }
 
 // ---------- 書き出し ----------
@@ -4940,7 +4966,22 @@ function renderAbout(root) {
  * 見たい人だけが開けるように、詳細はたたんでおく。
  * 実使用の記録の形式 (Field QA へ渡すもの) は今までどおり変えない。
  */
+/**
+ * 書き出し。**3つに分かれていたものを1画面にまとめた。**
+ *
+ * 「実際に使った結果」「学習記録の控え」「うまく動かないときの情報」「利用状況」が
+ * 別々の画面にあると、何を貼ればよいか毎回考えることになる。
+ * 上の切り替えで選び、押すのは「コピー」1つだけにする。
+ * **どれも外へは送らない。**画面に出して、社長がコピーして貼るためだけのもの。
+ */
 let exportMode = 'field';
+
+const EXPORT_TABS = [
+  ['field', '実際に使った結果', 'Claude に貼って、通じなかった表現を見直します'],
+  ['usage', '使い勝手の記録', 'この版が使いやすかったかを見直す数字。学習内容は入りません'],
+  ['bug', 'うまく動かないとき', '端末と画面の情報だけ。学習内容は入りません'],
+  ['all', '控え（バックアップ）', '端末を替えるときや、念のため控えを取るとき'],
+];
 
 function exportPayload() {
   if (exportMode === 'field') {
@@ -4951,6 +4992,15 @@ function exportPayload() {
       reports: state.fieldReports || [],
     }, null, 2);
   }
+  if (exportMode === 'usage') {
+    return JSON.stringify({
+      _format: 'lang90/usage',
+      _exportedAt: new Date().toISOString(),
+      summary: engine.useSummary(state.use),
+      dayFeedback: state.dayFeedback || {},
+    }, null, 2);
+  }
+  if (exportMode === 'bug') return diagnosticsText();
   return storage.exportState(state);
 }
 
@@ -4958,17 +5008,18 @@ function renderExport(root) {
   const n = (state.fieldReports || []).length;
   const box = el('div', { class: 'copybox' });
 
-  box.appendChild(el('p', { class: 'copy-lead',
-    text: '「コピー」を押してから、Claude のチャットに貼ってください。' }));
-
   const tabs = el('div', { class: 'export-tabs' });
-  const tab = (mode, label) => el('button', {
-    class: 'ex-tab', attrs: { type: 'button', 'aria-pressed': String(exportMode === mode) },
-    text: label, on: { click: () => { exportMode = mode; openSheet('export'); } },
-  });
-  tabs.appendChild(tab('field', `実際に使った結果（${n}件）`));
-  tabs.appendChild(tab('all', '全部（バックアップ）'));
+  for (const [mode, label] of EXPORT_TABS) {
+    tabs.appendChild(el('button', {
+      class: 'ex-tab', attrs: { type: 'button', 'aria-pressed': String(exportMode === mode) },
+      text: mode === 'field' && n ? `${label}（${n}）` : label,
+      on: { click: () => { exportMode = mode; openSheet('export'); } },
+    }));
+  }
   box.appendChild(tabs);
+
+  const lead = (EXPORT_TABS.find(t => t[0] === exportMode) || [])[2] || '';
+  box.appendChild(el('p', { class: 'copy-lead', text: lead }));
 
   const done = el('div', { class: 'copy-done' });
   done.hidden = true;
@@ -4980,8 +5031,7 @@ function renderExport(root) {
     on: { click: async () => {
       const ok = await copyText(text);
       done.hidden = false;
-      done.textContent = ok
-        ? (exportMode === 'field' ? '実際に使った結果をコピーしました' : 'バックアップをコピーしました')
+      done.textContent = ok ? 'コピーしました。Claude のチャットに貼ってください'
         : '下の「データを見る」を開き、枠を長押しして「すべてを選択」→「コピー」してください';
     } },
   }));
@@ -5008,36 +5058,6 @@ async function copyText(node) {
 }
 
 // ---------- 不具合報告 ----------
-/**
- * 不具合報告。**外へは何も送らない。**
- * 教材の本文・実使用の記録・保存領域の中身は入れない
- * (原因を知るのに要らないうえ、貼り先の履歴に残るため)。
- */
-function renderBugReport(root) {
-  const text = diagnosticsText();
-  const box = el('div', { class: 'copybox' });
-  box.appendChild(el('p', { class: 'copy-lead',
-    text: '下の内容をコピーして、Claude か ChatGPT に貼ってください。'
-      + '学習した内容や、実際に使った記録は入りません。' }));
-
-  const done = el('div', { class: 'copy-done' });
-  done.hidden = true;
-  const ta = el('textarea', { attrs: { id: 'diag-text', readonly: 'readonly', rows: '12', spellcheck: 'false' } });
-  ta.value = text;
-
-  box.appendChild(el('button', {
-    class: 'primary', attrs: { type: 'button' }, text: 'コピー',
-    on: { click: async () => {
-      const ok = await copyText(ta);
-      done.hidden = false;
-      done.textContent = ok ? 'コピーしました' : '下の枠を長押しして「すべてを選択」→「コピー」してください';
-    } },
-  }));
-  box.appendChild(done);
-  box.appendChild(ta);
-  root.appendChild(box);
-}
-
 function diagnosticsText() {
   const s = state.session;
   return buildReport({
@@ -5091,23 +5111,23 @@ function renderPractice(root) {
   // 間違えた表現が最優先。ここが一番効く
   row('間違えた表現',
     m.ready.length ? '前に言えなかったものを、もう一度'
-      : m.waiting.length ? 'いま出せるものはありません'
+      : m.waiting.length ? '少し時間を空けてから出します'
       : 'まだありません',
     m.ready.length ? `${m.ready.length}` : (m.waiting.length ? '待機中' : ''),
     () => { track('practice_mistakes'); openSheet('mistakes'); }, m.ready.length === 0);
 
-  row('5分だけ復習', '期日の来ているものだけ。新しい語は入りません',
+  row('5分だけ復習', '期日の来ているものだけ',
     dueNow ? `${dueNow}` : '',
     () => { if (dueNow) { track('practice_sprint'); startSession('sprint5'); } }, dueNow === 0);
-
-  row('組み合わせ', '日本語とモンゴル語を合わせる。覚え具合には影響しません', '',
-    () => { track('practice_match'); startMatch(); }, false);
 
   row('保存したフレーズ', '☆ を付けたもの', favCount ? `${favCount}` : '',
     () => { track('practice_favorites'); openSheet('favorites'); }, favCount === 0);
 
-  row('商談の直前に見る', '商談で話す順に並べた35表現', '5分',
+  row('商談の直前に見る', '場面ごとに並べた35表現', '5分',
     () => { track('practice_briefing'); openSheet('briefing'); }, false);
+
+  row('組み合わせ', 'ウォームアップ。学習の記録には影響しません', '',
+    () => { track('practice_match'); startMatch(); }, false);
 
   root.appendChild(list);
 }
@@ -5395,6 +5415,7 @@ function startSession(modeId) {
 function beginLesson() {
   lessonStats = { steps: 0, answered: 0, correct: 0, wrong: 0, introduced: 0 };
   lessonStart = qIndex;
+  sawRecallLabel = false;
   sessionStartedAt = Date.now();
   // 「始めた回数」と「終えた回数」はレッスン単位で数える。
   // セッション単位で数えると、1回の中で6レッスン終えたときに率が600%になる
@@ -5437,7 +5458,14 @@ function nextItem() {
   $('field-row').hidden = true;
   // はじめて見る語には「実際の会話で使った」を出さない。まだ使いようがない
   $('field-open').hidden = introduce;
-  $('intro-lead').hidden = !introduce;
+
+  // 「覚える」には毎回ラベルを出す (答えが最初から見えている理由になる)。
+  // 「思い出す」はその回の1問目にだけ出す。毎問出すと、
+  // 思い出すことに使うはずの視線を1つ余分に奪う
+  const lead = $('step-label');
+  if (introduce) { lead.textContent = '覚える'; lead.hidden = false; sawRecallLabel = false; }
+  else if (!sawRecallLabel) { lead.textContent = '思い出す'; lead.hidden = false; sawRecallLabel = true; }
+  else lead.hidden = true;
 
   // 聞き取りのときだけ、日本語を伏せて音を主役にする
   $('listen-prompt').hidden = !listening;
@@ -5470,7 +5498,7 @@ function nextItem() {
     audio.play(card.id);
   }
 
-  renderStepHint(introduce);
+  renderStepHint();
 
   $('keyhint').textContent = introduce
     ? 'Space = 次へ' : 'Space = 答え / ← 言えなかった / → 言えた';
@@ -5489,20 +5517,17 @@ function nextItem() {
  * ずっと「あと◯問！」と出していると、ただの背景になって効かなくなる。
  * 出題の中身は変えていない (engine が決めた順のまま、言い方だけ添える)。
  */
-function renderStepHint(introduce) {
+function renderStepHint() {
   const hint = $('step-hint');
   const left = lessonEnd - qIndex;      // このレッスンの残り
-  const pos = qIndex - lessonStart;     // このレッスンの何問目か (0始まり)
 
-  let text = '', near = false;
-  if (left === 1) { text = '最後の1問'; near = true; }
-  else if (left === 2) { text = 'あと2問'; near = true; }
-  else if (pos === 0) text = introduce ? 'まずは覚えるところから' : 'ウォームアップ';
-  else if (introduce) text = '覚える';
-  else text = '思い出してみよう';
-
+  // **終わりが近いときだけ出す。**
+  // 毎問なにか書いてあると、それ自体が背景になって読まれなくなるうえ、
+  // 思い出すことに使うはずの視線を1つ余分に奪う。
+  const text = left === 1 ? '最後の1問' : left === 2 ? 'あと2問' : '';
   hint.textContent = text;
-  hint.className = near ? 'step-hint near' : 'step-hint';
+  hint.hidden = !text;
+  hint.className = 'step-hint near';
 }
 
 /**
@@ -6144,8 +6169,37 @@ function renderPhrases(viewId) {
     return;
   }
 
+  // 商談中は「探す時間」がいちばん惜しい。場面の見出しを上に貼り付けて、
+  // 1タップでその場所へ飛べるようにする
+  if (groups.length > 1) {
+    const jump = el('div', { class: 'jump', attrs: { role: 'navigation', 'aria-label': '場面へ移動' } });
+    groups.forEach((g, i) => {
+      jump.appendChild(el('button', {
+        text: g.label, attrs: { type: 'button', 'aria-current': String(i === 0) },
+        on: (e) => {}, // 下でまとめて付ける
+      }));
+    });
+    body.appendChild(jump);
+    // 見出しの位置へ飛ぶ。要素は下で作るので、参照は後から解決する
+    const anchors = [];
+    [...jump.children].forEach((btn, i) => {
+      btn.addEventListener('click', () => {
+        const target = anchors[i];
+        if (!target) return;
+        target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        for (const b of jump.children) b.setAttribute('aria-current', 'false');
+        btn.setAttribute('aria-current', 'true');
+      });
+    });
+    body._anchors = anchors;
+  }
+
   for (const g of groups) {
-    if (g.label) body.appendChild(el('div', { class: 'ph-topic', text: g.label }));
+    if (g.label) {
+      const h = el('div', { class: 'ph-topic', text: g.label });
+      body.appendChild(h);
+      if (body._anchors) body._anchors.push(h);
+    }
     for (const id of g.ids) {
       const card = state.cards[id];
       const row = el('div', { class: 'ph-item' }, [
