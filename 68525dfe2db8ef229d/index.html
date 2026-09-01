@@ -7589,13 +7589,19 @@ function renderTalks(root) {
   const box = el('div', { class: 'practice' });
   for (const d of list) {
     const sc = scenarioOf(d.scenarioId);
+    // 場面の名前は全部同じなので出しても選ぶ手がかりにならない。
+    // 代わりに「どういう場面か」を出す。選ぶときに見たいのはこっち
+    const desc = d.aboutJa || (sc ? sc.labelJa : '');
+    // 発話の数ではなく**往復の数**を出す。4発話なら2往復。
+    // 発話の数をそのまま「往復」と書くと、実際の倍の長さに見える
+    const turns = (d.turns || []).length;
     box.appendChild(el('button', { class: 'pr', attrs: { type: 'button' },
       on: { click: () => startTalk(d) } }, [
       el('span', {}, [
         el('span', { class: 'pr-t', text: d.labelJa || d.id }),
-        el('span', { class: 'pr-d', text: sc ? sc.labelJa : '' }),
+        el('span', { class: 'pr-d', text: desc }),
       ]),
-      el('span', { class: 'pr-n', text: `${(d.turns || []).length}往復` }),
+      el('span', { class: 'pr-n', text: `${Math.ceil(turns / 2)}往復` }),
     ]));
   }
   root.appendChild(box);
