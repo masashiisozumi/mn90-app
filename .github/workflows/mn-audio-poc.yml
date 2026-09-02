@@ -61,13 +61,57 @@ jobs:
 
           made = {}
 
+          # --- 0. **その model は、モンゴル語の文字をそもそも受け取れるのか。**
+          # 2026-09-02、本番で使っている mms-tts-mon が ө と ш を語彙に持たず、
+          # 黙って捨てていた。音は出るので、音を聞くまで気づけなかった。
+          # だから合成する前に、まず「文字が入るか」を見る。
+          def reception(tok, name):
+              lost, seen = {}, 0
+              for cid, e in texts.items():
+                  t = e["mn"]
+                  try:
+                      back = tok.decode(tok(t, add_special_tokens=False)["input_ids"])
+                  except Exception as ex:
+                      print(f"  {name}: 文字を入れられない ({type(ex).__name__})"); return None
+                  for ch in set(t):
+                      if ch.isspace(): continue
+                      seen += t.count(ch)
+                      if ch not in back: lost[ch] = lost.get(ch, 0) + t.count(ch)
+              n = sum(lost.values())
+              print(f"  {name}: 受け取り率 {100*(seen-n)/max(seen,1):.1f}%  "
+                    + ("落ちた字なし" if not lost else
+                       "落ちた字 " + " ".join(f"{c}(U+{ord(c):04X})x{k}" for c, k in
+                                              sorted(lost.items(), key=lambda x: -x[1])[:8])))
+              return lost
+
           # --- 1. SpeechT5 (MIT) + Common Voice 17 (CC0)。**権利の鎖がきれい**
           print("=== antoniow12/speecht5_tts_mongolian (MIT / Common Voice 17) ===")
           try:
-              from transformers import SpeechT5Processor, SpeechT5ForTextToSpeech, SpeechT5HifiGan
+              from transformers import (SpeechT5Processor, SpeechT5ForTextToSpeech,
+                                        SpeechT5HifiGan, SpeechT5Tokenizer,
+                                        SpeechT5FeatureExtractor)
               from datasets import load_dataset
+              from huggingface_hub import list_repo_files
               MID = "antoniow12/speecht5_tts_mongolian"
-              proc = SpeechT5Processor.from_pretrained(MID)
+              files = list_repo_files(MID)
+              print("  中に入っているもの:", ", ".join(sorted(files))[:300])
+              try:
+                  proc = SpeechT5Processor.from_pretrained(MID)
+                  print("  processor: この repo のものを使う")
+              except Exception as e1:
+                  # preprocessor_config.json が無いだけなら、土台(MIT)のものを借りる。
+                  # ただし **借りた tokenizer がモンゴル語を受け取れるかは別問題** なので下で見る。
+                  print("  processor: この repo に無い ->", type(e1).__name__)
+                  tk = (SpeechT5Tokenizer.from_pretrained(MID)
+                        if any(f.startswith("spm_char") or f == "tokenizer_config.json" for f in files)
+                        else SpeechT5Tokenizer.from_pretrained("microsoft/speecht5_tts"))
+                  proc = SpeechT5Processor(feature_extractor=SpeechT5FeatureExtractor(),
+                                           tokenizer=tk)
+                  print("  processor: 土台 microsoft/speecht5_tts の入口を借りた")
+              lost = reception(proc.tokenizer, "speecht5 の入口")
+              if lost is None or sum(lost.values()) > 0:
+                  print("  **文字を落とすので、音を作っても意味が変わる。ここで止める。**")
+                  raise RuntimeError("文字を受け取れない")
               m = SpeechT5ForTextToSpeech.from_pretrained(MID)
               voc = SpeechT5HifiGan.from_pretrained("microsoft/speecht5_hifigan")
               emb = load_dataset("Matthijs/cmu-arctic-xvectors", split="validation")
@@ -113,6 +157,41 @@ jobs:
           except Exception as e:
               print("  ", type(e).__name__, str(e)[:160])
 
+          # --- 3. 今つかっているものを、同じ物差しで測る
+          print()
+          print("=== facebook/mms-tts-mon (いま本番で使っているもの) ===")
+          try:
+              from transformers import VitsModel, AutoTokenizer
+              tok = AutoTokenizer.from_pretrained("facebook/mms-tts-mon")
+              reception(tok, "mms-tts-mon そのまま")
+              CMAP = {"\u04e9": "\u0473", "\u0448": "\u0449"}
+              class Mapped:
+                  def __init__(self, t): self.t = t
+                  def __call__(self, s, **kw):
+                      for a, b in CMAP.items(): s = s.replace(a, b)
+                      return self.t(s, **kw)
+                  def decode(self, *a, **k): return self.t.decode(*a, **k)
+              # 置き換えたあとに何が残るかを見る。**これは「正しい読み」の証明ではない。**
+              # 語彙にある字へ寄せたら受け取り率が上がる、というだけ。
+              # 音が良くなったかは話者に聞くまで分からない。
+              lost2, seen2 = {}, 0
+              for cid, e in texts.items():
+                  t0 = e["mn"]
+                  t1 = t0
+                  for a, b in CMAP.items(): t1 = t1.replace(a, b)
+                  back = tok.decode(tok(t1, add_special_tokens=False)["input_ids"])
+                  for ch in set(t1):
+                      if ch.isspace(): continue
+                      seen2 += t1.count(ch)
+                      if ch not in back: lost2[ch] = lost2.get(ch, 0) + t1.count(ch)
+              n2 = sum(lost2.values())
+              print(f"  字を寄せたあと: 受け取り率 {100*(seen2-n2)/max(seen2,1):.1f}%  "
+                    + ("落ちた字なし" if not lost2 else
+                       "落ちた字 " + " ".join(f"{c}(U+{ord(c):04X})x{k}" for c, k in
+                                              sorted(lost2.items(), key=lambda x: -x[1])[:8])))
+          except Exception as e:
+              print("  ", type(e).__name__, str(e)[:160])
+
           json.dump(made, open("ab-out/models.json","w"), ensure_ascii=False, indent=1)
           print()
           print("**どのモデルが良いかは決めない。権利と、本当に音になるかだけ確かめた。**")
@@ -123,7 +202,7 @@ jobs:
           git config user.name "mn90-audio-bot"
           git config user.email "noreply@github.com"
           git checkout -B audio-ab
-          git add -f ab-out models.txt model-rights.json
+          for f in ab-out models.txt; do [ -e "$f" ] && git add -f "$f"; done
           git commit -q -m "設定違いの比較音源と、モデルの中身の記録" || echo "変更なし"
           git push -f origin audio-ab
           echo "pushed to audio-ab"
