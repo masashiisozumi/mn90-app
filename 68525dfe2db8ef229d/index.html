@@ -2980,6 +2980,16 @@ const EVENTS = [
   'listening_started',   // 1本を始めた
   'listening_replayed',  // 通しで聞いた (もう一度を含む)
   'listening_finished',  // 1本を終えた
+  // --- 音の一生。**実機で「どこで止まったか」を切り分けるための数だけ。**
+  //     どの表現を鳴らしたか・本文・場所・接続先の機器名は1つも入れない。
+  //     started と ended を別に数えるのが要点で、
+  //     「鳴り始めたが最後まで鳴らなかった」回数がここに出る
+  'audio_started',       // 鳴り始めた
+  'audio_ended',         // **最後まで鳴った** (これだけが正常終了)
+  'audio_interrupted',   // こちらが止めていないのに途中で止まった (端末側の事情)
+  'audio_cancelled',     // こちらから止めた (やめる・次へ・連打)
+  'audio_failed',        // 鳴らせなかった
+  'audio_timeout',       // 鳴り終わりの合図が来なかった
 ];
 
 const MAX_DAYS = 60;          // 保持する日数。個人βの見直しに足りる範囲
@@ -5383,6 +5393,38 @@ function createAudio(opts = {}) {
   }
 
   /**
+   * 音の一生。**「鳴り始めた」と「最後まで鳴った」を別のものとして扱う。**
+   *
+   * 2026-09-02、「鳴り始めた」だけを見て成功と判定していたために、
+   * 前の音を踏み潰しながら進む不具合を長く見逃していた。
+   *
+   *   requested    鳴らすよう頼まれた
+   *   started      鳴り始めた
+   *   ended        **最後まで鳴った** (これだけが正常終了)
+   *   interrupted  こちらが止めていないのに、途中で止まった
+   *                (画面を消した・電話が入った等。**端末側の事情**)
+   *   cancelled    こちらから止めた (やめる・次へ進む・連打)
+   *   failed       鳴らせなかった (許可されない・読めない)
+   *   no_audio     鳴らすものが無い
+   *   timeout      鳴り終わりの合図が来ないまま、目安の時間を過ぎた
+   *
+   * **interrupted と cancelled を混ぜない。**混ぜると、
+   * 「iPhone が止めたのか、こちらが止めたのか」が永久に分からなくなる。
+   */
+  const OUTCOMES = ['requested', 'started', 'ended', 'interrupted',
+    'cancelled', 'failed', 'no_audio', 'timeout'];
+
+  /** 出来事の伝え先。**中身 (本文・音声) は渡さない。id と種類だけ。** */
+  const onEvent = typeof opts.onEvent === 'function' ? opts.onEvent : null;
+  function emit(phase, id, extra) {
+    if (!onEvent) return;
+    try { onEvent({ phase, id, ...(extra || {}) }); } catch (e) { /* 記録で本体を止めない */ }
+  }
+
+  // こちらから止めている最中か。**pause が誰のせいかを見分けるため。**
+  let stopping = false;
+
+  /**
    * **鳴り終わるまで待って鳴らす。**
    *
    * play() は「鳴り始めたら」返る (HTMLMediaElement の決まり)。
@@ -5398,42 +5440,73 @@ function createAudio(opts = {}) {
    * (ended が来ない端末があっても、そこで止まらない)
    */
   function playToEnd(id, opt = {}) {
+    emit('requested', id);
     const wasStatic = hasStatic(id);
     const r = play(id, opt);
-    if (!wasStatic) return r;
+    // 端末の読み上げは、もともと鳴り終わりで返る
+    if (!wasStatic) {
+      return r.then(res => {
+        const out = res === 'no_audio' ? 'no_audio'
+          : res === 'superseded' ? 'cancelled'
+            : res === 'played' ? 'ended' : 'failed';
+        emit(out, id);
+        return out;
+      });
+    }
     const a = elParams;
-    if (!a || !a.addEventListener) return r;
+    if (!a || !a.addEventListener) return r.then(() => { emit('ended', id); return 'ended'; });
     const mine = token;
     const it = items[id];
     const limitMs = Math.round(((Number(it && it.duration) || 3) + 1.5) * 1000);
     return r.then(res => {
-      if (res !== 'played' || mine !== token) return res;
-      if (a.ended || a.paused) return res;
+      if (res === 'no_audio') { emit('no_audio', id); return 'no_audio'; }
+      if (res === 'blocked' || res === 'error') { emit('failed', id, { why: res }); return 'failed'; }
+      if (res === 'superseded' || mine !== token) { emit('cancelled', id); return 'cancelled'; }
+      emit('started', id);
+      // すでに終わっている / 止まっている
+      if (a.ended) { emit('ended', id); return 'ended'; }
+      if (a.paused) {
+        const out = stopping || mine !== token ? 'cancelled' : 'interrupted';
+        emit(out, id); return out;
+      }
       return new Promise(resolve => {
         let done = false;
-        const finish = (why) => {
+        const finish = (out) => {
           if (done) return;
           done = true;
           clearTimeout(timer);
-          a.removeEventListener('ended', onEnd);
-          a.removeEventListener('pause', onEnd);
-          a.removeEventListener('error', onEnd);
-          resolve(why);
+          a.removeEventListener('ended', onEnded);
+          a.removeEventListener('pause', onPause);
+          a.removeEventListener('error', onError);
+          emit(out, id);
+          resolve(out);
         };
-        const onEnd = () => finish(mine === token ? res : 'superseded');
+        // **最後まで鳴った。これだけが正常終了。**
+        const onEnded = () => finish('ended');
+        // 止まった。**こちらが止めたのか、端末が止めたのか**を分ける
+        const onPause = () => finish(stopping || mine !== token ? 'cancelled'
+          : (a.ended ? 'ended' : 'interrupted'));
+        const onError = () => finish('failed');
         const timer = setTimeout(() => finish('timeout'), limitMs);
-        a.addEventListener('ended', onEnd);
-        a.addEventListener('pause', onEnd);
-        a.addEventListener('error', onEnd);
+        a.addEventListener('ended', onEnded);
+        a.addEventListener('pause', onPause);
+        a.addEventListener('error', onError);
       });
     });
   }
 
-  /** 音の要素だけ止める (読み上げには触らない)。 */
+  /**
+   * 音の要素だけ止める (読み上げには触らない)。
+   * **止めている間は印を立てる。**そうしないと、この pause が
+   * 「こちらが止めた」のか「端末が止めた」のか区別できない。
+   */
   function stopElement() {
     const a = elParams;
     if (!a) return;
+    stopping = true;
     try { a.pause(); a.currentTime = 0; } catch (e) { /* 停止できなくても進む */ }
+    // 同じ回のうちに来る pause まで印を立てておく
+    setTimeout(() => { stopping = false; }, 0);
   }
 
   /**
@@ -5471,7 +5544,7 @@ function createAudio(opts = {}) {
   }
 
   return {
-    has, count, play, playToEnd, stop, unlock, playing, tierFor,
+    has, count, play, playToEnd, stop, unlock, playing, tierFor, OUTCOMES,
     hasStatic, hasSpeech, qualityFor, speechAvailable, speechQuality,
     /** 不具合報告に出す中身。教材本文は入らない。 */
     speechReport() { return speech && speech.report ? speech.report() : null; },
@@ -6320,10 +6393,28 @@ function answerTextOf(id) {
   return it ? it.mn : null;
 }
 
+/**
+ * 音の一生を数える。**実機で「どこで止まったか」を切り分けるため。**
+ *
+ * 社長の iPhone で画面を消したときに止まるのか、こちらが止めているのかは、
+ * 数字が無いと永久に推測のままになる。**started と ended を別に数える。**
+ * 「鳴り始めたが最後まで鳴らなかった」回数が、そのまま手がかりになる。
+ *
+ * **記録するのは種類と回数だけ。**どの表現を鳴らしたか・本文・場所・
+ * つないだ機器の名前は1つも残さない (engine/analytics.js の一覧が関門)。
+ */
+function countAudioPhase(ev) {
+  if (!ev || !ev.phase) return;
+  // requested は数えない (started と二重になるだけ)
+  if (ev.phase === 'requested' || ev.phase === 'no_audio') return;
+  track('audio_' + ev.phase);
+}
+
 function makeAudio(manifest) {
   return createAudio({
     manifest, speech, resolveText: answerTextOf,
     onEnded: () => markPlaying(false),
+    onEvent: countAudioPhase,
   });
 }
 
@@ -7756,7 +7847,8 @@ function driveReady() {
   return narration.available() && driveCandidates().length >= 5;
 }
 
-let driveState = null;   // { steps, at, timer, startedAt, played, talks, minutes }
+let driveState = null;   // { id, steps, at, timer, startedAt, played, talks, minutes }
+let driveSession = 0;    // 何回目の Drive か。**止めた回を確実に締め出すための番号**
 
 function openDrive() {
   driveState = null;
@@ -7816,8 +7908,13 @@ function startDrive() {
       if (d) steps.push(...drive.stepsForTalk(d));
     }
   }
-  driveState = { steps, at: 0, timer: null, startedAt: Date.now(), played: 0, talks: 0,
-    minutes: driveMinutes, stopped: false };
+  // **1回ぶんに名前を付ける。**古い回のタイマー・鳴り終わりの合図・
+  // 次へ進む予定が、新しい回へ入り込まないようにするための唯一の目印。
+  // driveToken だけだと「今どの回の話か」が分からず、
+  // 止めた回から次の音が始まる形を作りやすい
+  driveSession += 1;
+  driveState = { id: driveSession, steps, at: 0, timer: null, startedAt: Date.now(),
+    played: 0, talks: 0, minutes: driveMinutes, stopped: false };
   track('drive_session_start');
   $('drive-setup').hidden = true;
   $('drive-run').hidden = false;
@@ -7840,8 +7937,13 @@ async function runDrive() {
   }
 
   const mine = ++driveToken;
-  // driveState が消えていたら false。**止めたあとに進めない**
-  const done = () => mine === driveToken && !!driveState && !driveState.stopped;
+  const session = driveState.id;
+  // **この回のものか**を、3つとも満たすときだけ true にする。
+  //   1 いちばん新しい手順であること (連打で古い手順が残っていない)
+  //   2 Drive がまだ生きていること
+  //   3 **同じ回であること** (止めて始め直したら、古い回はここで落ちる)
+  const done = () => mine === driveToken && !!driveState
+    && !driveState.stopped && driveState.id === session;
 
   if (st.kind === 'think' || st.kind === 'repeat' || st.kind === 'talk_gap') {
     $('drive-now').textContent = st.kind === 'repeat' ? 'もう一度' : '…';
