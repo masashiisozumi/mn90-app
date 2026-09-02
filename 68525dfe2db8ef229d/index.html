@@ -555,6 +555,9 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
   background:var(--raised);color:var(--ink);font:inherit;font-weight:700;
   padding:10px 12px;text-align:left;cursor:pointer}
 .cats button .c-n{display:block;font-weight:400;font-size:calc(0.8rem * var(--fs));color:var(--dim);margin-top:3px}
+/* 順番と速さ。**小さく2行。**押す場所は増やすが、行は増やさない */
+.study-opt{margin-bottom:8px}
+.study-opt button{min-height:44px;padding:8px 14px}
 /* 流している最中に出す1件。**大きく1つだけ。**運転中でなくても見やすいように */
 .study-now{border:1px solid var(--line);border-radius:var(--radius-card);
   padding:18px;margin-bottom:var(--space-4);background:var(--raised);text-align:center}
@@ -861,6 +864,9 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 <main id="study" class="wrap" hidden>
   <div class="head"><span class="brand" id="study-title">—</span></div>
   <p class="ph-lead" id="study-note"></p>
+  <!-- 順番と速さ。**流している最中でも押せる。**押した瞬間に切り替わる -->
+  <div class="opt-row study-opt" id="study-order"></div>
+  <div class="opt-row study-opt" id="study-tempo"></div>
   <div id="study-now" class="study-now" hidden>
     <div class="study-ja" id="study-ja"></div>
     <div class="study-mn" id="study-mn"></div>
@@ -4728,17 +4734,31 @@ __m["engine/drive.js"] = { DURATIONS, STEP_KINDS, ALLOWED_EVENTS, MODES, DEFAULT
  * カテゴリーの中身は languages/<code>/ 側が持つ。
  */
 
-/** 流し方。**2つだけ。**増やすと出発前に迷う */
-const TEMPOS = ['normal', 'slow'];
-const DEFAULT_TEMPO = 'normal';
+/** 速さ。**2つだけ。**増やすと迷う。既定は速いほう (社長:「速度遅いかな」) */
+const TEMPOS = ['fast', 'slow'];
+const DEFAULT_TEMPO = 'fast';
 
-/** 日本語のあと、モンゴル語が鳴り出すまで */
-const AFTER_JA_MS = { normal: 500, slow: 1100 };
-/** モンゴル語のあと、次の日本語まで */
-const AFTER_MN_MS = { normal: 700, slow: 1500 };
+/**
+ * 並べる順。**既定はモンゴル語が先。**
+ *
+ * 社長:「モンゴル語→日本語かな？やはり」。
+ * 先に音を聞いて、そのあと意味で答え合わせをする形になる。
+ * 逆 (日本語が先) も選べるようにしておく — 1タップで入れ替わる。
+ */
+const ORDERS = ['mn_ja', 'ja_mn'];
+const DEFAULT_ORDER = 'mn_ja';
+
+/** 先に鳴ったもののあと、もう片方が来るまで */
+const AFTER_FIRST_MS = { fast: 350, slow: 900 };
+/** 1件を終えて、次へ移るまで */
+const AFTER_PAIR_MS = { fast: 500, slow: 1200 };
 /** 長い文は少しだけ長く待つ (1文字あたり) */
-const PER_CHAR_MS = 18;
-const MAX_EXTRA_MS = 600;
+const PER_CHAR_MS = 10;
+const MAX_EXTRA_MS = 300;
+
+/** 前の名前でも動くようにしておく (呼ぶ側を一度に直さなくてよいように) */
+const AFTER_JA_MS = AFTER_FIRST_MS;
+const AFTER_MN_MS = AFTER_PAIR_MS;
 
 /**
  * 読み上げに渡す日本語。**括弧の中は読まない。**
@@ -4819,22 +4839,28 @@ const SPOKEN_SECONDS_EACH = 2.4;
 /** これだけの長さは持たせる。**途中で終わらせない** */
 const FILL_MINUTES = 60;
 
-function playlist(items, { tempo = DEFAULT_TEMPO, minutes = FILL_MINUTES } = {}) {
+function playlist(items, { tempo = DEFAULT_TEMPO, order = DEFAULT_ORDER,
+  minutes = FILL_MINUTES } = {}) {
   const t = TEMPOS.includes(tempo) ? tempo : DEFAULT_TEMPO;
+  const o = ORDERS.includes(order) ? order : DEFAULT_ORDER;
   const usable = items.filter(x => x && x.mn);
   const out = [];
   if (!usable.length) return out;
   // 1周ぶんの見積り (間 + 鳴っている時間)
   const perLap = usable.reduce((a, it) =>
-    a + (AFTER_JA_MS[t] + extra(it.ja) + AFTER_MN_MS[t] + extra(it.mn)) / 1000
+    a + (AFTER_FIRST_MS[t] + AFTER_PAIR_MS[t] + extra(it.ja) + extra(it.mn)) / 1000
       + SPOKEN_SECONDS_EACH, 0);
   const loops = Math.max(2, Math.ceil((minutes * 60) / Math.max(1, perLap)));
   for (let n = 0; n < Math.max(1, loops); n++) {
     for (const it of usable) {
-      out.push({ kind: 'ja', id: it.id, text: sayableJa(it.ja) });
-      out.push({ kind: 'gap', ms: AFTER_JA_MS[t] + extra(it.ja) });
-      out.push({ kind: 'mn', id: it.id, text: it.mn });
-      out.push({ kind: 'gap', ms: AFTER_MN_MS[t] + extra(it.mn) });
+      const ja = { kind: 'ja', id: it.id, text: sayableJa(it.ja) };
+      const mn = { kind: 'mn', id: it.id, text: it.mn };
+      const first = o === 'mn_ja' ? mn : ja;
+      const second = o === 'mn_ja' ? ja : mn;
+      out.push(first);
+      out.push({ kind: 'gap', ms: AFTER_FIRST_MS[t] + extra(first.text) });
+      out.push(second);
+      out.push({ kind: 'gap', ms: AFTER_PAIR_MS[t] + extra(second.text) });
     }
   }
   return out;
@@ -4844,7 +4870,7 @@ function playlist(items, { tempo = DEFAULT_TEMPO, minutes = FILL_MINUTES } = {})
 function affectsSrs() { return false; }
 
 
-__m["engine/study.js"] = { TEMPOS, DEFAULT_TEMPO, AFTER_JA_MS, AFTER_MN_MS, FILL_MINUTES, buildCategory, playlist, affectsSrs, sayableJa };
+__m["engine/study.js"] = { TEMPOS, DEFAULT_TEMPO, ORDERS, DEFAULT_ORDER, AFTER_FIRST_MS, AFTER_PAIR_MS, AFTER_JA_MS, AFTER_MN_MS, FILL_MINUTES, buildCategory, playlist, affectsSrs, sayableJa };
 })();
 
 // ===== engine/listening.js =====
@@ -8510,6 +8536,10 @@ function driveScenes() {
 // 覚え具合・連続日数・その日の進みを1つも動かさない。
 
 let studyCat = null;      // いま開いているカテゴリー
+/** 並べる順。**既定はモンゴル語が先** (社長:「モンゴル語→日本語かな？やはり」) */
+let studyOrder = study.DEFAULT_ORDER;
+/** 速さ。**既定は速いほう** (社長:「速度遅いかな」) */
+let studyTempo = study.DEFAULT_TEMPO;
 let studyState = null;    // { id, steps, at, timer, stopped }
 let studySession = 0;
 let studyToken = 0;
@@ -8557,11 +8587,45 @@ function openStudy(id) {
   $('study-note').textContent = '「通しで流す」を押すと、日本語のあとにモンゴル語が流れます。'
     + '言えたかどうかは聞きません。'
     + (unchecked ? ' このモンゴル語は、まだモンゴル語話者の確認を受けていません。' : '');
+  paintStudyOpts();
   paintStudyList();
   $('study-now').hidden = true;
   $('study-play').hidden = false;
   $('study-stop').hidden = true;
   showScreen('study');
+}
+
+/**
+ * 順番と速さ。**流している最中でも押せる。**
+ * 押したらその場で作り直して、いま鳴っているものの続きから流し直す。
+ * (止めてから選び直させると、試すのが面倒になる)
+ */
+function paintStudyOpts() {
+  const rows = [
+    ['study-order', [['mn_ja', 'モンゴル語 → 日本語'], ['ja_mn', '日本語 → モンゴル語']],
+      () => studyOrder, v => { studyOrder = v; }],
+    ['study-tempo', [['fast', 'はやい'], ['slow', 'ゆっくり']],
+      () => studyTempo, v => { studyTempo = v; }],
+  ];
+  for (const [id, opts, get, set] of rows) {
+    const box = $(id);
+    clear(box);
+    for (const [v, label] of opts) {
+      box.appendChild(el('button', {
+        class: 'opt', attrs: { type: 'button', 'aria-pressed': String(get() === v) },
+        on: { click: () => { set(v); paintStudyOpts(); if (studyState && !studyState.stopped) restartStudy(); } },
+      }, [
+        el('span', { class: 'opt-mark', text: get() === v ? '✓' : '' }),
+        el('span', { text: label }),
+      ]));
+    }
+  }
+}
+
+/** 順番や速さを変えたときに、流し直す */
+function restartStudy() {
+  stopStudy(true);
+  startStudy();
 }
 
 function paintStudyList() {
@@ -8600,8 +8664,9 @@ function startStudy() {
   audio.stop();
   studySession += 1;
   studyToken += 1;
-  studyState = { id: studySession, steps: study.playlist(studyCat.items), at: 0,
-    timer: null, stopped: false };
+  studyState = { id: studySession,
+    steps: study.playlist(studyCat.items, { order: studyOrder, tempo: studyTempo }),
+    at: 0, timer: null, stopped: false };
   if (!studyState.steps.length) { studyState = null; showNotice('流せるものがありません'); return; }
   track('study_play');
   $('study-now').hidden = false;
