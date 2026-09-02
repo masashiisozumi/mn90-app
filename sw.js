@@ -13,14 +13,25 @@
  */
 
 // 中身が変わるたびに上げる。古い保管庫はここを見て捨てる
-const CACHE = 'mn90-v72';
+const CACHE = 'mn90-v82';
 
 // 最初に取り込むもの。1枚のHTMLに全部入っているので、これだけで動く
 const SHELL = ['./', './index.html', './manifest.webmanifest', './apple-touch-icon.png'];
 
+// モンゴル語の音声。**ここは build-standalone.js が書き換える。手で足さない。**
+// 運転中に電波が切れる場所へ入っても止まらないよう、最初にまとめて取り込む。
+// SHELL と分けているのは、addAll が1件でも失敗すると全部が入らないため。
+// 音は1件ずつ入れ、落ちたものはあとで普通に取りに行けばよい。
+const AUDIO = [];  /* AUDIO-LIST */
+
 self.addEventListener('install', (e) => {
   // すぐには入れ替わらない。待機したまま、アプリ側の合図を待つ
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).catch(() => {}));
+  e.waitUntil((async () => {
+    const c = await caches.open(CACHE);
+    try { await c.addAll(SHELL); } catch (err) { /* 通信が弱いときは次に開いたときへ回す */ }
+    // 音は1件ずつ。**1件の失敗で全部を落とさない**
+    await Promise.all(AUDIO.map((u) => c.add(u).catch(() => {})));
+  })());
 });
 
 self.addEventListener('activate', (e) => {

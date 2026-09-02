@@ -1,0 +1,17 @@
+このフォルダの音声について
+
+モデル: facebook/mms-tts-mon
+提供元: Meta Platforms, Inc. (Facebook)
+ライセンス: CC BY-NC 4.0
+ライセンス全文: https://creativecommons.org/licenses/by-nc/4.0/
+
+facebook/mms-tts-mon (Meta / Facebook), CC BY-NC 4.0 — https://creativecommons.org/licenses/by-nc/4.0/
+
+これは合成音声です。人が録音したものではありません。
+このモデルを使って生成したもので、発音が正しいかどうかは確認していません。
+
+利用の範囲: 非商用のみ (personal / non-commercial)。
+販売・課金・広告収益化・商用サービスでの提供には使えません。
+
+件数: 140
+生成: 2026-09-01T23:02:10.684Z

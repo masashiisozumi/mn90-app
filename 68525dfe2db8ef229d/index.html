@@ -2,7 +2,7 @@
   Mongolian 90 — 社長個人β (1ファイル版)
   build-standalone.js が engine/ 言語パック/ UI / 教材を連結して生成する。
   手で編集しない。直すときは元のファイルを直して作り直す。
-  生成元: 教材 140件 / モジュール 34本 / 参考音声 0件 / 読み方の目安 156件 (強弱 66件) / 追加コンテンツ 2パック(会話 22本)
+  生成元: 教材 140件 / モジュール 35本 / モンゴル語 合成音声 140件 / 読み方の目安 156件 (強弱 66件) / 追加コンテンツ 2パック(会話 22本)
 -->
 <!doctype html>
 <html lang="ja">
@@ -572,6 +572,34 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .turn-row{display:flex;align-items:center;gap:10px;margin-top:8px}
 .turn .spk{min-height:var(--tap);min-width:var(--tap)}
 
+/* ---- 会話の聞き取り ---- */
+/* **最初は文字を出さない。**耳で追う練習なので、目に頼れる場所を作らない。
+   段階が進んで初めて日本語が出て、最後に本文が出る。 */
+.ln-step{font-size:calc(var(--t-tiny) * var(--fs));color:var(--dim);
+  letter-spacing:.04em;margin-bottom:var(--space-2)}
+.ln-head{font-size:calc(1.35rem * var(--fs));font-weight:700;line-height:1.4;
+  margin:0 0 var(--space-3);word-break:break-word}
+.ln-lead{font-size:calc(var(--t-body) * var(--fs));color:var(--dim);
+  line-height:1.7;margin:0 0 var(--space-4)}
+/* 聞いている間に出す印。何往復のどこかだけを示し、本文は出さない */
+.ln-dots{display:flex;gap:8px;flex-wrap:wrap;margin:var(--space-4) 0}
+.ln-dot{width:14px;height:14px;border-radius:50%;background:var(--sunk);
+  border:1px solid var(--line)}
+.ln-dot.is-on{background:var(--accent);border-color:var(--accent)}
+/* 「いま鳴っている」を、色だけでなく形でも示す */
+.ln-dot.is-now{transform:scale(1.35)}
+.ln-box{background:var(--raised);border:1px solid var(--line);
+  border-radius:var(--radius-card);padding:15px;margin-bottom:var(--space-3)}
+.ln-mn{font-size:calc(1.25rem * var(--fs));font-weight:700;line-height:1.35;
+  word-break:break-word}
+.ln-ja{font-size:calc(var(--t-sub) * var(--fs));color:var(--dim);
+  line-height:1.5;margin-top:4px}
+.ln-who{font-size:calc(var(--t-tiny) * var(--fs));color:var(--dim);
+  letter-spacing:.04em;margin-bottom:4px}
+.ln-row{display:flex;align-items:center;gap:10px;margin-top:10px}
+.ln-row .spk{min-height:var(--tap);min-width:var(--tap)}
+#listening-replay{background:var(--raised);color:var(--ink);border:2px solid var(--line)}
+
 /* ---- 書き出し / 不具合報告 ---- */
 .copybox{background:var(--raised);border:1px solid var(--line);border-radius:var(--radius-card);padding:15px}
 .copy-lead{font-size:.85rem;color:var(--dim);line-height:1.7;margin:0 0 14px}
@@ -1010,6 +1038,24 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
   </div>
 </div>
 
+<main id="listening" class="wrap" hidden>
+  <div class="head"><span class="brand" id="listening-title">会話の聞き取り</span></div>
+  <p class="ln-step" id="listening-step"></p>
+  <h2 class="ln-head" id="listening-head"></h2>
+  <p class="ln-lead" id="listening-lead"></p>
+  <div class="ln-dots" id="listening-dots" hidden></div>
+  <div id="listening-body"></div>
+  <div class="dock-pad"></div>
+</main>
+
+<div class="dock" id="listening-dock" hidden>
+  <div class="dock-inner">
+    <button id="listening-next" class="primary" type="button">次へ</button>
+    <button id="listening-replay" class="ghost" type="button" hidden>もう一度聞く</button>
+    <button id="listening-back" class="ghost" type="button">練習へ戻る</button>
+  </div>
+</div>
+
 </body>
 </html>
 
@@ -1022,8 +1068,8 @@ window.__MN90_CURRICULUM = {"meta":{"version":1,"generatedBy":"mongolian-90/data
 // 読み方の目安 (カタカナ)。教材本文とは別に持つ
 window.__MN90_READING = {"meta":{"version":1,"generatedBy":"languages/mn/build-reading-hints.js","field":"readingHintJa","note":"読み方の目安。発音の正解を示すものではない。教材本文とは別に持つ。","basis":"モンゴル語の綴りだけを見て作る。読み上げの音を根拠にしない。","at":"2026-09-01","count":156},"readingHintJa":{"p_i":"ビ","p_you_pol":"タ","p_you_casual":"チ","p_he_she":"テル・フン","p_we":"ビド","v_be_now":"バイナ","n_japan":"ヤポン","n_mongolia":"モンゴル","n_name":"ネル","s_iam_from_jp":"ビ・ヤポノース・イルセン","s_my_name_is":"ナマイグ・◯◯・ゲデグ","g_hello":"サイン・バイナ・ウー?","g_thanks":"バヤルララー","g_yes":"ティーム","g_no":"ウグイ","q_what":"ユー","q_who":"ヘン","q_where":"ハーナ","q_when":"ヘゼー","q_how":"ヤージ","q_howmany":"ヘデン","q_whichmodel":"ヤマル・ザグワル","s_whats_this":"エネ・ユー・ウェ?","s_where_is":"ハーナ・バイナ・ウェ?","n_car":"マシン","n_company":"コムパニ","n_person":"フン","n_work":"アジル","n_today":"オノードル","n_tomorrow":"マルガーシュ","s_are_you_ok":"ズゲール・ウー?","s_do_you_speak_en":"タ・アングリアル・ヤルダグ・ウー?","s_is_this_ok":"エネ・ボロフ・ウー?","v_speak":"ヤリフ","v_go":"ヤワフ","v_come":"イレフ","v_buy":"フダルダジ・アワフ","v_sell":"ザラフ","v_see":"ウゼフ","v_know":"メデフ","v_understand":"オイルゴフ","s_i_dont_get":"オイルゴフグイ・バイナ","s_say_again":"ダヒン・ヘルジ・オグノ・ウー","s_slowly":"アージューハン・ヤリナ・ウー","s_thanks_much":"マシュ・イフ・バヤルララー","s_nice_to_meet":"タニルツァハド・タータイ・バイナ","s_thanks_time":"ツァグ・ガルガサンド・バヤルララー","s_card_exchange":"ネリーン・フードサー・ソリルツョ","n_businesscard":"ネリーン・フーダス","s_i_sell_cars":"ビ・フーチン・アウトマシン・ザルダグ","n_usedcar":"フーチン・アウトマシン","s_see_you":"ダラー・ウールジャ","s_goodbye":"バヤルタイ","s_sorry":"ウーチラーライ","s_please_wait":"トゥル・フレーネ・ウー","num_1":"ネグ","num_2":"ホヨル","num_3":"グラウ","num_4":"ドロウ","num_5":"タウ","num_6":"ズルガー","num_7":"ドロー","num_8":"ナイム","num_9":"エス","num_10":"アラウ","num_100":"ズー","num_1000":"ミャンガ","n_price":"ウネ","s_how_much":"エネ・ヤマル・ウネテイ・ウェ?","n_dollar":"アムドルラル","s_i_have_car":"ビ・マシンタイ","s_i_dont_have":"ナダド・テル・バイフグイ","s_no_accident":"エネ・マシン・オソル・アワールト・オルジ・バイガーグイ","n_accident":"オソル・アワール","n_family":"ゲル・ブル","n_child":"フーヘド","n_wife":"エフネル","n_shop":"デルグール","n_money":"モンゴ","n_time":"ツァグ","s_i_have_family":"ビ・ゲル・ブルテイ","s_do_you_have":"バイガー・ユー?","n_phone":"ウタス","n_water":"ウス","n_food":"ホール","n_day":"オドル","n_month":"サル","n_year":"ジル","n_morning":"オグロー","n_evening":"オロイ","n_road":"ザム","n_city":"ホト","n_house":"ゲル","n_country":"ウルス","n_language":"ヘル","s_i_buy_this":"ビ・ウーニーグ・フダルダジ・アウナ","s_show_me":"ウーニーグ・ウズールネ・ウー","s_i_sell_this":"ビ・エネ・マシニグ・ザルナ","pn_this":"エネ","pn_that":"テル","n_document":"ビチグ・バリムト","n_photo":"ズラグ","v_send":"イルゲーフ","v_take":"アワフ","v_give":"オゴフ","v_do":"ヒーフ","v_look_for":"ハイフ","v_find":"オロフ","n_partner":"トゥンシュ","n_market":"ザフ・ゼール","s_i_am_in_ub":"ビ・ウラーンバータルト・バイナ","s_send_to_you":"ビ・タンド・イルゲーネ","n_ub":"ウラーンバータル","n_airport":"ニセフ・オンゴツニ・ブーダル","n_hotel":"ゾチド・ブーダル","n_restaurant":"レストラン","n_office":"オフフィス","n_bank":"バンク","n_port":"ボームト","n_customs":"ガール","s_where_is_toilet":"アリウン・ツェウリーン・オロー・ハーナ・バイナ・ウェ?","s_lets_meet_here":"エンド・ウールジャ","adv_here":"エンド","adv_there":"テンド","n_meeting":"ウールザルト","s_thank_you_today":"オノードル・マシュ・イフ・バヤルララー","s_ill_contact":"ビ・ダヒン・ホルボグドノ","s_can_i_contact":"タンタイ・ホルボグドジ・ボロフ・ウー?","v_contact":"ホルボグドフ","n_km":"キロメトル","s_how_many_km":"ヘデン・キロメトル・ヤウサン・ベ?","s_what_year":"エネ・マシン・ヘデン・オニフ・ウェ?","n_color":"オンゴ","c_white":"ツァガーン","c_black":"ハル","c_red":"ウラーン","n_engine":"ホドルグール","n_part":"セルベグ","s_lets_work_together":"ハムトラン・アジルラツガーヤ","s_ill_send_quote":"ビ・ウニーン・サナル・イルゲーネ","d_cafe_what_have":"ユー・アワフ・ウェ?","d_cafe_one_coffee":"ネグ・コフェ・オグノ・ウー","d_cafe_sugar":"チヘルテイ・ユー?","d_cafe_no_thanks":"ウグイ,・ヘレググイ","d_cafe_takeaway":"アウチ・ヤウナ","d_air_passport":"パスポルトー・オグノ・ウー","d_air_here_it_is":"エンド・バイナ","d_air_any_bags":"テーシュ・バイガー・ユー?","d_air_one_bag":"ティーム,・ネグ・シルヘグ・バイナ","d_air_gate_number":"アルワン・ホヨルドゥガール・ハールガ","d_res_how_many":"ヘドゥーレー・ウェ?","d_res_two_people":"ホヨル・フン","d_res_order_what":"ユー・ザヒアラフ・ウェ?","d_res_this_one":"ウーニーグ・オグノ・ウー","d_res_drink_what":"ユー・ウーフ・ウェ?","d_res_water_please":"ウス・オグノ・ウー"}};
 window.__MN90_PROSODY = {"meta":{"version":1,"generatedBy":"languages/mn/build-prosody-hints.js","field":"prosodyHintJa","shows":"最初の長い母音・二重母音のみ。確からしさが high の語だけに付ける。","note":"決まった読み方を示すものではない。少し強めに読む位置の目安。","basis":"モンゴル語の綴りだけを見て作る。読み上げの音は根拠にしない。","at":"2026-09-01","words":{"high":82,"medium":96,"low":105},"itemsWithHint":66,"itemsWithoutHint":90},"prosodyHintJa":{"v_be_now":[[{"t":"バイ","s":true},{"t":"ナ","s":false}]],"s_iam_from_jp":[null,[{"t":"ヤポ","s":false},{"t":"ノー","s":true},{"t":"ス","s":false}],null],"s_my_name_is":[[{"t":"ナ","s":false},{"t":"マイ","s":true},{"t":"グ","s":false}],null,null],"g_hello":[null,[{"t":"バイ","s":true},{"t":"ナ","s":false}],null],"g_thanks":[[{"t":"バヤルラ","s":false},{"t":"ラー","s":true}]],"g_no":[[{"t":"ウ","s":false},{"t":"グイ","s":true}]],"q_where":[[{"t":"ハー","s":true},{"t":"ナ","s":false}]],"q_when":[[{"t":"ヘ","s":false},{"t":"ゼー","s":true}]],"s_where_is":[[{"t":"ハー","s":true},{"t":"ナ","s":false}],[{"t":"バイ","s":true},{"t":"ナ","s":false}],null],"n_today":[[{"t":"オ","s":false},{"t":"ノー","s":true},{"t":"ドル","s":false}]],"n_tomorrow":[[{"t":"マル","s":false},{"t":"ガー","s":true},{"t":"シュ","s":false}]],"s_are_you_ok":[[{"t":"ズ","s":false},{"t":"ゲー","s":true},{"t":"ル","s":false}],null],"v_understand":[[{"t":"オイ","s":true},{"t":"ルゴフ","s":false}]],"s_i_dont_get":[[{"t":"オイ","s":true},{"t":"ルゴフグイ","s":false}],[{"t":"バイ","s":true},{"t":"ナ","s":false}]],"s_slowly":[[{"t":"アー","s":true},{"t":"ジューハン","s":false}],null,null],"s_thanks_much":[null,null,[{"t":"バヤルラ","s":false},{"t":"ラー","s":true}]],"s_nice_to_meet":[null,[{"t":"ター","s":true},{"t":"タイ","s":false}],[{"t":"バイ","s":true},{"t":"ナ","s":false}]],"s_thanks_time":[null,null,[{"t":"バヤルラ","s":false},{"t":"ラー","s":true}]],"s_card_exchange":[[{"t":"ネ","s":false},{"t":"リー","s":true},{"t":"ン","s":false}],[{"t":"フー","s":true},{"t":"ドサー","s":false}],null],"n_businesscard":[[{"t":"ネ","s":false},{"t":"リー","s":true},{"t":"ン","s":false}],[{"t":"フー","s":true},{"t":"ダス","s":false}]],"s_i_sell_cars":[null,[{"t":"フー","s":true},{"t":"チン","s":false}],null,null],"n_usedcar":[[{"t":"フー","s":true},{"t":"チン","s":false}],null],"s_see_you":[[{"t":"ダ","s":false},{"t":"ラー","s":true}],[{"t":"ウー","s":true},{"t":"ルジャ","s":false}]],"s_goodbye":[[{"t":"バヤル","s":false},{"t":"タイ","s":true}]],"s_sorry":[[{"t":"ウー","s":true},{"t":"チラーライ","s":false}]],"s_please_wait":[null,[{"t":"フ","s":false},{"t":"レー","s":true},{"t":"ネ","s":false}],null],"num_6":[[{"t":"ズル","s":false},{"t":"ガー","s":true}]],"num_7":[[{"t":"ド","s":false},{"t":"ロー","s":true}]],"s_how_much":[null,null,[{"t":"ウネ","s":false},{"t":"テイ","s":true}],null],"s_i_have_car":[null,[{"t":"マシン","s":false},{"t":"タイ","s":true}]],"s_i_dont_have":[null,null,[{"t":"バイ","s":true},{"t":"フグイ","s":false}]],"s_no_accident":[null,null,null,[{"t":"ア","s":false},{"t":"ワー","s":true},{"t":"ルト","s":false}],null,[{"t":"バイ","s":true},{"t":"ガーグイ","s":false}]],"n_accident":[null,[{"t":"ア","s":false},{"t":"ワー","s":true},{"t":"ル","s":false}]],"n_child":[[{"t":"フー","s":true},{"t":"ヘド","s":false}]],"n_shop":[[{"t":"デル","s":false},{"t":"グー","s":true},{"t":"ル","s":false}]],"s_i_have_family":[null,null,[{"t":"ブル","s":false},{"t":"テイ","s":true}]],"s_do_you_have":[[{"t":"バイ","s":true},{"t":"ガー","s":false}],null],"n_morning":[[{"t":"オグ","s":false},{"t":"ロー","s":true}]],"n_evening":[[{"t":"オ","s":false},{"t":"ロイ","s":true}]],"s_i_buy_this":[null,[{"t":"ウー","s":true},{"t":"ニーグ","s":false}],null,null],"s_show_me":[[{"t":"ウー","s":true},{"t":"ニーグ","s":false}],[{"t":"ウ","s":false},{"t":"ズー","s":true},{"t":"ルネ","s":false}],null],"v_send":[[{"t":"イル","s":false},{"t":"ゲー","s":true},{"t":"フ","s":false}]],"s_i_am_in_ub":[null,[{"t":"ウ","s":false},{"t":"ラー","s":true},{"t":"ンバータルト","s":false}],[{"t":"バイ","s":true},{"t":"ナ","s":false}]],"s_send_to_you":[null,null,[{"t":"イル","s":false},{"t":"ゲー","s":true},{"t":"ネ","s":false}]],"n_ub":[[{"t":"ウ","s":false},{"t":"ラー","s":true},{"t":"ンバータル","s":false}]],"n_airport":[null,null,[{"t":"ブー","s":true},{"t":"ダル","s":false}]],"n_hotel":[null,[{"t":"ブー","s":true},{"t":"ダル","s":false}]],"s_where_is_toilet":[null,[{"t":"ツェウ","s":false},{"t":"リー","s":true},{"t":"ン","s":false}],[{"t":"オ","s":false},{"t":"ロー","s":true}],[{"t":"ハー","s":true},{"t":"ナ","s":false}],[{"t":"バイ","s":true},{"t":"ナ","s":false}],null],"s_lets_meet_here":[null,[{"t":"ウー","s":true},{"t":"ルジャ","s":false}]],"n_meeting":[[{"t":"ウー","s":true},{"t":"ルザルト","s":false}]],"s_thank_you_today":[[{"t":"オ","s":false},{"t":"ノー","s":true},{"t":"ドル","s":false}],null,null,[{"t":"バヤルラ","s":false},{"t":"ラー","s":true}]],"s_can_i_contact":[[{"t":"タン","s":false},{"t":"タイ","s":true}],null,null,null],"c_white":[[{"t":"ツァ","s":false},{"t":"ガー","s":true},{"t":"ン","s":false}]],"c_red":[[{"t":"ウ","s":false},{"t":"ラー","s":true},{"t":"ン","s":false}]],"n_engine":[[{"t":"ホドル","s":false},{"t":"グー","s":true},{"t":"ル","s":false}]],"s_lets_work_together":[null,[{"t":"アジルラツ","s":false},{"t":"ガー","s":true},{"t":"ヤ","s":false}]],"s_ill_send_quote":[null,[{"t":"ウ","s":false},{"t":"ニー","s":true},{"t":"ン","s":false}],null,[{"t":"イル","s":false},{"t":"ゲー","s":true},{"t":"ネ","s":false}]],"d_cafe_sugar":[[{"t":"チヘル","s":false},{"t":"テイ","s":true}],null],"d_cafe_no_thanks":[[{"t":"ウ","s":false},{"t":"グイ","s":true},{"t":",","s":false}],[{"t":"ヘレグ","s":false},{"t":"グイ","s":true}]],"d_air_passport":[[{"t":"パスポル","s":false},{"t":"トー","s":true}],null,null],"d_air_here_it_is":[null,[{"t":"バイ","s":true},{"t":"ナ","s":false}]],"d_air_any_bags":[null,[{"t":"バイ","s":true},{"t":"ガー","s":false}],null],"d_air_one_bag":[null,null,null,[{"t":"バイ","s":true},{"t":"ナ","s":false}]],"d_air_gate_number":[null,[{"t":"ホヨルドゥ","s":false},{"t":"ガー","s":true},{"t":"ル","s":false}],[{"t":"ハー","s":true},{"t":"ルガ","s":false}]],"d_res_how_many":[[{"t":"ヘ","s":false},{"t":"ドゥー","s":true},{"t":"レー","s":false}],null],"d_res_this_one":[[{"t":"ウー","s":true},{"t":"ニーグ","s":false}],null,null]}};
-// 参考音声の目録。mp3 は隣の audio/ に置く (埋め込むと1枚が数MBになるため)
-window.__MN90_AUDIO = {"version":1,"languageCode":"mn","assetId":"azure-tts-mn","provider":"azure-speech","voice":"mn-MN-BataaNeural","locale":"mn-MN","format":"mp3","syntheticVoice":true,"displayLabel":"参考音声（合成）","base":"audio/","generatedAt":null,"items":{}};
+// 音声の目録。mp3 は隣の audio/ に置く (埋め込むと1枚が数MBになるため)
+window.__MN90_AUDIO = {"version":1,"languageCode":"mn","assetId":"mms-tts-mon-nc","provider":"transformers-vits","voice":"mms-tts-mon","locale":"mn-MN","format":"mp3","syntheticVoice":true,"displayLabel":"モンゴル語 合成音声","base":"audio/","generatedAt":"2026-09-01T23:02:10.684Z","items":{"adv_here":{"file":"adv_here.mp3","bytes":3837,"sha256":"a5711c32a57e8654f42c79d5641cf3080596fbd37c48e059987af89c137a44b4","textHash":"c03b9ade890ddb27","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.646Z","duration":0.544,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"adv_there":{"file":"adv_there.mp3","bytes":2973,"sha256":"b11f19c99b3942b40f6ae10c6a4a5611efe99d541c33eae62e9813399c408d84","textHash":"4dd472faf162db34","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.647Z","duration":0.392,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"c_black":{"file":"c_black.mp3","bytes":4125,"sha256":"2765a10d6ba3c3678df0098cd6250852f99c205d9884cd754060d43215aa0925","textHash":"b66c64bc9c649fef","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.647Z","duration":0.587,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"c_red":{"file":"c_red.mp3","bytes":5421,"sha256":"72b17da1f6b852642bc4ba0dabbb78005cd4eaf0eb7a10805d4cb5f0f2d125c7","textHash":"112c445d82308509","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.648Z","duration":0.808,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"c_white":{"file":"c_white.mp3","bytes":4845,"sha256":"7ba6aa6fe3713d13bbe378392bf150424f4374baba8577314235f01f82a56f56","textHash":"ad7b090c0e834b46","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.648Z","duration":0.711,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"g_hello":{"file":"g_hello.mp3","bytes":7869,"sha256":"343f6db2805554d111054d0eb88b5f7af0c657e593a0c26ed76634ff38bbe35d","textHash":"2d22cf486fa4beaf","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.648Z","duration":1.216,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"g_no":{"file":"g_no.mp3","bytes":5421,"sha256":"c9343e91ad101afe142c74e6647e7f843cab8c66ca31bc6917708a803ed97d13","textHash":"e81ee00357ef886c","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.650Z","duration":0.816,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"g_thanks":{"file":"g_thanks.mp3","bytes":6861,"sha256":"4fa533e333bd44a58a13a0f6816728cad0336a74ed12700ccd7519ce714e39b2","textHash":"b66af2714dea2cc2","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.650Z","duration":1.041,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"g_yes":{"file":"g_yes.mp3","bytes":3117,"sha256":"5416b2c94a32bb51967559acc26d850f24bbc15517e7dde9cef0c8119014da81","textHash":"545f3efca295d90d","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.650Z","duration":0.412,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_accident":{"file":"n_accident.mp3","bytes":6429,"sha256":"297b38164e8eee7f5f1a4cbaef7056a94c5ab7eb48e181b7effb26e1750970c8","textHash":"c27343b87b9774df","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.651Z","duration":0.963,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_airport":{"file":"n_airport.mp3","bytes":10605,"sha256":"1da5b3f369c34bbb11f576d268a7e077f9e8ba90b7435c2b9c97d5fbfe6cde30","textHash":"763798090c3dfdbe","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.651Z","duration":1.679,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_bank":{"file":"n_bank.mp3","bytes":4701,"sha256":"bc8a38ec4cbe542ac7fc53abecaa5ef6ea4030b48ab24c201752aee1aad3342b","textHash":"92f2b1f60a959ce2","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.651Z","duration":0.683,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_businesscard":{"file":"n_businesscard.mp3","bytes":7581,"sha256":"58f6b53112b69ca509382ac89198725ba1b261e54b9db04465c320742eae8bfd","textHash":"297cc51d3f2be0e8","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.651Z","duration":1.156,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_car":{"file":"n_car.mp3","bytes":4845,"sha256":"a4cecf8b92710c7d12c5f0abedfa8e87fc7084d0e64d08ea35834ba294098091","textHash":"32f4f30f85afaadf","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.651Z","duration":0.715,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_child":{"file":"n_child.mp3","bytes":4269,"sha256":"4f6e4cf4e26f8bf2c9d5088a08dcc344eccd8ec6b0fcc8291a254873f7564fa7","textHash":"c8ae4c766418dffe","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.651Z","duration":0.604,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_city":{"file":"n_city.mp3","bytes":4413,"sha256":"785c51515c6c505110a52d26282ef71ec4818e958a5d3aeb105f06b186afca47","textHash":"8d5946636e837068","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.651Z","duration":0.64,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_color":{"file":"n_color.mp3","bytes":2541,"sha256":"f5a664bbd379957cbaa40b2bee7b58961c4dac9ae88ba0d71d08aeb7bab53575","textHash":"55fe4eacc91a2b68","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.651Z","duration":0.32,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_company":{"file":"n_company.mp3","bytes":5277,"sha256":"fd3b4b85776c3de2e5c890900606ab78409eb7847e9079ee5270405cc0ec977f","textHash":"4eccca6e7d1de2c1","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.651Z","duration":0.775,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_country":{"file":"n_country.mp3","bytes":3981,"sha256":"9dad4b8037c849d8e15ab16eece6e14c9d2831ed430721683cd041e76b5187cd","textHash":"3e10e9bfbb7123e2","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.651Z","duration":0.568,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_customs":{"file":"n_customs.mp3","bytes":3981,"sha256":"15356c3821b0ddab6ea467192890bf814520b83b0cf913dd94b30d219a05cb8f","textHash":"1790ec3fd7659e71","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.651Z","duration":0.567,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_day":{"file":"n_day.mp3","bytes":2397,"sha256":"21b56d7889300d95c3bca671d1772eef6e78c1fb8e8931aaab28274d5198a230","textHash":"72728338ab623e4c","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.652Z","duration":0.304,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_document":{"file":"n_document.mp3","bytes":7437,"sha256":"37380a073edc51739f95a045e592806bc68df9ae41749901001ad8a8f0812c52","textHash":"32ebd615c14c15e6","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.652Z","duration":1.14,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_dollar":{"file":"n_dollar.mp3","bytes":8013,"sha256":"0310c4bc07297483894d7d9db288eedf0c8879d9bf4276608c2c703e9474574c","textHash":"bdc7e09d663a9efb","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.652Z","duration":1.24,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_engine":{"file":"n_engine.mp3","bytes":5277,"sha256":"9c0f297ee7ae31e0b06e813ad0e618df59cd0417d98c14efbe77a9b238bfed95","textHash":"8f98b83f07a189a4","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.652Z","duration":0.78,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_evening":{"file":"n_evening.mp3","bytes":3549,"sha256":"4b57f2eeb49222b5c0ea84a316c63d845c743842404a0517e8ae45af04677812","textHash":"501a42a4556e8c2c","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.652Z","duration":0.491,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_family":{"file":"n_family.mp3","bytes":5421,"sha256":"efb6a42759f72121a40f1baf50157e21f591ea875c62afa4f215692706c18c26","textHash":"238f0b2163e8bae4","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.652Z","duration":0.811,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_food":{"file":"n_food.mp3","bytes":4557,"sha256":"d8c66036251fc40320cfc8731cfe8bede2084de3dd8ecc6a35a8cb4af00d063f","textHash":"ad178d11fa5b255f","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.652Z","duration":0.665,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_hotel":{"file":"n_hotel.mp3","bytes":7437,"sha256":"abfafa8b4477e5f582d1bf2609a7206ba6dc33731ee6a609b5dcc71d7aa8a6da","textHash":"2d9c3223a735b732","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.652Z","duration":1.135,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_house":{"file":"n_house.mp3","bytes":3981,"sha256":"cc238053b967252390765d38074afd21d8564d319309804bdd11571c828dcdb0","textHash":"077608f538820821","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.652Z","duration":0.56,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_japan":{"file":"n_japan.mp3","bytes":4557,"sha256":"4d1020e2118ed9fe8043f4dede31defd99d4a0679542325bb9118800382a1651","textHash":"7e6d84ecf6429e1f","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.652Z","duration":0.672,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_km":{"file":"n_km.mp3","bytes":6573,"sha256":"bd407a44d854517071813745377cf2a534d4cdad8639c275106d0cd27d908d4a","textHash":"32eae61f3600fa51","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.652Z","duration":0.995,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_language":{"file":"n_language.mp3","bytes":4269,"sha256":"d68538df1ac1fce71535fccec631ea290df410881867acb64e13930ee6f56def","textHash":"2e4d569913c745d6","contentRevision":2,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.652Z","duration":0.624,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_market":{"file":"n_market.mp3","bytes":7005,"sha256":"1a9d92bcc67c71f93bc1769e75e20c571a8ce12413c92db68c6cb9542c1f1008","textHash":"9791547bf7ac8395","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.652Z","duration":1.072,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_meeting":{"file":"n_meeting.mp3","bytes":8157,"sha256":"c3256b9f8b23dc4838b904e474884b8e5eda447d068bc5f6fb82feb0ef3dbda6","textHash":"1222cdf1d71cd8ba","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.652Z","duration":1.264,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_money":{"file":"n_money.mp3","bytes":4557,"sha256":"d8fdd8a74cef5f8d807c0526f295b6c734b7b5df91dbf8a93adcd13b8f150cae","textHash":"09eb5d828ba5fc8b","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.652Z","duration":0.656,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_mongolia":{"file":"n_mongolia.mp3","bytes":7437,"sha256":"b28e4b851d0b32dde9548eb37efbdf650b6f8fbc25d49102f3cacee50a3ceb0b","textHash":"7312619b8d168a51","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.652Z","duration":1.136,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_month":{"file":"n_month.mp3","bytes":3405,"sha256":"04fef72c75e0290113b09fe4ae84554b10f4c505123cb6cc7395e1c959abf93d","textHash":"1b5d194d98f24ac4","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.652Z","duration":0.459,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_morning":{"file":"n_morning.mp3","bytes":3117,"sha256":"624652147ec4b16a11ece2a54f34327bbcdccd4d544f7947ea03089602624892","textHash":"c900b36bc376f46a","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.653Z","duration":0.432,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_name":{"file":"n_name.mp3","bytes":3117,"sha256":"3c0b7ba029fb6bee7e77db4b4ba592aaa8d62dad4aa1a0ea41b99d213a4f3cdb","textHash":"dcee95db006e89e8","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.653Z","duration":0.416,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_office":{"file":"n_office.mp3","bytes":4269,"sha256":"a20c4190613b9008fcbee124d139ee4a083202f9f8df7a2455833faaa22629c9","textHash":"89926c511e72cf49","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.653Z","duration":0.624,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_part":{"file":"n_part.mp3","bytes":4701,"sha256":"7bde82eb6fbe3f88bee8ee3416e4e6183c329157596befb95a4742e4a0296f6b","textHash":"bdf299de59aa6281","contentRevision":2,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.653Z","duration":0.675,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_partner":{"file":"n_partner.mp3","bytes":3549,"sha256":"9af6482f9036397c4233d1ecd853fad21328175271719442b24aa0ea898874cd","textHash":"eb309688989aec7b","contentRevision":2,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.653Z","duration":0.486,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_person":{"file":"n_person.mp3","bytes":3693,"sha256":"40c8ee20cab3f51bcbebf73a95db494f0856f1348959d888ebf396e327701a88","textHash":"6ec7dcc83563f2c4","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.653Z","duration":0.524,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_phone":{"file":"n_phone.mp3","bytes":4845,"sha256":"9772007653dfbd10790b01743db89f071b625672c7700bb94c94100ef1df72a1","textHash":"b25293a071c32488","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.653Z","duration":0.704,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_photo":{"file":"n_photo.mp3","bytes":5277,"sha256":"1ec20d4c2b62f8a9990a31d328a7d30b467b8ee62816dd0163b115370599411f","textHash":"9d641fdb943f19f2","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.653Z","duration":0.784,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_port":{"file":"n_port.mp3","bytes":5565,"sha256":"92b71296823658a81ef428c3e3e72655cbd4dbac0fa07878032e12d7751f31b5","textHash":"a0178ed68fd8d632","contentRevision":2,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.653Z","duration":0.825,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_price":{"file":"n_price.mp3","bytes":3261,"sha256":"d8798c03210b0e9f68168612c10d33d0c2daa67f5c46ac1a9c8c47318b3af14a","textHash":"1cac1f4717ff71aa","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.653Z","duration":0.448,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_restaurant":{"file":"n_restaurant.mp3","bytes":7725,"sha256":"91c744fbf2babb0251d752d8bd2eb8340ae576b79d1b7d444ddec74638f28a6a","textHash":"047a01d70891ed1e","contentRevision":2,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.653Z","duration":1.18,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_road":{"file":"n_road.mp3","bytes":2829,"sha256":"9ca277b20493182d0f97aa2e5c89e70ca8287228f47235726a444deb95a95d9e","textHash":"c284a5ea7ef6b4ab","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.653Z","duration":0.378,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_shop":{"file":"n_shop.mp3","bytes":4845,"sha256":"d1c41f9db3124fbae077a6f9e7cbed08c433ba32eb31da04201849cc50a01dd6","textHash":"4ef4a92f4a7239b6","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.653Z","duration":0.712,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_time":{"file":"n_time.mp3","bytes":3261,"sha256":"d6c4b0d4c6e5723395773afe326a3c8072d5cb1c3305145b358c14f9ec067036","textHash":"f397c59de471b73d","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.653Z","duration":0.454,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_today":{"file":"n_today.mp3","bytes":3549,"sha256":"9e016916e1fc18e05f4cdcb57bd3b0995292faad450863a7ece1dfcca4af5756","textHash":"8c6fd054e5150fde","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.653Z","duration":0.496,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_tomorrow":{"file":"n_tomorrow.mp3","bytes":5133,"sha256":"150e2be22eec02314b0bd8a696b21d05011428b29a71a8bb05f6b101e1dcab19","textHash":"ace987573f07c2ee","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.653Z","duration":0.751,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_ub":{"file":"n_ub.mp3","bytes":6861,"sha256":"4efe37b7e842f922842d810aebce80475dca07290fccfce3b4a6b6a9a1c2a330","textHash":"0995f958c3eb9dd5","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.654Z","duration":1.036,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_usedcar":{"file":"n_usedcar.mp3","bytes":8589,"sha256":"6b76377e3d84d6f80f4ec7b2858ec607c61e47aba4ec5a6d5d3fc8efc421c3b4","textHash":"c2324928b2c0db2d","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.654Z","duration":1.337,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_water":{"file":"n_water.mp3","bytes":2973,"sha256":"408513d04ce60224932cbddf07366b8cc22e7160f230508239c8ecff3e649a71","textHash":"58d3808f9fa17b9f","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.654Z","duration":0.4,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_wife":{"file":"n_wife.mp3","bytes":4557,"sha256":"9d0d4f40099f21a39fc7631f60549b581cc0c74dacaf486651ef183ddee9355b","textHash":"fe73296a6946d7ec","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.654Z","duration":0.672,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_work":{"file":"n_work.mp3","bytes":5277,"sha256":"9565ea4a01d2f344fa90354820eba30bffd9d88ca3bb5d5768689c1d836f4035","textHash":"01eed7e495040485","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.654Z","duration":0.777,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"n_year":{"file":"n_year.mp3","bytes":3693,"sha256":"f10a793117ad2d8a50d0b6641733a015d337c709fa7224c2ec1fc38a182c0d16","textHash":"6b591a147e67fc75","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.654Z","duration":0.528,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"num_1":{"file":"num_1.mp3","bytes":4269,"sha256":"845afa3dd1f5e530b8e9a15e0ff953b25f33111faca0be3c36af2046be4aea85","textHash":"75273ba18a853f06","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.654Z","duration":0.62,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"num_10":{"file":"num_10.mp3","bytes":4125,"sha256":"abadc46d60866ebf9803f2ebd3c6cd98d41abf2864799757464d9dd8d9464782","textHash":"19752f17a6918225","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.654Z","duration":0.589,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"num_100":{"file":"num_100.mp3","bytes":2973,"sha256":"42cdf5314281dcb42693689eb00a786806f38727158ae39c2f2a05b4a73bbb0d","textHash":"2dcabbb8ad6da1a7","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.654Z","duration":0.396,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"num_1000":{"file":"num_1000.mp3","bytes":4845,"sha256":"461370b95c7e30bfa6a656ff56569339deb55e8530ccdf32b1c931b1f74918eb","textHash":"af07de08df878056","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.654Z","duration":0.72,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"num_2":{"file":"num_2.mp3","bytes":3549,"sha256":"4fd3a6855251a94a7052d8c778abb37101612c467adb7ad1c9c9adf2fc80cc82","textHash":"7aaa0b286054bf79","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.654Z","duration":0.492,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"num_3":{"file":"num_3.mp3","bytes":4701,"sha256":"34a8c44f62334892c298043d19051bbaa4bf1ac5c3e242c3ec32db9ef3cdf3aa","textHash":"d182c44d2bb555bc","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.654Z","duration":0.684,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"num_4":{"file":"num_4.mp3","bytes":2541,"sha256":"515b5bcd416557480eb74e31386fd3fddd49e63786bb57ef6412ce69e9baff9b","textHash":"d8e2168dc4f3a97e","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.654Z","duration":0.336,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"num_5":{"file":"num_5.mp3","bytes":3117,"sha256":"2f070795b3e64204be4e8c8f7970b99368890fb6b6aa5d0989f77b76871eb7e9","textHash":"5bbbabb01e440bed","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.654Z","duration":0.429,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"num_6":{"file":"num_6.mp3","bytes":5133,"sha256":"73ff91986d5893f16303b380b890e688717664983e98a59c60f748a17799f173","textHash":"03f298e7e145576f","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.654Z","duration":0.752,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"num_7":{"file":"num_7.mp3","bytes":4701,"sha256":"10e05ce4446d53ff9e4f7c7ab5145b29fad18da0eba3eebc5bc73e0ea9a2a9a0","textHash":"d76ed8020d7b3d0a","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.654Z","duration":0.684,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"num_8":{"file":"num_8.mp3","bytes":4269,"sha256":"a69b4095fa454e4cbe0fd8fed93924dedcf693251c23b9006c66193747aeacbd","textHash":"505f06e9fed76acd","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.654Z","duration":0.624,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"num_9":{"file":"num_9.mp3","bytes":2541,"sha256":"37053cda8aca9695cb9c10591f41800e82b525875ad786eabfb152f75ee811dc","textHash":"39f723c14ba9ec3b","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.654Z","duration":0.336,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"p_he_she":{"file":"p_he_she.mp3","bytes":5421,"sha256":"d8cb9e2d2e60be8684dc5e5391c09b03fa9f25f386d42c0d038cccc7c24cdc05","textHash":"c0ff5d223d0bd120","contentRevision":2,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.655Z","duration":0.807,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"p_i":{"file":"p_i.mp3","bytes":2829,"sha256":"b842b3ab3da64e525ee333a04d47c8f1ed17598f2f6f59b2d50689a28647977d","textHash":"d84e495df64c266d","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.655Z","duration":0.368,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"p_we":{"file":"p_we.mp3","bytes":4845,"sha256":"4031503558ee7677d2941ff8f339d6127dc898e589febf55294369d1f9ec5533","textHash":"fdf1abcecdd0e88f","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.655Z","duration":0.72,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"p_you_casual":{"file":"p_you_casual.mp3","bytes":2973,"sha256":"cc1b0e3446a2712330463006b8109e81f24902a6984f58924c87c0c003766627","textHash":"5fc059e1ea519f7b","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.655Z","duration":0.4,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"p_you_pol":{"file":"p_you_pol.mp3","bytes":3117,"sha256":"1b2d3bf31ad01f5df2f3841368ba60899d0bbfbdd0c79eb2d459e9f6d01f86f7","textHash":"9a5e1719011675a2","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.655Z","duration":0.417,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"pn_that":{"file":"pn_that.mp3","bytes":2397,"sha256":"1da5b94bf9b9a789efd777602c8ee39300329725a27811be79e84361438816ff","textHash":"34d912f5cbd32dd8","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.655Z","duration":0.299,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"pn_this":{"file":"pn_this.mp3","bytes":3693,"sha256":"bfbcc69d09d4d42a48468dacae8bc89bb000d59ea3a9465172d10e80f058d620","textHash":"4723992d3477e698","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.655Z","duration":0.512,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"q_how":{"file":"q_how.mp3","bytes":3693,"sha256":"f2e1a5784200e59a9b2f10d78321f7e69ad5a6f884775fce6023ce72695ac898","textHash":"559dfd6dfb1ea601","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.655Z","duration":0.523,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"q_howmany":{"file":"q_howmany.mp3","bytes":4701,"sha256":"fad866754c34db483457d87226748aed26cb3ad6a8a6cd240f15086a7dd8a708","textHash":"d296854fd87a462d","contentRevision":2,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.655Z","duration":0.688,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"q_what":{"file":"q_what.mp3","bytes":3117,"sha256":"44d523492fc667abea90ae59dce125073ae8e4dd7589fffe98c44001f65316ec","textHash":"c864f6b6f39d38ee","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.655Z","duration":0.432,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"q_when":{"file":"q_when.mp3","bytes":3837,"sha256":"03d423cf1554d57dccd58acf5ca8baff6d3e0c1a132af545d802cebbd22981ef","textHash":"1ec2e482bb2e7a21","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.655Z","duration":0.54,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"q_where":{"file":"q_where.mp3","bytes":5133,"sha256":"e153c79bac55fc1f3140e72285488f2392cc15f96e18f918b4f7c0b3953fdf3b","textHash":"2ac7e277ec175553","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.655Z","duration":0.752,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"q_whichmodel":{"file":"q_whichmodel.mp3","bytes":7581,"sha256":"fb3fefeec068e7903956cf26a8558bb2d5d3ab16b36b406ce1a8b36095d5d336","textHash":"0dc9f2f1571396b4","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.655Z","duration":1.163,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"q_who":{"file":"q_who.mp3","bytes":3117,"sha256":"3af66665f17cdbc87eb537b340fcea3150ca255381a5e08fc21c8bee049c03b0","textHash":"21d1073a37ab65e0","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.655Z","duration":0.416,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_are_you_ok":{"file":"s_are_you_ok.mp3","bytes":5709,"sha256":"4f23d63e3b4aaa51a5db8827ae75cd04d106d1188591eefaab76a91f48fbd2a5","textHash":"1957cfe440d3d009","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.655Z","duration":0.86,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_can_i_contact":{"file":"s_can_i_contact.mp3","bytes":9741,"sha256":"3ec6498922325a02cd8f3ca5101d75dce58d692f1ac845084919f430edc3aaf3","textHash":"db21722a9a9ed8a5","contentRevision":2,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.655Z","duration":1.523,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_card_exchange":{"file":"s_card_exchange.mp3","bytes":10749,"sha256":"14b93279d1ff1e0ca277fa886571e3cc7fa11ae7774bdd43e67646b2cefda22d","textHash":"1d30d2530e8a4b96","contentRevision":2,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.656Z","duration":1.684,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_do_you_have":{"file":"s_do_you_have.mp3","bytes":6285,"sha256":"cc61d98ea03e2c0670b01f4554d3d67536d78288db2dc003eb2dcce07acb0f6a","textHash":"68a550aa5b1d36d6","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.656Z","duration":0.939,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_do_you_speak_en":{"file":"s_do_you_speak_en.mp3","bytes":9021,"sha256":"871197d919d059ca656f799f1ffdcadab09046d97d0434ee2079c50d628d8f6e","textHash":"4fc71009b65a9ee7","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.656Z","duration":1.403,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_goodbye":{"file":"s_goodbye.mp3","bytes":5709,"sha256":"299ecdd7d019c5f5636709313a0a880ab7c36165316d7107194208e53fb9dfa2","textHash":"c5a28ed3b80dd8ba","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.656Z","duration":0.845,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_how_many_km":{"file":"s_how_many_km.mp3","bytes":11325,"sha256":"d0d5a23e673cb79989e7ede7eb96483a73d06d7941bd5d91b295be26c171f2cb","textHash":"8f59baeeaa031f36","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.656Z","duration":1.789,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_how_much":{"file":"s_how_much.mp3","bytes":10029,"sha256":"4656dc19352b46689056faef339f1108eaf35b78b2ec3c7c96aa4386003d71a2","textHash":"f7875e520828fa8f","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.656Z","duration":1.576,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_i_am_in_ub":{"file":"s_i_am_in_ub.mp3","bytes":9453,"sha256":"cb7afa4cfdc7f7e1cde29942b77b47175a26d6a9bbef415e6d12740093c69743","textHash":"1b990c61d467f86f","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.656Z","duration":1.479,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_i_buy_this":{"file":"s_i_buy_this.mp3","bytes":11613,"sha256":"1b6a67a2733631fb9368552448516fe3ef2af92c36b17cf00ced241a3fb99db1","textHash":"463274ff14a06910","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.656Z","duration":1.844,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_i_dont_get":{"file":"s_i_dont_get.mp3","bytes":7437,"sha256":"a655a099838784e10dae1e46664375e8fe9c06170dbfe586f08bd21e2c5fce17","textHash":"0e13cefea9eafe64","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.656Z","duration":1.131,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_i_dont_have":{"file":"s_i_dont_have.mp3","bytes":11037,"sha256":"4fb2dba4c29707801509dad3f9481faa55d3b03f62965b52ddd7f228a0b07bb5","textHash":"30b7213eea014e28","contentRevision":2,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.656Z","duration":1.731,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_i_have_car":{"file":"s_i_have_car.mp3","bytes":7149,"sha256":"6344bbda865ba486e87d1d244c7cf4ef7d1c2ee4329a207c621ebfbf78894772","textHash":"6126d70cd3662c17","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.656Z","duration":1.087,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_i_have_family":{"file":"s_i_have_family.mp3","bytes":9741,"sha256":"6379ff85906ac4918035a76ec407b490bc35fa149b9a36d37ea9541978f66137","textHash":"fecb1c4a19ba10b4","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.656Z","duration":1.52,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_i_sell_cars":{"file":"s_i_sell_cars.mp3","bytes":15645,"sha256":"86edbe5be90070a96fbc84283c0db20f892a74f2950f34b265b702a3dae3fa18","textHash":"5fbe5902d615e76c","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.656Z","duration":2.5,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_i_sell_this":{"file":"s_i_sell_this.mp3","bytes":9021,"sha256":"a2c3504258c67ffc2816b6fd06fa683fb846ea49fb22ca612bdc263830ee2b34","textHash":"e38aba27b8d6342d","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.657Z","duration":1.392,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_iam_from_jp":{"file":"s_iam_from_jp.mp3","bytes":8733,"sha256":"aa6d8a4d127fd357d6e6e6678dd1586562313e88c635abaeaecfd2cfb2d18ed4","textHash":"08ddec7adc1e185c","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.657Z","duration":1.347,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_ill_contact":{"file":"s_ill_contact.mp3","bytes":12765,"sha256":"1981bb2600db599058bc55f65eb6163d2ba451021bc0d637407c0e04fdc7f966","textHash":"55a7193b8cabe49c","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.657Z","duration":2.03,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_ill_send_quote":{"file":"s_ill_send_quote.mp3","bytes":11469,"sha256":"5e1849842008a216154c77324306be479c6a7f72af8ac18cf111fa3c637e1c7c","textHash":"088a5dac0368a0bf","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.657Z","duration":1.82,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_is_this_ok":{"file":"s_is_this_ok.mp3","bytes":6429,"sha256":"43657734d2426adeaf7e8908ff92a649a321a46f905c66b753d8e898f8e2a4a1","textHash":"6d849d57dafc0ec9","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.657Z","duration":0.961,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_lets_meet_here":{"file":"s_lets_meet_here.mp3","bytes":7149,"sha256":"c4aa6123fba470e1f8f41846f5a0f858a77fbb520776ca95bda4533dd9cae65e","textHash":"272a516dc587a200","contentRevision":2,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.657Z","duration":1.088,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_lets_work_together":{"file":"s_lets_work_together.mp3","bytes":9453,"sha256":"3423b2d2dd2c75dd328841d469760597409d8a216a1b9a0101f624e7376a521f","textHash":"7751727b0ac959e3","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.657Z","duration":1.466,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_my_name_is":{"file":"s_my_name_is.mp3","bytes":7437,"sha256":"86e8528ac5f9f81f4c05bc83003da726289b909cc1a4fb164760f77dc39ad410","textHash":"8d911e285d901c63","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.657Z","duration":1.146,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_nice_to_meet":{"file":"s_nice_to_meet.mp3","bytes":11613,"sha256":"84f456b7c4244f652b94c5fde3b1d85df5df8f20e5d3a2429c3b27215e4aa545","textHash":"8bebbc7b7de15668","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.657Z","duration":1.827,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_no_accident":{"file":"s_no_accident.mp3","bytes":13629,"sha256":"17064becd8d2dca801fc5357b1a492e9131d1363f84ce62dd78b91d6f330f090","textHash":"464a3ee2e141acfd","contentRevision":2,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.657Z","duration":2.177,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_please_wait":{"file":"s_please_wait.mp3","bytes":5997,"sha256":"2a8e422a475047fed9b68828c174e07cfc619f912b5f2318cca2ec6d0261b2ba","textHash":"ea189638318c7776","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.657Z","duration":0.892,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_say_again":{"file":"s_say_again.mp3","bytes":7437,"sha256":"3e6ee8a37bf783c263d293324b8ccf91a84eeafbfacd325b80f1c2e8f94e532c","textHash":"3afddd4ccc52af79","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.657Z","duration":1.147,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_see_you":{"file":"s_see_you.mp3","bytes":8877,"sha256":"2fc3b76f42f8dc204afd41ed15cf60868a9428459e2b0be35a8a0c3a773fbd78","textHash":"b39931afb4165f0f","contentRevision":2,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.657Z","duration":1.373,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_send_to_you":{"file":"s_send_to_you.mp3","bytes":8733,"sha256":"c43b1c42dcbb019f42c78cae244d376bb9593c0140ede1781f2ea94c3fc75ad5","textHash":"c223ae102c9169ca","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.658Z","duration":1.36,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_show_me":{"file":"s_show_me.mp3","bytes":8445,"sha256":"bbddfc4e7d3643b199c5531f533f7a68b2c3dcb5f90947ba21e0636632bcc4f7","textHash":"9f2dd63b01dd31a6","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.658Z","duration":1.305,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_slowly":{"file":"s_slowly.mp3","bytes":9165,"sha256":"87bfa9c896d9497657907ac503e4cffbfc831c37ea2c9a0f81e57b4128288d06","textHash":"d36adbc083a66ec7","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.658Z","duration":1.433,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_sorry":{"file":"s_sorry.mp3","bytes":6141,"sha256":"ec9a9348f6f65bd78568177ee47f63a4b92c6b93f911b782ea7ef07889f7b7cf","textHash":"6ddcd22930dd4711","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.658Z","duration":0.923,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_thank_you_today":{"file":"s_thank_you_today.mp3","bytes":13629,"sha256":"b38f1f37453da8658198cc25c247e7bfea786bb990993508363953df48ec12da","textHash":"94984e4ccb852585","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.658Z","duration":2.162,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_thanks_much":{"file":"s_thanks_much.mp3","bytes":11181,"sha256":"ee0b09e6e43b6924b5134a039a346ca219302f84b1843acdcf29e7b0f97da8bf","textHash":"0d06c1ed77f44ebf","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.658Z","duration":1.773,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_thanks_time":{"file":"s_thanks_time.mp3","bytes":10749,"sha256":"3d80c0fcaff9bce56b02f540bc81bb4a0d5c06ebf62d675395cf86cc90626f94","textHash":"bbabdf8ce74f6bd4","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.658Z","duration":1.686,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_what_year":{"file":"s_what_year.mp3","bytes":9309,"sha256":"c9e23601121558169fa6a13b2fc6c1e57605a117842d530c24092cfd56752870","textHash":"0375e47eb3be05ed","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.658Z","duration":1.445,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_whats_this":{"file":"s_whats_this.mp3","bytes":6717,"sha256":"4fb9c3fae44a30a5d6ee0c817277b53943e2a357ba156415f8f6f336fda1bf87","textHash":"4a2e568dc446b747","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.658Z","duration":1.024,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_where_is":{"file":"s_where_is.mp3","bytes":6141,"sha256":"d3fe09f37582557ef89dda5fe5071051a77c5f0d812a54d6a605f647832eef83","textHash":"7cde9294af8f2a66","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.658Z","duration":0.916,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"s_where_is_toilet":{"file":"s_where_is_toilet.mp3","bytes":12045,"sha256":"85499a50041bef559ab3222168c60ac01a144809acc9263effc10da7c26b4f88","textHash":"e6f32e5fd57b7808","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.658Z","duration":1.9,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"v_be_now":{"file":"v_be_now.mp3","bytes":3981,"sha256":"af993c2b9bef0f33b5da8b7fe2f34683630f2155bd803385d7fba44ee1a4b564","textHash":"f276dd6eb1594790","contentRevision":2,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.658Z","duration":0.555,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"v_buy":{"file":"v_buy.mp3","bytes":7149,"sha256":"f791e0185b335b51812a5be6591322d2981f64e02fe9c1c1de0bfb5c7fe99ebc","textHash":"509f452b0503bc70","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.658Z","duration":1.1,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"v_come":{"file":"v_come.mp3","bytes":3981,"sha256":"52af9180ac6301ead63c0d3f10cb4c5ca5f8999d306c8dcf442721384b24e724","textHash":"b2756db76a1e47d5","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.658Z","duration":0.576,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"v_contact":{"file":"v_contact.mp3","bytes":6141,"sha256":"2226864e4a6e605e88ad40c21ac94924f38846824e8d098438aff0c5e3d16730","textHash":"fc239b1280cac736","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.659Z","duration":0.928,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"v_do":{"file":"v_do.mp3","bytes":4557,"sha256":"98b4f137c22c22d6047efc2185cf4bcb87d7e5a4d18f1c62bc643587f3786ca3","textHash":"c80c18fc6041b6d2","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.659Z","duration":0.667,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"v_find":{"file":"v_find.mp3","bytes":5709,"sha256":"c7776b31d9c3c025b130e1f01ae7eec92b1ebfcc96891f55928fe4b3e398c4fb","textHash":"9a1595eb16bcb15e","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.659Z","duration":0.861,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"v_give":{"file":"v_give.mp3","bytes":2973,"sha256":"675f6c57c7a0670d6a0bfd901ad0a0031791ddbf53d85311ceb39766b99c229b","textHash":"a847457b3c382e72","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.659Z","duration":0.4,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"v_go":{"file":"v_go.mp3","bytes":2973,"sha256":"167cbb839df7930e81b61cfbd9b88c2f72c1dec5eb2127fc23aa56384c388bbd","textHash":"651dfe754f58204c","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.659Z","duration":0.4,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"v_know":{"file":"v_know.mp3","bytes":5709,"sha256":"06019e5828b27519d0244c1e63c89bbd54a1e34e0520a1cfb5e859c7bc81bea9","textHash":"20f1b8cab0dc398e","contentRevision":2,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.659Z","duration":0.864,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"v_look_for":{"file":"v_look_for.mp3","bytes":5421,"sha256":"a4fff909fe0986da19c9d273ca84ccb651b07b6088ba0441a0880a3cbd973c27","textHash":"7795a05b9e393735","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.659Z","duration":0.8,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"v_see":{"file":"v_see.mp3","bytes":3837,"sha256":"eb129ee7cd01fdbaa0556ad6a7ca648b3bd2acd9b74c19cd011fee122eb4addc","textHash":"ebeb5efdc6aef4e8","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.659Z","duration":0.544,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"v_sell":{"file":"v_sell.mp3","bytes":4269,"sha256":"1c836b757690e47095e8fa8b903e8eb40f491605b83b4b06173050b04793a657","textHash":"fa22ee34c5de490b","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.659Z","duration":0.62,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"v_send":{"file":"v_send.mp3","bytes":4989,"sha256":"bc7b77545dfc514bad15c717b97661e5cf36dbdb4c9656f7c70052d21d8ef73d","textHash":"14b063f66b5f9421","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.659Z","duration":0.736,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"v_speak":{"file":"v_speak.mp3","bytes":4269,"sha256":"37dcce2a4faa41f59c2e568addd0947162da385437d57b67b38681e0707de020","textHash":"4443d946bb1816c2","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.659Z","duration":0.613,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"v_take":{"file":"v_take.mp3","bytes":3693,"sha256":"708b6a97fc468ff1293b931ffefb85b6ce5ce7ce4fcdf51bbe2ea61ab622826d","textHash":"66d4f4dcd08c93bb","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.659Z","duration":0.528,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}},"v_understand":{"file":"v_understand.mp3","bytes":5997,"sha256":"4bd5e92907c02e319e7e316aa043e5d52334ed894f544bdd571c8d89e28fc727","textHash":"8c08b7d01e2e4cfc","contentRevision":1,"voice":"mms-tts-mon","generatedAt":"2026-09-01T23:02:10.659Z","duration":0.901,"datasetId":"(提供元が公開していない)","sourceOwner":"Meta Platforms, Inc. (Facebook) — モデルの提供元","rights":{"licenseStatus":"ok","baseWeightsLicenseStatus":"ok","baseDatasetLicenseStatus":"unknown","datasetLicenseStatus":"unknown","voiceLicenseStatus":"unknown","derivedWeightsStatus":"unknown","commercialStatus":"no","redistributionStatus":"ok","attributionStatus":"ok","dependencyLicenseStatus":"ok","nonCommercialStatus":"ok","qualityStatus":"ok"}}},"model":"facebook/mms-tts-mon","usage":"personal","sampleRate":16000,"license":"CC BY-NC 4.0","attribution":"facebook/mms-tts-mon (Meta / Facebook), CC BY-NC 4.0 — https://creativecommons.org/licenses/by-nc/4.0/"};
 // 追加コンテンツ (会話)。offline で開けるよう、これも埋め込む
 window.__MN90_PACKS = [{"id":"daily-conversation-v1","meta":{"purpose":"日常会話 Skill v1。**新しいモンゴル語を1文字も作っていない。**","status":"production_ready","policy":"全ての turn が、既に production_ready の教材を ref で指す。新規表現ゼロ。","authoredBy":"claude:assembly-v1","authoredAt":"2026-09-01","note":"確かめたのは『並べ方が会話として成り立つか』だけ。モンゴル語の文そのものは既存140件のまま。はじめの一言 → 聞き取れなかったとき → たずねる → 確かめる → 約束して終える の順に並べ替え、一覧に場面の小見出しを付けた。会話の中身・ID・turn は変えていない。"},"scenarios":[{"id":"daily","labelJa":"日常会話","skillId":"skill_daily","roles":{"other":"相手","learner":"自分"}}],"items":[],"dialogues":[{"id":"daily_greet_intro","scenarioId":"daily","labelJa":"はじめまして","aboutJa":"会って名乗るまで","status":"production_ready","turns":[{"n":1,"speaker":"other","ref":"g_hello","audioId":null},{"n":2,"speaker":"learner","ref":"g_hello","audioId":null},{"n":3,"speaker":"other","ref":"s_nice_to_meet","audioId":null},{"n":4,"speaker":"learner","ref":"s_my_name_is","audioId":null}],"groupJa":"はじめの一言"},{"id":"daily_where_from","scenarioId":"daily","labelJa":"どこから来たか","aboutJa":"出身を伝えて、次につなげる","status":"production_ready","turns":[{"n":1,"speaker":"other","ref":"s_nice_to_meet","audioId":null},{"n":2,"speaker":"learner","ref":"s_iam_from_jp","audioId":null},{"n":3,"speaker":"other","ref":"s_lets_work_together","audioId":null},{"n":4,"speaker":"learner","ref":"g_thanks","audioId":null}],"groupJa":"はじめの一言"},{"id":"daily_intro_work","scenarioId":"daily","labelJa":"自分の仕事を伝える","aboutJa":"何をしている人かを自分から言う","status":"production_ready","turns":[{"n":1,"speaker":"other","ref":"s_nice_to_meet","audioId":null},{"n":2,"speaker":"learner","ref":"s_i_sell_cars","audioId":null},{"n":3,"speaker":"other","ref":"s_card_exchange","audioId":null},{"n":4,"speaker":"learner","ref":"g_thanks","audioId":null}],"groupJa":"はじめの一言"},{"id":"daily_card_exchange","scenarioId":"daily","labelJa":"名刺を交換する","aboutJa":"自分から声をかけて名刺を出す","status":"production_ready","turns":[{"n":1,"speaker":"learner","ref":"s_nice_to_meet","audioId":null},{"n":2,"speaker":"learner","ref":"s_card_exchange","audioId":null},{"n":3,"speaker":"other","ref":"g_yes","audioId":null},{"n":4,"speaker":"learner","ref":"g_thanks","audioId":null}],"groupJa":"はじめの一言"},{"id":"daily_didnt_catch","scenarioId":"daily","labelJa":"聞き取れなかったとき","aboutJa":"分からないまま流さず、言い直してもらう","status":"production_ready","turns":[{"n":1,"speaker":"other","ref":"s_whats_this","audioId":null},{"n":2,"speaker":"learner","ref":"s_say_again","audioId":null},{"n":3,"speaker":"other","ref":"s_whats_this","audioId":null},{"n":4,"speaker":"learner","ref":"s_slowly","audioId":null}],"groupJa":"聞き取れなかったとき"},{"id":"daily_dont_understand","scenarioId":"daily","labelJa":"分からないと伝える","aboutJa":"分からないことを隠さず、英語を試す","status":"production_ready","turns":[{"n":1,"speaker":"other","ref":"s_where_is","audioId":null},{"n":2,"speaker":"learner","ref":"s_i_dont_get","audioId":null},{"n":3,"speaker":"other","ref":"s_where_is","audioId":null},{"n":4,"speaker":"learner","ref":"s_do_you_speak_en","audioId":null}],"groupJa":"聞き取れなかったとき"},{"id":"daily_english_slowly","scenarioId":"daily","labelJa":"英語が通じないとき","aboutJa":"英語を試して、通じないのでゆっくり話してもらう","status":"production_ready","turns":[{"n":1,"speaker":"learner","ref":"s_sorry","audioId":null},{"n":2,"speaker":"learner","ref":"s_do_you_speak_en","audioId":null},{"n":3,"speaker":"other","ref":"g_no","audioId":null},{"n":4,"speaker":"learner","ref":"s_slowly","audioId":null}],"groupJa":"聞き取れなかったとき"},{"id":"daily_make_them_wait","scenarioId":"daily","labelJa":"少し待ってもらう","aboutJa":"その場で答えられないとき、待ってもらって詫びる","status":"production_ready","turns":[{"n":1,"speaker":"other","ref":"s_whats_this","audioId":null},{"n":2,"speaker":"learner","ref":"s_please_wait","audioId":null},{"n":3,"speaker":"other","ref":"g_yes","audioId":null},{"n":4,"speaker":"learner","ref":"s_sorry","audioId":null}],"groupJa":"聞き取れなかったとき"},{"id":"daily_ask_toilet","scenarioId":"daily","labelJa":"お手洗いをたずねる","aboutJa":"呼びかけて、たずねて、待つ","status":"production_ready","turns":[{"n":1,"speaker":"learner","ref":"s_sorry","audioId":null},{"n":2,"speaker":"learner","ref":"s_where_is_toilet","audioId":null},{"n":3,"speaker":"other","ref":"s_please_wait","audioId":null},{"n":4,"speaker":"learner","ref":"g_thanks","audioId":null}],"groupJa":"たずねる"},{"id":"daily_ask_have","scenarioId":"daily","labelJa":"あるかどうかをたずねる","aboutJa":"自分からたずねて、無ければ次をたずねる","status":"production_ready","turns":[{"n":1,"speaker":"learner","ref":"s_do_you_have","audioId":null},{"n":2,"speaker":"other","ref":"s_i_dont_have","audioId":null},{"n":3,"speaker":"learner","ref":"s_where_is","audioId":null},{"n":4,"speaker":"other","ref":"s_please_wait","audioId":null},{"n":5,"speaker":"learner","ref":"g_thanks","audioId":null}],"groupJa":"たずねる"},{"id":"daily_have_yes","scenarioId":"daily","labelJa":"あったとき、見せてもらう","aboutJa":"「ありますか」に「はい」と返ってきたその先","status":"production_ready","turns":[{"n":1,"speaker":"learner","ref":"s_do_you_have","audioId":null},{"n":2,"speaker":"other","ref":"g_yes","audioId":null},{"n":3,"speaker":"learner","ref":"s_show_me","audioId":null},{"n":4,"speaker":"other","ref":"s_please_wait","audioId":null},{"n":5,"speaker":"learner","ref":"g_thanks","audioId":null}],"groupJa":"たずねる"},{"id":"daily_show_me_shop","scenarioId":"daily","labelJa":"店で見せてもらう","aboutJa":"声をかけて、現物を見せてもらう","status":"production_ready","turns":[{"n":1,"speaker":"learner","ref":"s_sorry","audioId":null},{"n":2,"speaker":"learner","ref":"s_show_me","audioId":null},{"n":3,"speaker":"other","ref":"g_yes","audioId":null},{"n":4,"speaker":"learner","ref":"g_thanks","audioId":null}],"groupJa":"たずねる"},{"id":"daily_check_ok","scenarioId":"daily","labelJa":"これでよいか確かめる","aboutJa":"言われたことに、その場で確認を返す","status":"production_ready","turns":[{"n":1,"speaker":"other","ref":"s_show_me","audioId":null},{"n":2,"speaker":"learner","ref":"s_is_this_ok","audioId":null},{"n":3,"speaker":"other","ref":"g_yes","audioId":null},{"n":4,"speaker":"learner","ref":"s_thanks_much","audioId":null}],"groupJa":"確かめる・気づかう"},{"id":"daily_are_you_ok","scenarioId":"daily","labelJa":"気づかわれたとき","aboutJa":"「大丈夫ですか」と聞かれて答える","status":"production_ready","turns":[{"n":1,"speaker":"other","ref":"s_are_you_ok","audioId":null},{"n":2,"speaker":"learner","ref":"g_yes","audioId":null},{"n":3,"speaker":"learner","ref":"g_thanks","audioId":null}],"groupJa":"確かめる・気づかう"},{"id":"daily_where_i_am","scenarioId":"daily","labelJa":"いまどこにいるか伝える","aboutJa":"自分の居場所を言って、会う約束にする","status":"production_ready","turns":[{"n":1,"speaker":"learner","ref":"s_i_am_in_ub","audioId":null},{"n":2,"speaker":"other","ref":"s_lets_meet_here","audioId":null},{"n":3,"speaker":"learner","ref":"g_yes","audioId":null},{"n":4,"speaker":"learner","ref":"g_thanks","audioId":null}],"groupJa":"約束して終える"},{"id":"daily_meeting_plan","scenarioId":"daily","labelJa":"次の約束を自分から決める","aboutJa":"自分から場所を決めて、連絡してよいかたずねる","status":"production_ready","turns":[{"n":1,"speaker":"learner","ref":"s_lets_meet_here","audioId":null},{"n":2,"speaker":"other","ref":"g_yes","audioId":null},{"n":3,"speaker":"learner","ref":"s_can_i_contact","audioId":null},{"n":4,"speaker":"other","ref":"s_ill_contact","audioId":null},{"n":5,"speaker":"learner","ref":"g_thanks","audioId":null}],"groupJa":"約束して終える"},{"id":"daily_contact","scenarioId":"daily","labelJa":"また連絡する約束","aboutJa":"連絡してよいか確かめて、受ける","status":"production_ready","turns":[{"n":1,"speaker":"other","ref":"s_can_i_contact","audioId":null},{"n":2,"speaker":"learner","ref":"g_yes","audioId":null},{"n":3,"speaker":"other","ref":"s_ill_contact","audioId":null},{"n":4,"speaker":"learner","ref":"g_thanks","audioId":null}],"groupJa":"約束して終える"},{"id":"daily_send_quote","scenarioId":"daily","labelJa":"値段はあとで送る","aboutJa":"その場で答えず、持ち帰って終える","status":"production_ready","turns":[{"n":1,"speaker":"other","ref":"s_how_much","audioId":null},{"n":2,"speaker":"learner","ref":"s_ill_send_quote","audioId":null},{"n":3,"speaker":"other","ref":"g_thanks","audioId":null},{"n":4,"speaker":"learner","ref":"s_ill_contact","audioId":null}],"groupJa":"約束して終える"},{"id":"daily_thanks_goodbye","scenarioId":"daily","labelJa":"お礼を言って別れる","aboutJa":"その日を締めて、次につなげる","status":"production_ready","turns":[{"n":1,"speaker":"other","ref":"s_thanks_time","audioId":null},{"n":2,"speaker":"learner","ref":"s_thank_you_today","audioId":null},{"n":3,"speaker":"other","ref":"s_see_you","audioId":null},{"n":4,"speaker":"learner","ref":"s_goodbye","audioId":null}],"groupJa":"約束して終える"}]},{"id":"daily-travel-v1","meta":{"purpose":"日常・旅行の会話。Phase 17 の試作。","status":"draft","warning":"この中のモンゴル語は起草直後で、起草工程以外の確認を受けていない。通常の利用者へは出さない。","authoredBy":"claude:draft-v1","authoredAt":"2026-09-01","reusePolicy":"既にある140件で言えることは、新しいIDを作らず ref で指す。"},"scenarios":[{"id":"cafe","labelJa":"カフェ","skillId":"skill_cafe","roles":{"other":"店員","learner":"自分"}},{"id":"airport","labelJa":"空港","skillId":"skill_airport","roles":{"other":"係員","learner":"自分"}},{"id":"restaurant","labelJa":"レストラン","skillId":"skill_restaurant","roles":{"other":"店員","learner":"自分"}}],"items":[{"id":"d_cafe_what_have","ja":"何になさいますか","mn":"Юу авах вэ?","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_cafe_one_coffee","ja":"コーヒーを1つください","mn":"Нэг кофе өгнө үү","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_cafe_sugar","ja":"砂糖は入れますか","mn":"Чихэртэй юу?","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_cafe_no_thanks","ja":"いいえ、要りません","mn":"Үгүй, хэрэггүй","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["cafe","restaurant"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_cafe_takeaway","ja":"持ち帰りです","mn":"Авч явна","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_air_passport","ja":"パスポートをお願いします","mn":"Паспортоо өгнө үү","contentRevision":1,"status":"draft","register":"polite","themes":["travel"],"scenarioTags":["airport"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_air_here_it_is","ja":"こちらです","mn":"Энд байна","contentRevision":1,"status":"draft","register":"polite","themes":["travel"],"scenarioTags":["airport","hotel"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_air_any_bags","ja":"預ける荷物はありますか","mn":"Тээш байгаа юу?","contentRevision":1,"status":"draft","register":"polite","themes":["travel"],"scenarioTags":["airport"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_air_one_bag","ja":"はい、1つあります","mn":"Тийм, нэг ширхэг байна","contentRevision":1,"status":"draft","register":"polite","themes":["travel"],"scenarioTags":["airport"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_air_gate_number","ja":"ゲートは12番です","mn":"Арван хоёрдугаар хаалга","contentRevision":1,"status":"draft","register":"polite","themes":["travel"],"scenarioTags":["airport"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_res_how_many","ja":"何名様ですか","mn":"Хэдүүлээ вэ?","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["restaurant"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_res_two_people","ja":"2人です","mn":"Хоёр хүн","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["restaurant"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_res_order_what","ja":"ご注文は何になさいますか","mn":"Юу захиалах вэ?","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["restaurant"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_res_this_one","ja":"これをお願いします","mn":"Үүнийг өгнө үү","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["restaurant","cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_res_drink_what","ja":"お飲み物は何になさいますか","mn":"Юу уух вэ?","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["restaurant","cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null},{"id":"d_res_water_please","ja":"水をお願いします","mn":"Ус өгнө үү","contentRevision":1,"status":"draft","register":"polite","themes":["daily","travel"],"scenarioTags":["restaurant","cafe"],"qa":{"checkers":["claude:draft-v1"],"blockers":["起草工程以外の確認が無い"],"at":"2026-09-01"},"copyright_origin":"original","source":null}],"dialogues":[{"id":"cafe_order_basic","scenarioId":"cafe","labelJa":"コーヒーを1つ頼む","status":"draft","turns":[{"n":1,"speaker":"other","ref":"d_cafe_what_have","audioId":null},{"n":2,"speaker":"learner","ref":"d_cafe_one_coffee","audioId":null},{"n":3,"speaker":"other","ref":"d_cafe_sugar","audioId":null},{"n":4,"speaker":"learner","ref":"d_cafe_no_thanks","audioId":null},{"n":5,"speaker":"other","ref":"s_how_much","audioId":null},{"n":6,"speaker":"learner","ref":"g_thanks","audioId":null}]},{"id":"airport_checkin_basic","scenarioId":"airport","labelJa":"チェックインで荷物を預ける","status":"draft","turns":[{"n":1,"speaker":"other","ref":"d_air_passport","audioId":null},{"n":2,"speaker":"learner","ref":"d_air_here_it_is","audioId":null},{"n":3,"speaker":"other","ref":"d_air_any_bags","audioId":null},{"n":4,"speaker":"learner","ref":"d_air_one_bag","audioId":null},{"n":5,"speaker":"other","ref":"d_air_gate_number","audioId":null},{"n":6,"speaker":"learner","ref":"g_thanks","audioId":null}]},{"id":"restaurant_order_basic","scenarioId":"restaurant","labelJa":"席について注文する","status":"draft","turns":[{"n":1,"speaker":"other","ref":"d_res_how_many","audioId":null},{"n":2,"speaker":"learner","ref":"d_res_two_people","audioId":null},{"n":3,"speaker":"other","ref":"d_res_order_what","audioId":null},{"n":4,"speaker":"learner","ref":"d_res_this_one","audioId":null},{"n":5,"speaker":"other","ref":"d_res_drink_what","audioId":null},{"n":6,"speaker":"learner","ref":"d_res_water_please","audioId":null}]}]}];
 window.__MN90_STANDALONE = true;
@@ -2921,6 +2967,12 @@ const EVENTS = [
   'audio_replay',        // 同じ問題でもう一度聞いた
   'listening_start',     // 聞き取り問題が出た
   'listening_complete',  // 聞き取り問題に答えた
+  // --- 会話の聞き取り。**何回聞いたかの数だけ。**
+  //     どの会話か・聞き取れたかどうかは1つも入れない (engine/listening.js)
+  'practice_listening',  // 会話の聞き取りの一覧を開いた
+  'listening_started',   // 1本を始めた
+  'listening_replayed',  // 通しで聞いた (もう一度を含む)
+  'listening_finished',  // 1本を終えた
 ];
 
 const MAX_DAYS = 60;          // 保持する日数。個人βの見直しに足りる範囲
@@ -4265,6 +4317,137 @@ function affectsSrs() { return false; }
 __m["engine/drive.js"] = { DURATIONS, STEP_KINDS, ALLOWED_EVENTS, THINK_BASE_MS, THINK_PER_CHAR_MS, THINK_MAX_MS, REPEAT_RATIO, thinkMs, eligible, buildPlaylist, stepsForItem, stepsForTalk, isAllowedEvent, affectsSrs };
 })();
 
+// ===== engine/listening.js =====
+(() => {
+/**
+ * 会話の聞き取り。**単語ではなく、往復のやりとりを耳で追う。**
+ *
+ * 実際の商談で困るのは「単語が分からない」ことより、
+ * **話が続いているあいだに置いていかれる**こと。だから1文ではなく
+ * 4〜8往復のかたまりを、意味が取れるまで何度でも聞ける形にする。
+ *
+ * 流れ (画面はこの順に出す):
+ *
+ *   1 listen_all   会話をひととおり聞く (文字は出さない)
+ *   2 think        何の話だったかを自分で考える (無音)
+ *   3 listen_again もう一度、同じものを聞く
+ *   4 reveal       何の話だったかを日本語で見る
+ *   5 line         1発話ずつ、文・読み方の目安つきで聞き直す
+ *   6 respond      最後に、自分なら何と返すかを言ってから例を見る
+ *
+ * ## ここでやらないこと
+ *
+ * **録音しない。聞き取れたかを機械で判定しない。点数を付けない。**
+ * 「分かった / 分からなかった」は本人にしか分からない。
+ * 機械が判定すると、判定に合わせて聞くようになる。
+ *
+ * ## 音の関門
+ *
+ * **正式な音声があるときしか出さない。**別の言語の声による代用は、
+ * 1文を参考に聞くぶんには構わないが、**会話を耳で追う練習には使わない。**
+ * 代用の音で会話に慣れると、現地で通じない音の並びを覚える。
+ * 判断は engine/audio-policy.js が持ち、ここは結果を受け取るだけ。
+ *
+ * このファイルには特定の自然言語の文字列を置かない。
+ */
+
+const audioPolicy = __m["engine/audio-policy.js"];
+
+/** 手順の種類。画面はこの並びしか出さない。 */
+const STEP_KINDS = [
+  'listen_all',    // 通しで聞く
+  'think',         // 何の話か考える (無音)
+  'listen_again',  // もう一度通しで聞く
+  'reveal',        // 何の話だったかを見る
+  'line',          // 1発話ずつ
+  'respond',       // 自分なら何と返すか
+];
+
+/** 会話の長さの目安。短すぎると練習にならず、長すぎると覚えていられない。 */
+const MIN_TURNS = 3;
+const MAX_TURNS = 8;
+
+/**
+ * 考える時間 (ミリ秒)。**会話の長さで変える。**
+ * 1往復ずつ思い出すのではなく、全体の筋を思い出すので Drive より長めにとる。
+ */
+const THINK_BASE_MS = 4000;
+const THINK_PER_TURN_MS = 900;
+const THINK_MAX_MS = 12000;
+
+function thinkMs(turnCount) {
+  const n = Math.max(0, Number(turnCount) || 0);
+  return Math.min(THINK_MAX_MS, THINK_BASE_MS + n * THINK_PER_TURN_MS);
+}
+
+/**
+ * その会話を聞き取り練習に出してよいか。
+ *
+ * **全部の発話に正式な音声が要る。**1つでも欠けると、
+ * 途中で無音になって「聞き取れなかった」と誤解させる。
+ *
+ * @param {object} d 会話
+ * @param {(ref:string)=>string} tierOf その発話に使える音の層を返す
+ */
+function eligible(d, tierOf) {
+  if (!d || !Array.isArray(d.turns) || d.turns.length < MIN_TURNS) return false;
+  if (d.turns.length > MAX_TURNS) return false;
+  if (typeof tierOf !== 'function') return false;
+  return d.turns.every(t => audioPolicy.canGradeListening(tierOf(t.ref || t.line)));
+}
+
+/** 出せる会話だけを返す。**出せないものを黙って混ぜない。** */
+function playable(dialogues, tierOf) {
+  return (dialogues || []).filter(d => eligible(d, tierOf));
+}
+
+/**
+ * 手順に開く。
+ *
+ * @param {object} d 会話
+ * @param {object} opt { tierOf }
+ * @returns {object[]|null} 出せないときは null (空配列を返すと「終わった」と読める)
+ */
+function toSteps(d, opt = {}) {
+  if (!eligible(d, opt.tierOf)) return null;
+  const turns = d.turns;
+  const steps = [
+    { kind: 'listen_all', dialogueId: d.id, turns: turns.map(t => t.ref || t.line), graded: false },
+    { kind: 'think', dialogueId: d.id, ms: thinkMs(turns.length), graded: false },
+    { kind: 'listen_again', dialogueId: d.id, turns: turns.map(t => t.ref || t.line), graded: false },
+    { kind: 'reveal', dialogueId: d.id, graded: false },
+  ];
+  for (const t of turns) {
+    steps.push({
+      kind: 'line', dialogueId: d.id, n: t.n, speaker: t.speaker,
+      ref: t.ref || null, line: t.line || null, graded: false,
+    });
+  }
+  // 最後は必ず自分の番で終える。聞くだけで終わると口が動かない
+  const lastMine = [...turns].reverse().find(t => t.speaker === 'learner');
+  steps.push({
+    kind: 'respond', dialogueId: d.id,
+    n: lastMine ? lastMine.n : turns[turns.length - 1].n,
+    ref: lastMine ? (lastMine.ref || null) : null,
+    graded: false,
+  });
+  return steps;
+}
+
+/**
+ * 記録してよい出来事。**本文も、聞き取れたかどうかも残さない。**
+ * 残すのは「何回聞いたか」だけ。
+ */
+const ALLOWED_EVENTS = ['listening_started', 'listening_replayed', 'listening_finished'];
+function isAllowedEvent(name) { return ALLOWED_EVENTS.includes(name); }
+
+/** 覚え具合を動かすか。**必ず false。** */
+function affectsSrs() { return false; }
+
+
+__m["engine/listening.js"] = { STEP_KINDS, MIN_TURNS, MAX_TURNS, THINK_MAX_MS, thinkMs, eligible, playable, toSteps, ALLOWED_EVENTS, isAllowedEvent, affectsSrs };
+})();
+
 // ===== app/narration.js =====
 (() => {
 /**
@@ -5192,6 +5375,53 @@ function createAudio(opts = {}) {
     } catch (e) { return Promise.resolve('error'); }
   }
 
+  /**
+   * **鳴り終わるまで待って鳴らす。**
+   *
+   * play() は「鳴り始めたら」返る (HTMLMediaElement の決まり)。
+   * 次々に鳴らす画面 (会話を通しで聞く・ドライブ学習) でそのまま繋ぐと、
+   * 前の音を途中で踏み潰しながら進んでしまう。
+   * 2026-09-02、会話の聞き取りで実際にそうなっていた
+   * (0.46秒ごとに次が始まり、どの発話も途中で切れていた)。
+   *
+   * 端末の読み上げは、もともと鳴り終わりで返るのでそのまま。
+   * 音声ファイルのときだけ、終わりを待つ。
+   *
+   * 待ちっぱなしにならないよう、**目録の長さ + 余裕**で必ず打ち切る。
+   * (ended が来ない端末があっても、そこで止まらない)
+   */
+  function playToEnd(id, opt = {}) {
+    const wasStatic = hasStatic(id);
+    const r = play(id, opt);
+    if (!wasStatic) return r;
+    const a = elParams;
+    if (!a || !a.addEventListener) return r;
+    const mine = token;
+    const it = items[id];
+    const limitMs = Math.round(((Number(it && it.duration) || 3) + 1.5) * 1000);
+    return r.then(res => {
+      if (res !== 'played' || mine !== token) return res;
+      if (a.ended || a.paused) return res;
+      return new Promise(resolve => {
+        let done = false;
+        const finish = (why) => {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          a.removeEventListener('ended', onEnd);
+          a.removeEventListener('pause', onEnd);
+          a.removeEventListener('error', onEnd);
+          resolve(why);
+        };
+        const onEnd = () => finish(mine === token ? res : 'superseded');
+        const timer = setTimeout(() => finish('timeout'), limitMs);
+        a.addEventListener('ended', onEnd);
+        a.addEventListener('pause', onEnd);
+        a.addEventListener('error', onEnd);
+      });
+    });
+  }
+
   /** 音の要素だけ止める (読み上げには触らない)。 */
   function stopElement() {
     const a = elParams;
@@ -5234,12 +5464,21 @@ function createAudio(opts = {}) {
   }
 
   return {
-    has, count, play, stop, unlock, playing, tierFor,
+    has, count, play, playToEnd, stop, unlock, playing, tierFor,
     hasStatic, hasSpeech, qualityFor, speechAvailable, speechQuality,
     /** 不具合報告に出す中身。教材本文は入らない。 */
     speechReport() { return speech && speech.report ? speech.report() : null; },
     get label() { return (manifest && manifest.displayLabel) || '参考音声（合成）'; },
     get voice() { return (manifest && manifest.voice) || null; },
+    /** 出どころの表示に要るぶんだけ。**目録そのものは渡さない** */
+    get credit() {
+      if (!manifest || !manifest.model || !Object.keys(items).length) return null;
+      return {
+        model: manifest.model, license: manifest.license || '',
+        attribution: manifest.attribution || '', usage: manifest.usage || 'personal',
+        label: manifest.displayLabel || '', count: Object.keys(items).length,
+      };
+    },
     _srcFor: srcFor,
   };
 }
@@ -5894,6 +6133,7 @@ const contentPack = __m["engine/content-pack.js"];
 const dialogueModel = __m["engine/dialogue.js"];
 const audioPolicy = __m["engine/audio-policy.js"];
 const drive = __m["engine/drive.js"];
+const listening = __m["engine/listening.js"];
 const { createNarration } = __m["app/narration.js"];
 const { createStorage } = __m["engine/storage.js"];
 const { newCard, newProfile } = __m["engine/schema.js"];
@@ -6180,7 +6420,7 @@ function el(tag, opts = {}, children = []) {
 function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
 function $(id) { return document.getElementById(id); }
 
-const SCREENS = ['onboarding', 'home', 'more', 'sheet', 'session', 'summary', 'checkpoint', 'fieldlog', 'match', 'talk', 'drive'];
+const SCREENS = ['onboarding', 'home', 'more', 'sheet', 'session', 'summary', 'checkpoint', 'fieldlog', 'match', 'talk', 'drive', 'listening'];
 
 /** 画面と、それに対応する下部固定ボタンを同時に切り替える。 */
 let currentScreen = 'home';
@@ -6734,6 +6974,7 @@ const SHEETS = {
   // 読みに来た画面で目立つのが出口になってしまう
   favorites: { title: '保存したフレーズ', render: () => renderPhrases('favorites'), quietBack: true },
   talks: { title: '会話練習', render: renderTalks },
+  listens: { title: '会話の聞き取り', render: renderListens },
   briefing: { title: '商談の直前に見る', render: () => renderPhrases('briefing'), quietBack: true },
   // 3つに分かれていた書き出しを1つにまとめた (何を貼ればよいか迷わせない)
   // 用件はコピーなので、下の「もどる」は控えめにする
@@ -7024,17 +7265,19 @@ function aboutSections() {
   return [
     ['この版でできること', '日本語を見てモンゴル語を思い出す練習と、その復習の管理です。'
       + '教材は Day1〜14 の140件が入っています。'],
-    ['参考音声について', caps.audio
-      ? '流れるのは合成音声で、人が録音したものではありません。まねる手本としては使えますが、'
-        + '唯一の正解の音ではありません。現地で実際に聞いた音のほうを優先してください。'
+    ['音声について', caps.audio
+      ? '流れるのは合成音声で、人が録音したものではありません。'
+        + '発音が正しいかどうかは誰も確かめていないので、手本として鵜呑みにしないでください。'
+        + '現地で実際に聞いた音のほうを優先してください。'
         + (caps.listening ? '' : 'この端末にはモンゴル語の声が入っていないため、'
-          + '別の言語の声で読み上げています。音を聞いて答える問題は出していません。')
+          + '同梱の音声が無いところは別の言語の声で読み上げています。'
+          + 'そこでは音を聞いて答える問題を出していません。')
       : 'この端末では音を出せないため、音のボタンや、音を聞いて答える問題は'
         + '一切出てきません。学習そのものは今までどおり進められます。'],
     ['発音の採点はしません', 'モンゴル語は資料の少ない言語で、AIの発音判定は当てになりません。'
       + '誤った音を「正解」として覚えてしまうほうが有害なので、採点機能は作りません。'
       + '音声が入っても、できるのは「聞く」「繰り返し聞く」「自分でまねる」までです。'],
-    ['まだ入っていないもの', 'キリル文字の練習（Day1〜3の分）、運転中に聞くモード、'
+    ['まだ入っていないもの', 'キリル文字の練習（Day1〜3の分）、'
       + 'シャドーイングやロールプレイ、Day15以降の教材。'],
     ['教材の品質について', 'この教材は、人のモンゴル語話者が確認したものではありません。'
       + '複数のAIによる検査と規則検査を通しただけです。'
@@ -7044,6 +7287,36 @@ function aboutSections() {
       + 'それが、発音の問題と教材の問題を分ける唯一の手がかりです。'],
     ['記録の保存先', 'この端末のブラウザにだけ残ります。他の端末とは共有されません。'
       + 'URL を変えると読めなくなるので、同じ URL を使い続けてください。'],
+    ...audioCreditSections(),
+  ];
+}
+
+/**
+ * 音声の出どころと、守っている条件。
+ *
+ * **使わせてもらっている以上、書くのは義務。**CC BY-NC 4.0 は
+ * 「表示すること」と「非商用に限ること」を条件に使わせてくれる license なので、
+ * その2つを画面に書く。**音声を入れていないときは出さない** (嘘になるため)。
+ *
+ * 毎日の学習画面には出さない。ここ (このアプリについて) にだけ置く。
+ */
+function audioCreditSections() {
+  // **目録を window から直に読まない。**1枚版にしか入っていないので、
+  // 素の app/ では出どころの表示が丸ごと消えていた (2026-09-02 に実機で発覚)
+  const c = audio.credit;
+  if (!c) return [];
+  return [
+    ['モンゴル語音声の出どころ',
+      `この版のモンゴル語音声は ${c.model}（提供: Meta / Facebook）で作った合成音声です。`
+      + `${c.count}件を、あらかじめ音声ファイルにして同梱しています。`
+      + '人が録音したものではありません。'
+      + '発音が正しいかどうかは、誰も確かめていません。'],
+    ['音声の利用条件',
+      `${c.model} は ${c.license} で公開されています。`
+      + 'この条件は「出どころを表示すること」と「商用に使わないこと」の2つです。'
+      + 'このアプリは社長個人の学習のためだけに使い、'
+      + '売ったり、お金を受け取ったり、宣伝を載せたりはしません。'
+      + '条件の全文は creativecommons.org/licenses/by-nc/4.0/ にあります。'],
   ];
 }
 
@@ -7075,8 +7348,10 @@ function renderAbout(root) {
   for (const [label, value] of [
     ['版', BETA_VERSION],
     ['教材', `${Object.keys(state.cards).length} 件`],
-    // 件数を出すと、端末の読み上げで鳴っているのに「0件」と見えてしまう
-    ['参考音声', caps.audioCount > 0 ? `${caps.audioCount} 件`
+    // 件数を出すと、端末の読み上げで鳴っているのに「0件」と見えてしまう。
+    // 名前は目録から取る。同梱の音声と、端末の読み上げによる代用は別物なので、
+    // 同じ「参考音声」という名前でまとめない
+    [audio.label, caps.audioCount > 0 ? `${caps.audioCount} 件`
       : caps.audio ? '使えます' : 'この端末では使えません'],
   ]) {
     info.appendChild(el('div', { class: 'stat' }, [el('span', { text: label }), el('i', { text: value })]));
@@ -7292,6 +7567,17 @@ function renderPractice(root) {
       onClick: () => { track('practice_talk'); openSheet('talks', 'practice'); },
     });
   }
+
+  // 会話の聞き取り。**全発話に同梱の音声がある会話だけ。**
+  // 1つでも欠けると途中で無音になり、「聞き取れなかった」と誤解させる
+  const lnTalks = listeningTalks();
+  if (lnTalks.length) {
+    rows.push({
+      title: '会話の聞き取り', desc: '文字を見ずに、耳だけで話の筋を追う',
+      badge: `${lnTalks.length}`, ready: true, enabled: true,
+      onClick: () => { track('practice_listening'); openSheet('listens', 'practice'); },
+    });
+  }
   // 押せないものは下へ。押せるもの同士の順番は上の並びのまま
   // (「おすすめ」を作らない。実際にできるかどうかだけで決める)
   rows.forEach((r, i) => { r.order = i; });
@@ -7413,7 +7699,20 @@ function startMistakeSession(ready) {
  */
 const narration = createNarration({});
 
-/** Drive に入れてよい表現。**正式な音声があるものだけ。** */
+/**
+ * Drive で使ってよい音の層。**同梱した音声ファイルがあるものだけ。**
+ *
+ * 端末の読み上げは、たとえその言語の声が入っていても Drive では使わない。
+ * 運転中は何十分も耳だけで受け取るので、端末ごとに違う声・違う読みで
+ * 埋めると、覚える音が端末次第になる。それに、別の言語の声で代用された
+ * ことに本人が気づけない。**目録に音声ファイルがある教材だけを入れ、
+ * 無いものは飛ばす。**
+ */
+function driveTier(id) {
+  return audio.hasStatic(id) ? audio.tierFor(id) : 'none';
+}
+
+/** Drive に入れてよい表現。**同梱した音声があるものだけ。** */
 function driveCandidates() {
   const cards = Object.values(state.cards || {});
   const nowIso = new Date().toISOString();
@@ -7422,15 +7721,26 @@ function driveCandidates() {
   return cards
     .map(c => ({
       id: c.id, text: c.answerKey, prompt: c.promptKey,
-      tier: audio.tierFor(c.id), weak: weak.has(c.id), due: due.has(c.id),
+      tier: driveTier(c.id), weak: weak.has(c.id), due: due.has(c.id),
       rank: c.introducedDay || 999,
     }))
     .filter(drive.eligible);
 }
 
+/**
+ * Drive に入れてよい会話。
+ *
+ * **全部の発話に正式な音声が要る。**1つでも欠けると、運転中に途中で無音になり、
+ * 「聞き取れなかった」と誤解させる。先頭だけ見て判断しない。
+ */
 function driveTalks() {
   return availableDialogues()
-    .map(d => ({ ...d, tier: audio.tierFor((d.turns[0] || {}).ref) }))
+    .map(d => {
+      const tiers = (d.turns || []).map(t => driveTier(t.ref));
+      // いちばん弱い層で決める。1つでも代用や無音があれば、その会話は出さない
+      const worst = tiers.some(x => !audioPolicy.canGradeListening(x)) ? 'none' : 'tts';
+      return { ...d, tier: worst };
+    })
     .filter(drive.eligible);
 }
 
@@ -7449,7 +7759,12 @@ function openDrive() {
   $('drive-lead').textContent =
     '日本語が流れます。少し間があくので、その間にモンゴル語を声に出してください。'
     + 'そのあとモンゴル語が流れるので、もう一度言ってください。'
-    + '覚え具合や連続日数には影響しません。';
+    + 'ときどき会話も挟まります。覚え具合や連続日数には影響しません。'
+    // **確かめていないことを、確かめたように書かない。**
+    // 画面を消したあとの音の扱いは iOS 側の話で、実機でしか分からない
+    + ' iPhone の実機ではまだ確かめていません。'
+    + '画面を消したあとや、他のアプリに切り替えたあとに音が止まることがあります。'
+    + '最初は停車中に一度試してください。';
   const row = $('drive-mins');
   clear(row);
   for (const m of drive.DURATIONS) {
@@ -7533,7 +7848,7 @@ async function runDrive() {
     const c = state.cards[id];
     $('drive-now').textContent = c ? c.answerKey : '';
     $('drive-sub').textContent = 'モンゴル語';
-    await audio.play(id, { manual: false });
+    await audio.playToEnd(id, { manual: false });
     // **鳴っている間に「やめる」を押されていることがある。**
     // 止まったあとの入れ物を触らない (押した瞬間に落ちる)
     if (!done()) return;
@@ -7621,6 +7936,7 @@ function renderTalks(root) {
     box.appendChild(row(d));
   }
 }
+
 
 
 /**
@@ -7792,6 +8108,275 @@ function talkBack() {
   audio.stop();
   talk = null;
   openSheet('practice');
+}
+
+// ---------- 会話の聞き取り ----------
+/* ==================== 会話の聞き取り ====================
+ *
+ * **耳で追う練習。**最初は文字を1つも出さない。
+ * 目に頼れる場所があると、そこを読んでしまって耳が働かない。
+ *
+ *   1 通しで聞く      → 文字なし。何往復かだけ印で出す
+ *   2 考える          → 無音。何の話だったかを自分で言葉にする
+ *   3 もう一度聞く    → 同じものを、同じまま
+ *   4 何の話か見る    → ここで初めて**日本語だけ**が出る
+ *   5 1発話ずつ       → ここで初めてモンゴル語と読み方の目安が出る
+ *   6 自分なら何と返す → 言ってから例を聞く
+ *
+ * 覚え具合・期日・連続日数・1日の新規語は1つも動かさない (engine/listening.js)。
+ * 聞き取れたかを機械で判定しない。録音もしない。
+ */
+
+/** 聞き取りに出してよい会話。**全発話に同梱の音声があるものだけ。** */
+function listeningTalks() {
+  return availableDialogues().filter(d => listening.eligible(d, ref => driveTier(ref)));
+}
+
+let ln = null;   // { dialogue, steps, at, revealed, playing }
+let lnToken = 0;
+
+function startListening(d) {
+  const steps = listening.toSteps(d, { tierOf: ref => driveTier(ref) });
+  if (!steps) return;              // 出せないものは、黙って始めない
+  audio.stop();
+  lnToken += 1;
+  ln = { dialogue: d, steps, at: 0, revealed: false, replays: 0 };
+  track('listening_started');
+  $('listening-title').textContent = d.labelJa || '会話の聞き取り';
+  showScreen('listening');
+  renderListening();
+}
+
+const LN_LABEL = {
+  listen_all: '1. まず通しで聞く',
+  think: '2. 何の話だったか考える',
+  listen_again: '3. もう一度聞く',
+  reveal: '4. 何の話だったかを見る',
+  line: '5. 1つずつ聞き直す',
+  respond: '6. 自分なら何と返すか',
+};
+
+function lnRoles() {
+  const sc = scenarioOf(ln.dialogue.scenarioId);
+  return (sc && sc.roles) || { other: '相手', learner: '自分' };
+}
+
+/** いま鳴らしている発話を印で示す。**本文は出さない。** */
+function lnDots(activeIndex) {
+  const box = $('listening-dots');
+  clear(box);
+  box.hidden = false;
+  ln.dialogue.turns.forEach((t, i) => {
+    const cls = 'ln-dot' + (i < activeIndex ? ' is-on' : '') + (i === activeIndex ? ' is-on is-now' : '');
+    box.appendChild(el('div', {
+      class: cls,
+      attrs: { 'aria-label': `${i + 1}つめ${i === activeIndex ? '（いま）' : ''}` },
+    }));
+  });
+}
+
+function renderListening() {
+  if (!ln) return;
+  const st = ln.steps[ln.at];
+  if (!st) return;
+  const body = $('listening-body');
+  clear(body);
+  $('listening-step').textContent = LN_LABEL[st.kind] || '';
+  $('listening-dots').hidden = true;
+  $('listening-replay').hidden = true;
+
+  const turns = ln.dialogue.turns;
+  const roles = lnRoles();
+
+  if (st.kind === 'listen_all' || st.kind === 'listen_again') {
+    $('listening-head').textContent = st.kind === 'listen_all'
+      ? 'そのまま聞いてください' : 'もう一度、同じものです';
+    // **ここで筋を書いてしまうと、聞かなくても分かってしまう。**
+    // 分かることは「何往復あるか」だけにする
+    $('listening-lead').textContent =
+      `${Math.ceil(turns.length / 2)}往復です。文字は出しません。`;
+    lnDots(-1);
+    $('listening-next').textContent = '聞く';
+    $('listening-replay').hidden = ln.replays === 0;
+    return;
+  }
+
+  if (st.kind === 'think') {
+    $('listening-head').textContent = '何の話だったと思いますか';
+    $('listening-lead').textContent =
+      '日本語で構いません。声に出して言ってみてください。分からなくても大丈夫です。';
+    $('listening-next').textContent = '考えた';
+    $('listening-replay').hidden = false;
+    return;
+  }
+
+  if (st.kind === 'reveal') {
+    $('listening-head').textContent = ln.dialogue.aboutJa || ln.dialogue.labelJa || '';
+    $('listening-lead').textContent = '合っていましたか。次から、1つずつ聞き直します。';
+    // ここでも本文は出さない。**日本語の筋だけ**
+    $('listening-next').textContent = '1つずつ聞く';
+    return;
+  }
+
+  if (st.kind === 'line') {
+    const t = turns.find(x => x.n === st.n) || turns[0];
+    const line = turnLine(t);
+    const mine = t.speaker === 'learner';
+    lnDots(turns.indexOf(t));
+    $('listening-head').textContent = '聞き直してみましょう';
+    $('listening-lead').textContent = '';
+    body.appendChild(el('div', { class: 'ln-box' }, [
+      el('div', { class: 'ln-who', text: mine ? `${roles.learner}（あなた）` : roles.other }),
+      el('div', { class: 'ln-mn', text: line ? line.mn : '' }),
+      readingRow(t.ref),
+      el('div', { class: 'ln-ja', text: line ? line.ja : '' }),
+      el('div', { class: 'ln-row' }, [
+        el('button', {
+          class: 'spk', attrs: { type: 'button', 'aria-label': `${line ? line.ja : ''} を聞く` },
+          on: { click: () => audio.play(t.ref, { manual: true }) },
+        }, [speakerIcon()]),
+      ]),
+    ]));
+    $('listening-next').textContent = '次へ';
+    return;
+  }
+
+  // respond — 自分なら何と返すか。**先に例を出さない**
+  const t = turns.find(x => x.n === st.n) || turns[turns.length - 1];
+  const line = turnLine(t);
+  if (!ln.revealed) {
+    $('listening-head').textContent = 'あなたなら何と返しますか';
+    $('listening-lead').textContent = 'モンゴル語で、声に出して言ってみてください。';
+    $('listening-next').textContent = '返し方を聞く';
+    return;
+  }
+  $('listening-head').textContent = '返し方の一つです';
+  $('listening-lead').textContent = '唯一の言い方ではありません。もう一度、自分でも言ってみてください。';
+  body.appendChild(el('div', { class: 'ln-box' }, [
+    el('div', { class: 'ln-who', text: `${roles.learner}（あなた）` }),
+    el('div', { class: 'ln-mn', text: line ? line.mn : '' }),
+    readingRow(t.ref),
+    el('div', { class: 'ln-ja', text: line ? line.ja : '' }),
+    el('div', { class: 'ln-row' }, [
+      el('button', {
+        class: 'spk', attrs: { type: 'button', 'aria-label': `${line ? line.ja : ''} を聞く` },
+        on: { click: () => audio.play(t.ref, { manual: true }) },
+      }, [speakerIcon()]),
+    ]),
+  ]));
+  $('listening-next').textContent = nextListening() ? 'もう一つ' : 'おわり';
+}
+
+/** 通しで鳴らす。**途中で画面を離れたら止める。** */
+async function lnPlayAll() {
+  if (!ln) return;
+  const mine = ++lnToken;
+  const turns = ln.dialogue.turns;
+  $('listening-next').disabled = true;
+  $('listening-replay').disabled = true;
+  for (let i = 0; i < turns.length; i++) {
+    if (mine !== lnToken || !ln) return;
+    lnDots(i);
+    await audio.playToEnd(turns[i].ref, { manual: false });
+    if (mine !== lnToken || !ln) return;
+    // 発話と発話のあいだ。**詰めて流すと、どこで切れたか分からなくなる**
+    await new Promise(r => setTimeout(r, 450));
+  }
+  if (mine !== lnToken || !ln) return;
+  lnDots(turns.length);
+  $('listening-next').disabled = false;
+  $('listening-replay').disabled = false;
+  ln.replays += 1;
+  track('listening_replayed');
+  $('listening-next').textContent = '次へ';
+  $('listening-replay').hidden = false;
+}
+
+function nextListening() {
+  if (!ln) return null;
+  const list = listeningTalks();
+  const i = list.findIndex(d => d.id === ln.dialogue.id);
+  return i >= 0 && i + 1 < list.length ? list[i + 1] : null;
+}
+
+function listeningNext() {
+  if (!ln) return;
+  const st = ln.steps[ln.at];
+  if (!st) return;
+  // 聞く段は、押した回で鳴らす。**鳴らさずに次へ飛ばさない**
+  if ((st.kind === 'listen_all' || st.kind === 'listen_again') && $('listening-next').textContent === '聞く') {
+    lnPlayAll();
+    return;
+  }
+  if (st.kind === 'respond' && !ln.revealed) {
+    ln.revealed = true;
+    renderListening();
+    const t = ln.dialogue.turns.find(x => x.n === st.n);
+    if (t) audio.play(t.ref, { manual: true });
+    return;
+  }
+  if (ln.at >= ln.steps.length - 1) {
+    track('listening_finished');
+    const nx = nextListening();
+    audio.stop();
+    lnToken += 1;
+    if (nx) { startListening(nx); return; }
+    listeningBack();
+    return;
+  }
+  ln.at += 1;
+  ln.replays = 0;
+  ln.revealed = false;
+  renderListening();
+}
+
+function listeningBack() {
+  lnToken += 1;
+  audio.stop();
+  ln = null;
+  // 何回聞いたかの数だけ残す。**書かないと、開くたびに消える**
+  storage.save(state);
+  $('listening-next').disabled = false;
+  $('listening-replay').disabled = false;
+  showScreen('sheet');
+  openSheet('practice');
+}
+
+/**
+ * 会話の聞き取りの一覧。会話練習と同じ並べ方にする。
+ * **同じ会話を2通りの練習で使う**ので、選ぶ手ざわりまで変えると迷う。
+ */
+function renderListens(root) {
+  const list = listeningTalks();
+  if (!list.length) {
+    root.appendChild(el('p', { class: 'fr-empty',
+      text: 'いま聞き取りに出せる会話がありません。' }));
+    return;
+  }
+  root.appendChild(el('p', { class: 'ph-lead',
+    text: '文字を見ずに、耳だけで話の筋を追う練習です。'
+      + '聞き取れたかを機械で判定することはありません。学習の記録には影響しません。' }));
+  const row = (d) => el('button', { class: 'pr', attrs: { type: 'button' },
+    on: { click: () => startListening(d) } }, [
+    el('span', {}, [
+      el('span', { class: 'pr-t', text: d.labelJa || d.id }),
+      // **ここに筋を書かない。**一覧で内容が分かると、聞く前に答えが出てしまう
+      el('span', { class: 'pr-d', text: `${Math.ceil((d.turns || []).length / 2)}往復` }),
+    ]),
+  ]);
+  let box = null, group = null;
+  for (const d of list) {
+    const g = d.groupJa || '';
+    if (g && g !== group) {
+      group = g;
+      const wrap = el('div', { class: 'grp' }, [el('div', { class: 'grp-h', text: g })]);
+      box = el('div', { class: 'practice' });
+      wrap.appendChild(box);
+      root.appendChild(wrap);
+    }
+    if (!box) { box = el('div', { class: 'practice' }); root.appendChild(box); }
+    box.appendChild(row(d));
+  }
 }
 
 // ---------- 組み合わせ練習 ----------
@@ -9331,6 +9916,9 @@ function wire() {
   $('more-btn').addEventListener('click', () => { showScreen('more'); renderMore(); });
   $('more-back').addEventListener('click', goHome);
   $('sheet-back').addEventListener('click', closeSheet);
+  $('listening-next').addEventListener('click', listeningNext);
+  $('listening-replay').addEventListener('click', lnPlayAll);
+  $('listening-back').addEventListener('click', listeningBack);
   $('talk-reveal').addEventListener('click', talkReveal);
   $('talk-next').addEventListener('click', talkNext);
   $('talk-back').addEventListener('click', talkBack);
