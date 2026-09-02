@@ -1,0 +1,116 @@
+{
+ "d_air_any_bags": {
+  "file": "d_air_any_bags__talk.mp3",
+  "mn": "Тээш байгаа юу?",
+  "ttsText": "Тээщ байгаа юу?",
+  "rev": 1
+ },
+ "d_air_gate_number": {
+  "file": "d_air_gate_number__talk.mp3",
+  "mn": "Арван хоёрдугаар хаалга",
+  "ttsText": "Арван хоёрдугаар хаалга",
+  "rev": 1
+ },
+ "d_air_here_it_is": {
+  "file": "d_air_here_it_is__talk.mp3",
+  "mn": "Энд байна",
+  "ttsText": "Энд байна",
+  "rev": 1
+ },
+ "d_air_one_bag": {
+  "file": "d_air_one_bag__talk.mp3",
+  "mn": "Тийм, нэг ширхэг байна",
+  "ttsText": "Тийм, нэг щирхэг байна",
+  "rev": 1
+ },
+ "d_air_passport": {
+  "file": "d_air_passport__talk.mp3",
+  "mn": "Паспортоо өгнө үү",
+  "ttsText": "Паспортоо ѳгнѳ үү",
+  "rev": 1
+ },
+ "d_cafe_no_thanks": {
+  "file": "d_cafe_no_thanks__talk.mp3",
+  "mn": "Үгүй, хэрэггүй",
+  "ttsText": "Үгүй, хэрэггүй",
+  "rev": 1
+ },
+ "d_cafe_one_coffee": {
+  "file": "d_cafe_one_coffee__talk.mp3",
+  "mn": "Нэг кофе өгнө үү",
+  "ttsText": "Нэг кофе ѳгнѳ үү",
+  "rev": 1
+ },
+ "d_cafe_sugar": {
+  "file": "d_cafe_sugar__talk.mp3",
+  "mn": "Чихэртэй юу?",
+  "ttsText": "Чихэртэй юу?",
+  "rev": 1
+ },
+ "d_cafe_takeaway": {
+  "file": "d_cafe_takeaway__talk.mp3",
+  "mn": "Авч явна",
+  "ttsText": "Авч явна",
+  "rev": 1
+ },
+ "d_cafe_what_have": {
+  "file": "d_cafe_what_have__talk.mp3",
+  "mn": "Юу авах вэ?",
+  "ttsText": "Юу авах вэ?",
+  "rev": 1
+ },
+ "d_res_drink_what": {
+  "file": "d_res_drink_what__talk.mp3",
+  "mn": "Юу уух вэ?",
+  "ttsText": "Юу уух вэ?",
+  "rev": 1
+ },
+ "d_res_how_many": {
+  "file": "d_res_how_many__talk.mp3",
+  "mn": "Хэдүүлээ вэ?",
+  "ttsText": "Хэдүүлээ вэ?",
+  "rev": 1
+ },
+ "d_res_order_what": {
+  "file": "d_res_order_what__talk.mp3",
+  "mn": "Юу захиалах вэ?",
+  "ttsText": "Юу захиалах вэ?",
+  "rev": 1
+ },
+ "d_res_this_one": {
+  "file": "d_res_this_one__talk.mp3",
+  "mn": "Үүнийг өгнө үү",
+  "ttsText": "Үүнийг ѳгнѳ үү",
+  "rev": 1
+ },
+ "d_res_two_people": {
+  "file": "d_res_two_people__talk.mp3",
+  "mn": "Хоёр хүн",
+  "ttsText": "Хоёр хүн",
+  "rev": 1
+ },
+ "d_res_water_please": {
+  "file": "d_res_water_please__talk.mp3",
+  "mn": "Ус өгнө үү",
+  "ttsText": "Ус ѳгнѳ үү",
+  "rev": 1
+ },
+ "d_shop_come_again": {
+  "file": "d_shop_come_again__talk.mp3",
+  "mn": "Дахин ирээрэй",
+  "ttsText": "Дахин ирээрэй",
+  "rev": 1
+ },
+ "d_shop_here_you_are": {
+  "file": "d_shop_here_you_are__talk.mp3",
+  "mn": "Энэ байна",
+  "ttsText": "Энэ байна",
+  "rev": 1
+ },
+ "d_shop_welcome": {
+  "file": "d_shop_welcome__talk.mp3",
+  "mn": "Тавтай морилно уу",
+  "ttsText": "Тавтай морилно уу",
+  "rev": 1
+ }
+}
