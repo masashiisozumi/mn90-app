@@ -2,7 +2,7 @@
   Mongolian 90 — 社長個人β (1ファイル版)
   build-standalone.js が engine/ 言語パック/ UI / 教材を連結して生成する。
   手で編集しない。直すときは元のファイルを直して作り直す。
-  生成元: 教材 140件 / モジュール 35本 / モンゴル語 合成音声 159件 / 読み方の目安 159件 (強弱 69件) / 追加コンテンツ 2パック(会話 28本)
+  生成元: 教材 140件 / モジュール 36本 / モンゴル語 合成音声 159件 / 読み方の目安 159件 (強弱 69件) / 追加コンテンツ 2パック(会話 28本)
 -->
 <!doctype html>
 <html lang="ja">
@@ -549,6 +549,26 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .drive-now{font-size:calc(1.6rem * var(--fs));font-weight:700;line-height:1.4;
   text-align:center;margin:var(--space-6) 0 var(--space-2);word-break:break-word}
 .drive-sub{font-size:calc(var(--t-sub) * var(--fs));color:var(--dim);text-align:center}
+/* 場面のボタン。2列。押す場所を大きく取る */
+.cats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:var(--space-5)}
+.cats button{min-height:64px;border-radius:var(--radius-card);border:1px solid var(--line);
+  background:var(--raised);color:var(--ink);font:inherit;font-weight:700;
+  padding:10px 12px;text-align:left;cursor:pointer}
+.cats button .c-n{display:block;font-weight:400;font-size:calc(0.8rem * var(--fs));color:var(--dim);margin-top:3px}
+/* 流している最中に出す1件。**大きく1つだけ。**運転中でなくても見やすいように */
+.study-now{border:1px solid var(--line);border-radius:var(--radius-card);
+  padding:18px;margin-bottom:var(--space-4);background:var(--raised);text-align:center}
+.study-ja{font-size:calc(1.05rem * var(--fs));color:var(--dim)}
+.study-mn{font-size:calc(1.5rem * var(--fs));font-weight:700;margin-top:6px;word-break:break-word}
+.study-reading{font-size:calc(0.95rem * var(--fs));color:var(--dim);margin-top:4px}
+/* 一覧の1件。日本語・モンゴル語・読み方を縦に積む */
+.si{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-bottom:1px solid var(--line)}
+.si:last-child{border-bottom:0}
+.si-b{flex:1;min-width:0}
+.si-ja{font-size:calc(0.92rem * var(--fs));color:var(--dim)}
+.si-mn{font-size:calc(1.12rem * var(--fs));font-weight:700;word-break:break-word;margin-top:2px}
+.si-r{font-size:calc(0.85rem * var(--fs));color:var(--dim);margin-top:2px}
+.si .spk{flex:none}
 /* 練習の見出し。**何をしたいときに押すのか**を先に見せる */
 /* 話者の確認が済んでいないもの。**目立たせるが、怖がらせない** */
 .pr-warn{display:block;font-size:calc(0.78rem * var(--fs));color:#8a5a00;
@@ -787,7 +807,14 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
     <span class="goal-n" id="goal-n"></span>
   </div>
 
+  <!-- 場面から選んで学ぶ。**90日の道すじとは別の入口。**
+       社長:「勉強したいカテゴリーにして」「カフェの勉強をタップできるように」 -->
+  <div class="grp-h">場面から学ぶ</div>
+  <p class="ph-lead" id="study-lead">押すと、その場面のことばが日本語→モンゴル語で流れます。判定はしません。</p>
+  <div class="cats" id="study-cats"></div>
+
   <!-- 今日を5問ずつに分けたもの。開始ボタンのすぐ上に置く -->
+  <div class="grp-h">今日の学習</div>
   <div class="lessons" id="lessons"></div>
 
   <div class="hero-note" id="today-note" hidden></div>
@@ -827,6 +854,27 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 <div class="dock" id="more-dock" hidden>
   <div class="dock-inner">
     <button id="more-back" class="primary" type="button">ホームへ戻る</button>
+  </div>
+</div>
+
+<!-- 場面から学ぶ。**判定ボタンを1つも置かない。** -->
+<main id="study" class="wrap" hidden>
+  <div class="head"><span class="brand" id="study-title">—</span></div>
+  <p class="ph-lead" id="study-note"></p>
+  <div id="study-now" class="study-now" hidden>
+    <div class="study-ja" id="study-ja"></div>
+    <div class="study-mn" id="study-mn"></div>
+    <div class="study-reading" id="study-reading"></div>
+  </div>
+  <div id="study-list"></div>
+  <div class="dock-pad-2"></div>
+</main>
+
+<div class="dock" id="study-dock" hidden>
+  <div class="dock-inner">
+    <button id="study-play" class="primary" type="button">▶ 通しで流す</button>
+    <button id="study-stop" class="primary" type="button" hidden>やめる</button>
+    <button id="study-back" class="ghost" type="button">もどる</button>
   </div>
 </div>
 
@@ -4657,6 +4705,148 @@ function affectsSrs() { return false; }
 __m["engine/drive.js"] = { DURATIONS, STEP_KINDS, ALLOWED_EVENTS, MODES, DEFAULT_MODE, THINK_BASE_MS, THINK_PER_CHAR_MS, THINK_MAX_MS, REPEAT_RATIO, FLOW_AFTER_JA_MIN_MS, FLOW_AFTER_JA_MAX_MS, FLOW_AFTER_MN_MIN_MS, FLOW_AFTER_MN_MAX_MS, FLOW_TURN_GAP_MS, FLOW_TALK_GAP_MS, FLOW_GROUP_MIN, FLOW_GROUP_MAX, FLOW_REPEAT_GAP, flowAfterJaMs, flowAfterMnMs, thinkMs, eligible, buildPlaylist, buildTalkPlaylist, talkSeconds, stepsForItem, stepsForTalk, isAllowedEvent, affectsSrs };
 })();
 
+// ===== engine/study.js =====
+(() => {
+/**
+ * 場面から選んで学ぶ (Study)。**日付にも覚え具合にも触らない。**
+ *
+ * 社長の言葉:
+ *   「勉強したいカテゴリーにして」
+ *   「カフェの勉強をタップできるように」
+ *   「言えたとかダメとか意味ないからやめて」
+ *   「聞き流すのは YouTube にある 日本語 そのあと モンゴル語 みたいなのを垂れ流す感じ」
+ *
+ * ここは 90日の道すじとは別の入口。
+ *
+ *   カテゴリーを選ぶ → その場面のことばが並ぶ → 上の1つを押すと流れ出す
+ *   → 日本語 → モンゴル語 → 次 → …（終わったら頭に戻る）
+ *
+ * **判定をしない。**押す場所は「流す」と「やめる」だけ。
+ * 覚え具合・連続日数・その日の進みを1つも動かさない。
+ *
+ * このファイルには特定の自然言語の文字列を置かない。
+ * カテゴリーの中身は languages/<code>/ 側が持つ。
+ */
+
+/** 流し方。**2つだけ。**増やすと出発前に迷う */
+const TEMPOS = ['normal', 'slow'];
+const DEFAULT_TEMPO = 'normal';
+
+/** 日本語のあと、モンゴル語が鳴り出すまで */
+const AFTER_JA_MS = { normal: 500, slow: 1100 };
+/** モンゴル語のあと、次の日本語まで */
+const AFTER_MN_MS = { normal: 700, slow: 1500 };
+/** 長い文は少しだけ長く待つ (1文字あたり) */
+const PER_CHAR_MS = 18;
+const MAX_EXTRA_MS = 600;
+
+/**
+ * 読み上げに渡す日本語。**括弧の中は読まない。**
+ *
+ * 教材には「こんにちは（字義は「お元気ですか？」）」のように、
+ * 画面で読むための断りが入っているものがある。垂れ流しでそこまで
+ * 読み上げると、次のモンゴル語が遠くなって流れが切れる。
+ * **画面には元のまま出す。**読み上げだけ短くする。
+ */
+function sayableJa(text) {
+  return String(text || '')
+    .replace(/[（(][^）)]*[）)]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim() || String(text || '');
+}
+
+function extra(text) {
+  return Math.min(MAX_EXTRA_MS, Math.round(String(text || '').length * PER_CHAR_MS));
+}
+
+/**
+ * カテゴリー1つぶんの中身を作る。
+ *
+ * **写しを持たない。**会話の場面なら、その場面の会話が指している教材を
+ * 出てくる順に並べるだけ。会話を直せば、ここも一緒に変わる。
+ *
+ * @param {object} cat  { id, kind, label, items? }
+ * @param {object} src
+ *   @param {object[]} src.dialogues  出せる会話 (scenarioId 付き)
+ *   @param {(id:string)=>({ja:string,mn:string}|null)} src.lineOf 本文の引き口
+ *   @param {(id:string)=>boolean} src.hasAudio  正式な音声があるか
+ * @returns {{id, label, items: {id, ja, mn, audio}[], fromDialogues: string[]}}
+ */
+function buildCategory(cat, { dialogues = [], lineOf = () => null, hasAudio = () => false } = {}) {
+  const ids = [];
+  const seen = new Set();
+  const from = [];
+  if (cat && cat.kind === 'scenario') {
+    for (const d of dialogues) {
+      if (d.scenarioId !== cat.id) continue;
+      from.push(d.id);
+      for (const t of d.turns || []) {
+        const id = t.ref;
+        // 会話の中だけにある文 (ref を持たない行) は、まだ扱わない
+        if (!id || seen.has(id)) continue;
+        seen.add(id);
+        ids.push(id);
+      }
+    }
+  } else {
+    for (const id of (cat && cat.items) || []) {
+      if (seen.has(id)) continue;
+      seen.add(id);
+      ids.push(id);
+    }
+  }
+  const items = [];
+  for (const id of ids) {
+    const line = lineOf(id);
+    // **本文が引けないものは出さない。**画面が空のまま音だけ鳴る形を作らない
+    if (!line || !line.mn) continue;
+    items.push({ id, ja: line.ja || '', mn: line.mn, audio: !!hasAudio(id) });
+  }
+  return { id: cat.id, label: cat.label, kind: cat.kind, items, fromDialogues: from };
+}
+
+/**
+ * 垂れ流しの並び。
+ *
+ * 日本語 → 間 → モンゴル語 → 間 → 次。**説明も、問いかけも挟まない。**
+ * 終わりまで来たら頭に戻る (社長:「垂れ流す感じ」)。
+ *
+ * @param {object[]} items buildCategory の items
+ * @param {object} opt { tempo, minutes }
+ */
+/** 1件あたり、音が鳴っているおおよその秒数 (何周ぶん用意するかの見積り用) */
+const SPOKEN_SECONDS_EACH = 2.4;
+/** これだけの長さは持たせる。**途中で終わらせない** */
+const FILL_MINUTES = 60;
+
+function playlist(items, { tempo = DEFAULT_TEMPO, minutes = FILL_MINUTES } = {}) {
+  const t = TEMPOS.includes(tempo) ? tempo : DEFAULT_TEMPO;
+  const usable = items.filter(x => x && x.mn);
+  const out = [];
+  if (!usable.length) return out;
+  // 1周ぶんの見積り (間 + 鳴っている時間)
+  const perLap = usable.reduce((a, it) =>
+    a + (AFTER_JA_MS[t] + extra(it.ja) + AFTER_MN_MS[t] + extra(it.mn)) / 1000
+      + SPOKEN_SECONDS_EACH, 0);
+  const loops = Math.max(2, Math.ceil((minutes * 60) / Math.max(1, perLap)));
+  for (let n = 0; n < Math.max(1, loops); n++) {
+    for (const it of usable) {
+      out.push({ kind: 'ja', id: it.id, text: sayableJa(it.ja) });
+      out.push({ kind: 'gap', ms: AFTER_JA_MS[t] + extra(it.ja) });
+      out.push({ kind: 'mn', id: it.id, text: it.mn });
+      out.push({ kind: 'gap', ms: AFTER_MN_MS[t] + extra(it.mn) });
+    }
+  }
+  return out;
+}
+
+/** **覚え具合を動かすことは無い。**呼ぶ側がここを見て確かめられるように置く */
+function affectsSrs() { return false; }
+
+
+__m["engine/study.js"] = { TEMPOS, DEFAULT_TEMPO, AFTER_JA_MS, AFTER_MN_MS, FILL_MINUTES, buildCategory, playlist, affectsSrs, sayableJa };
+})();
+
 // ===== engine/listening.js =====
 (() => {
 /**
@@ -5413,6 +5603,47 @@ const pack = {
    * 順番は商談の流れそのもの: 会って挨拶 → 車の話 → 値段 → 事故歴 →
    * 聞き取れないとき → 連絡先 → 次回 → お礼。
    */
+  /**
+   * 場面から選んで学ぶための並び。
+   *
+   * 社長:「勉強したいカテゴリーにして」「カフェの勉強をタップできるように」。
+   * 90日の道すじとは**別の入口**。何日目かに関係なく、その場面だけを見る。
+   *
+   * 2通りある。
+   *   scenario … 会話のある場面。**中身は会話から自動で作る。**
+   *              会話を直せば、ここも一緒に変わる (写しを持たない)
+   *   items    … 会話にはならない、ことばのまとまり
+   *
+   * **ここでは覚え具合を動かさない。**「言えた/言えなかった」を聞かない。
+   */
+  studyCategories: [
+    { id: 'cafe', kind: 'scenario', label: 'カフェ' },
+    { id: 'restaurant', kind: 'scenario', label: 'レストラン' },
+    { id: 'airport', kind: 'scenario', label: '空港' },
+    { id: 'business', kind: 'scenario', label: '商談' },
+    { id: 'shop', kind: 'scenario', label: '店で・頼む' },
+    { id: 'askback', kind: 'scenario', label: '聞き返す・通じないとき' },
+    { id: 'trouble', kind: 'scenario', label: '困ったとき' },
+    { id: 'w_greet', kind: 'items', label: 'あいさつ・返事', items: [
+      'g_hello', 'g_thanks', 'g_yes', 'g_no', 's_sorry', 's_goodbye',
+      's_see_you', 's_thanks_much', 's_thanks_time', 's_thank_you_today'] },
+    { id: 'w_self', kind: 'items', label: '自己紹介', items: [
+      's_nice_to_meet', 's_iam_from_jp', 's_my_name_is', 's_i_sell_cars',
+      's_card_exchange', 'n_name', 'n_japan', 'n_mongolia'] },
+    { id: 'w_car', kind: 'items', label: '車のこと', items: [
+      'n_car', 'n_usedcar', 'n_engine', 'n_color', 'n_part', 'n_accident',
+      's_what_year', 's_how_many_km', 's_no_accident', 's_show_me'] },
+    { id: 'w_price', kind: 'items', label: '値段・お金', items: [
+      's_how_much', 'n_price', 'n_dollar', 'n_money', 's_ill_send_quote',
+      's_i_buy_this', 'num_100', 'num_1000'] },
+    { id: 'w_num', kind: 'items', label: '数', items: [
+      'num_1', 'num_2', 'num_3', 'num_4', 'num_5',
+      'num_6', 'num_7', 'num_8', 'num_9', 'num_10'] },
+    { id: 'w_when', kind: 'items', label: '時と場所', items: [
+      'n_today', 'n_tomorrow', 'n_morning', 'n_day', 'adv_here', 'adv_there',
+      'q_where', 'q_when'] },
+  ],
+
   briefing: {
     label: '商談の直前に見る',
     topics: [
@@ -6565,6 +6796,7 @@ const contentPack = __m["engine/content-pack.js"];
 const dialogueModel = __m["engine/dialogue.js"];
 const audioPolicy = __m["engine/audio-policy.js"];
 const drive = __m["engine/drive.js"];
+const study = __m["engine/study.js"];
 const listening = __m["engine/listening.js"];
 const { createNarration } = __m["app/narration.js"];
 const { createStorage } = __m["engine/storage.js"];
@@ -6870,7 +7102,7 @@ function el(tag, opts = {}, children = []) {
 function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
 function $(id) { return document.getElementById(id); }
 
-const SCREENS = ['onboarding', 'home', 'more', 'sheet', 'session', 'summary', 'checkpoint', 'fieldlog', 'match', 'talk', 'drive', 'listening'];
+const SCREENS = ['onboarding', 'home', 'more', 'sheet', 'session', 'summary', 'checkpoint', 'fieldlog', 'match', 'talk', 'drive', 'listening', 'study'];
 
 /** 画面と、それに対応する下部固定ボタンを同時に切り替える。 */
 let currentScreen = 'home';
@@ -7075,6 +7307,7 @@ function renderHome() {
   renderGoal(plan);
   renderPath();
   renderLessons(plan);
+  paintStudyCats();
 
   const cd = curriculumDay(today.day);
   const note = $('today-note');
@@ -8265,6 +8498,158 @@ function driveScenes() {
     .filter(s => n[s.id])
     .sort((a, b) => (a.order ?? 99) - (b.order ?? 99))
     .map(s => ({ id: s.id, label: s.labelJa || s.id, n: n[s.id], featured: !!s.featured }));
+}
+
+// ---------- 場面から学ぶ ----------
+//
+// 社長:「勉強したいカテゴリーにして」「カフェの勉強をタップできるように」
+//       「言えたとかダメとか意味ないからやめて」
+//       「日本語 そのあと モンゴル語 を垂れ流す感じ」
+//
+// **判定を1つも置かない。**押す場所は「流す」「やめる」「もどる」だけ。
+// 覚え具合・連続日数・その日の進みを1つも動かさない。
+
+let studyCat = null;      // いま開いているカテゴリー
+let studyState = null;    // { id, steps, at, timer, stopped }
+let studySession = 0;
+let studyToken = 0;
+
+/** いま出せるカテゴリー。**中身が1件も無いものは出さない。** */
+function studyCategories() {
+  const cats = (mnPack.studyCategories || []);
+  const talks = availableDialogues();
+  return cats
+    .map(c => study.buildCategory(c, {
+      dialogues: talks,
+      lineOf,
+      // **目録を直接のぞかない。**音があるかどうかは caps に聞く
+      hasAudio: id => caps.audioFor(id),
+    }))
+    .filter(c => c.items.length > 0);
+}
+
+/** ホームに場面のボタンを並べる */
+function paintStudyCats() {
+  const box = $('study-cats');
+  if (!box) return;
+  clear(box);
+  const cats = studyCategories();
+  $('study-lead').hidden = !cats.length;
+  for (const c of cats) {
+    box.appendChild(el('button', { attrs: { type: 'button' },
+      on: { click: () => openStudy(c.id) } }, [
+      el('span', { text: c.label }),
+      el('span', { class: 'c-n', text: `${c.items.length}こ` }),
+    ]));
+  }
+}
+
+function openStudy(id) {
+  const cats = studyCategories();
+  studyCat = cats.find(c => c.id === id) || null;
+  if (!studyCat) { showNotice('いま出せるものがありません'); return; }
+  stopStudy(true);
+  track('study_open');
+  $('study-title').textContent = studyCat.label;
+  // **確認前のものが混ざっていたら、そう書く**
+  const unchecked = studyCat.kind === 'scenario'
+    && availableDialogues().some(d => d.scenarioId === studyCat.id && d.speakerChecked === false);
+  $('study-note').textContent = '「通しで流す」を押すと、日本語のあとにモンゴル語が流れます。'
+    + '言えたかどうかは聞きません。'
+    + (unchecked ? ' このモンゴル語は、まだモンゴル語話者の確認を受けていません。' : '');
+  paintStudyList();
+  $('study-now').hidden = true;
+  $('study-play').hidden = false;
+  $('study-stop').hidden = true;
+  showScreen('study');
+}
+
+function paintStudyList() {
+  const box = $('study-list');
+  clear(box);
+  const list = el('div', { class: 'practice' });
+  for (const it of studyCat.items) {
+    const r = readingOf(it.id);
+    const body = el('div', { class: 'si-b' }, [
+      el('div', { class: 'si-ja', text: it.ja }),
+      el('div', { class: 'si-mn', text: it.mn }),
+    ]);
+    if (r) {
+      const rr = el('div', { class: 'si-r' });
+      paintReading(rr, it.id, r);
+      body.appendChild(rr);
+    }
+    const row = el('div', { class: 'si' }, [body]);
+    // **音のボタンは、正式な音声があるときだけ。**代用の声で読ませない
+    if (it.audio) {
+      row.appendChild(el('button', {
+        class: 'spk', attrs: { type: 'button', 'aria-label': `${it.ja} を聞く` },
+        on: { click: () => audio.play(it.id, { manual: true }) },
+      }, [el('span', { attrs: { 'aria-hidden': 'true' }, text: '🔊' })]));
+    }
+    list.appendChild(row);
+  }
+  box.appendChild(list);
+}
+
+function startStudy() {
+  if (!studyCat) return;
+  if (studyState && !studyState.stopped) return;   // 連打で二重に流さない
+  audio.unlock();
+  narration.cancel();
+  audio.stop();
+  studySession += 1;
+  studyToken += 1;
+  studyState = { id: studySession, steps: study.playlist(studyCat.items), at: 0,
+    timer: null, stopped: false };
+  if (!studyState.steps.length) { studyState = null; showNotice('流せるものがありません'); return; }
+  track('study_play');
+  $('study-now').hidden = false;
+  $('study-play').hidden = true;
+  $('study-stop').hidden = false;
+  runStudy();
+}
+
+async function runStudy() {
+  if (!studyState || studyState.stopped) return;
+  const st = studyState.steps[studyState.at];
+  if (!st) { stopStudy(); return; }
+  const mine = ++studyToken;
+  const session = studyState.id;
+  const alive = () => mine === studyToken && !!studyState
+    && !studyState.stopped && studyState.id === session;
+
+  if (st.kind === 'gap') {
+    studyState.timer = setTimeout(() => { if (alive()) { studyState.at += 1; runStudy(); } }, st.ms);
+    return;
+  }
+  const line = lineOf(st.id);
+  $('study-ja').textContent = line ? line.ja : '';
+  $('study-mn').textContent = line ? line.mn : '';
+  const rbox = $('study-reading');
+  clear(rbox);
+  const r = readingOf(st.id);
+  if (r) paintReading(rbox, st.id, r);
+
+  if (st.kind === 'ja') await narration.speak(st.text || '');
+  else await audio.playToEnd(st.id, { manual: false });
+  if (!alive()) return;
+  studyState.at += 1;
+  runStudy();
+}
+
+function stopStudy(quiet) {
+  if (studyState) {
+    studyState.stopped = true;
+    if (studyState.timer) { clearTimeout(studyState.timer); studyState.timer = null; }
+  }
+  studyToken += 1;
+  narration.cancel();
+  audio.stop();
+  studyState = null;
+  if (quiet) return;
+  $('study-play').hidden = false;
+  $('study-stop').hidden = true;
 }
 
 /** Drive を出してよいか。**出せないときは入口ごと出さない。** */
@@ -10710,6 +11095,9 @@ function wire() {
   $('drive-start').addEventListener('click', startDrive);
   $('drive-stop').addEventListener('click', () => stopDrive('やめる'));
   $('drive-back').addEventListener('click', () => { stopDrive('もどる'); });
+  $('study-play').addEventListener('click', startStudy);
+  $('study-stop').addEventListener('click', () => stopStudy());
+  $('study-back').addEventListener('click', () => { stopStudy(true); showScreen('home'); renderHome(); });
   $('fieldlog-back').addEventListener('click', () => { showScreen('more'); renderMore(); });
   $('update-btn').addEventListener('click', applyUpdate);
   $('cp-continue').addEventListener('click', () => {
