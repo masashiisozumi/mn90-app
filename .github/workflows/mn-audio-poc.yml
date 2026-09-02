@@ -28,7 +28,7 @@ jobs:
         run: |
           python3 - <<'PY' 2>&1 | tee vocab.txt
           from transformers import AutoTokenizer
-          import json, urllib.request, collections
+          import json, urllib.request, urllib.parse, collections
           M = "facebook/mms-tts-mon"
           tok = AutoTokenizer.from_pretrained(M)
           v = tok.get_vocab()
@@ -80,7 +80,6 @@ jobs:
                       seen[m["id"]] = m
               except Exception as e:
                   print("  検索できず:", q, e)
-          import urllib.parse
           print(f"候補 {len(seen)}件")
           rows = []
           for mid, m in seen.items():
@@ -150,7 +149,7 @@ jobs:
           print("**どちらが良いかは決めない。モンゴル語話者に聞いてもらう。**")
           PY
 
-      - name: 結果を置く      - name: 結果を置く
+      - name: 結果を置く
         run: |
           git config user.name "mn90-audio-bot"
           git config user.email "noreply@github.com"
