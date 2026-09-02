@@ -13,7 +13,7 @@
  */
 
 // 中身が変わるたびに上げる。古い保管庫はここを見て捨てる
-const CACHE = 'mn90-v95';
+const CACHE = 'mn90-v96';
 
 // 最初に取り込むもの。1枚のHTMLに全部入っているので、これだけで動く
 const SHELL = ['./', './index.html', './manifest.webmanifest', './apple-touch-icon.png'];
@@ -44,6 +44,9 @@ const AUDIO = [
   './audio/d_res_this_one.mp3',
   './audio/d_res_two_people.mp3',
   './audio/d_res_water_please.mp3',
+  './audio/d_shop_come_again.mp3',
+  './audio/d_shop_here_you_are.mp3',
+  './audio/d_shop_welcome.mp3',
   './audio/g_hello.mp3',
   './audio/g_no.mp3',
   './audio/g_thanks.mp3',
