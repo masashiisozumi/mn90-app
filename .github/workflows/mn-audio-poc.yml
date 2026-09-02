@@ -183,6 +183,88 @@ jobs:
           print("**どれが良いかは、ここでは決めない。モンゴル語話者に聞いてもらう材料。**")
           PY
 
+      - name: 落ちている文字を、語彙にある字へ置き換えて比べる
+        run: |
+          python3 - <<'PY' 2>&1 | tee charmap.txt
+          from transformers import VitsModel, AutoTokenizer
+          import torch, json, numpy as np, wave, subprocess, os
+          M = "facebook/mms-tts-mon"
+          tok = AutoTokenizer.from_pretrained(M)
+          model = VitsModel.from_pretrained(M); model.eval()
+          sr = model.config.sampling_rate
+          texts = json.load(open("mn-texts.json", encoding="utf-8"))
+          vocab = set(tok.get_vocab())
+
+          print("=== モデルが受け取れない文字を、教材から全部あげる ===")
+          import collections
+          miss = collections.Counter()
+          for cid, t in texts.items():
+              for ch in t["mn"].lower():
+                  if ch.strip() and ch not in vocab: miss[ch] += 1
+          for ch, n in miss.most_common():
+              print(f"  {ch!r} U+{ord(ch):04X}  {n}回")
+
+          # **置き換え案。どれが正しいかは決めない。比べる材料を作るだけ。**
+          #   ө U+04E9 → ѳ U+0473 (語彙にある、見た目のよく似た字)
+          #   ш U+0448 → щ U+0449 (語彙にある、いちばん近い字)
+          MAP = {"\u04e9": "\u0473", "\u0448": "\u0449"}
+          def mapped(t):
+              return "".join(MAP.get(c, c) for c in t)
+
+          hit = [cid for cid, t in texts.items()
+                 if any(c in t["mn"].lower() for c in MAP)]
+          print()
+          print(f"置き換えが効く教材: {len(hit)} / {len(texts)}件")
+
+          PICK = [c for c in ["n_car","n_today","n_tomorrow","s_thanks_much",
+                              "s_say_again","n_month","s_my_name_is","n_water",
+                              "s_i_sell_cars","g_hello"] if c in texts][:10]
+          # 足りなければ影響のあるものから補う
+          for c in hit:
+              if len(PICK) >= 10: break
+              if c not in PICK: PICK.append(c)
+
+          def synth(text, seed):
+              model.config.speaking_rate = 0.90
+              model.config.noise_scale = 0.667
+              model.config.noise_scale_duration = 0.8
+              torch.manual_seed(seed)
+              x = tok(text, return_tensors="pt")
+              with torch.no_grad():
+                  return model(**x).waveform[0].cpu().numpy()
+          def trim(w, th=0.003):
+              i = np.where(np.abs(w) > th)[0]
+              if len(i) == 0: return w
+              return w[max(0,i[0]-int(0.06*sr)):min(len(w), i[-1]+int(0.18*sr))]
+          def save(w, name):
+              raw = f"ab-out/{name}.wav"
+              with wave.open(raw,"w") as f:
+                  f.setnchannels(1); f.setsampwidth(2); f.setframerate(sr)
+                  f.writeframes((np.clip(w,-1,1)*32767).astype("<i2").tobytes())
+              subprocess.run(["ffmpeg","-y","-loglevel","error","-i",raw,"-codec:a","libmp3lame",
+                              "-b:a","48k","-ac","1","-ar","24000",f"ab-out/{name}.mp3"], check=True)
+              os.remove(raw)
+
+          print()
+          print("id".ljust(18) + "いまの字".ljust(10) + "置き換え後".ljust(12)
+                + "モデルが受け取る文字")
+          for i, cid in enumerate(PICK):
+              t = texts[cid]["mn"]
+              m = mapped(t)
+              a = trim(synth(t, 4321+i)); b = trim(synth(m, 4321+i))
+              save(a, f"{cid}__v1_now"); save(b, f"{cid}__v6_charmap")
+              got_a = "".join(c for c in t.lower() if c in vocab or not c.strip())
+              got_b = "".join(c for c in m.lower() if c in vocab or not c.strip())
+              print(f"{cid.ljust(18)}{len(a)/sr:6.2f}秒   {len(b)/sr:6.2f}秒     "
+                    f"{got_a!r} → {got_b!r}")
+
+          json.dump({"map": {f"U+{ord(k):04X}": f"U+{ord(v):04X}" for k,v in MAP.items()},
+                     "affected": len(hit), "picked": PICK},
+                    open("ab-out/charmap.json","w"), ensure_ascii=False, indent=1)
+          print()
+          print("**どちらが良いかは決めない。モンゴル語話者に聞いてもらう。**")
+          PY
+
       - name: 結果を置く
         run: |
           git config user.name "mn90-audio-bot"
