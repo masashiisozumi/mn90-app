@@ -588,8 +588,15 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .ln-dot.is-on{background:var(--accent);border-color:var(--accent)}
 /* 「いま鳴っている」を、色だけでなく形でも示す */
 .ln-dot.is-now{transform:scale(1.35)}
+.ln-log{display:flex;flex-direction:column}
 .ln-box{background:var(--raised);border:1px solid var(--line);
-  border-radius:var(--radius-card);padding:15px;margin-bottom:var(--space-3)}
+  border-radius:var(--radius-card);padding:15px;margin-bottom:var(--space-3);
+  max-width:92%}
+/* 話し手で左右を分ける。**どちらの番か、名前を読まずに分かるように** */
+.ln-other{margin-right:auto}
+.ln-mine{margin-left:auto;background:var(--accent-soft);border-color:var(--accent)}
+/* いま聞いているところ。色だけでなく、縁の太さでも示す */
+.ln-box.is-now{border-width:2px}
 .ln-mn{font-size:calc(1.25rem * var(--fs));font-weight:700;line-height:1.35;
   word-break:break-word}
 .ln-ja{font-size:calc(var(--t-sub) * var(--fs));color:var(--dim);
@@ -1044,7 +1051,7 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
   <h2 class="ln-head" id="listening-head"></h2>
   <p class="ln-lead" id="listening-lead"></p>
   <div class="ln-dots" id="listening-dots" hidden></div>
-  <div id="listening-body"></div>
+  <div id="listening-body" class="ln-log"></div>
   <div class="dock-pad"></div>
 </main>
 
@@ -7786,6 +7793,16 @@ function openDrive() {
 let driveMinutes = 20;
 
 function startDrive() {
+  // **すでに走っているなら、何もしない。**
+  // 「はじめる」を隠しても、押された瞬間が重なれば2回入ってくる
+  // (2026-09-02、実際に3回叩いたら3本ぶんが同時に流れた)。
+  // 隠す・押せなくするだけに頼らず、ここで断る
+  if (driveState && !driveState.stopped) return;
+  // 前の音が残っていたら、必ず止めてから始める
+  audio.stop();
+  narration.cancel();
+  driveToken += 1;
+
   const plan = drive.buildPlaylist({
     candidates: driveCandidates(), dialogues: driveTalks(), minutes: driveMinutes,
   });
@@ -8175,6 +8192,29 @@ function lnDots(activeIndex) {
   });
 }
 
+/**
+ * 1発話ぶんの箱。**話し手で左右を分ける。**
+ * どちらが話しているかを、名前を読まなくても分かるようにする
+ * (会話練習の画面と同じ見え方に揃える。2つの画面で作法を変えない)。
+ */
+function lnTurnBox(t, roles, isNow) {
+  const line = turnLine(t);
+  const mine = t.speaker === 'learner';
+  const cls = 'ln-box' + (mine ? ' ln-mine' : ' ln-other') + (isNow ? ' is-now' : '');
+  return el('div', { class: cls }, [
+    el('div', { class: 'ln-who', text: mine ? `${roles.learner}（あなた）` : roles.other }),
+    el('div', { class: 'ln-mn', text: line ? line.mn : '' }),
+    readingRow(t.ref),
+    el('div', { class: 'ln-ja', text: line ? line.ja : '' }),
+    el('div', { class: 'ln-row' }, [
+      el('button', {
+        class: 'spk', attrs: { type: 'button', 'aria-label': `${line ? line.ja : ''} を聞く` },
+        on: { click: () => audio.play(t.ref, { manual: true }) },
+      }, [speakerIcon()]),
+    ]),
+  ]);
+}
+
 function renderListening() {
   if (!ln) return;
   const st = ln.steps[ln.at];
@@ -8219,25 +8259,21 @@ function renderListening() {
   }
 
   if (st.kind === 'line') {
-    const t = turns.find(x => x.n === st.n) || turns[0];
-    const line = turnLine(t);
-    const mine = t.speaker === 'learner';
-    lnDots(turns.indexOf(t));
+    const here = turns.findIndex(x => x.n === st.n);
+    const at = here < 0 ? 0 : here;
+    lnDots(at);
     $('listening-head').textContent = '聞き直してみましょう';
-    $('listening-lead').textContent = '';
-    body.appendChild(el('div', { class: 'ln-box' }, [
-      el('div', { class: 'ln-who', text: mine ? `${roles.learner}（あなた）` : roles.other }),
-      el('div', { class: 'ln-mn', text: line ? line.mn : '' }),
-      readingRow(t.ref),
-      el('div', { class: 'ln-ja', text: line ? line.ja : '' }),
-      el('div', { class: 'ln-row' }, [
-        el('button', {
-          class: 'spk', attrs: { type: 'button', 'aria-label': `${line ? line.ja : ''} を聞く` },
-          on: { click: () => audio.play(t.ref, { manual: true }) },
-        }, [speakerIcon()]),
-      ]),
-    ]));
+    // **聞き取れなかったところだけ、すぐ鳴らし直せるようにする。**
+    // 1つずつ順に進むだけだと、3番目を聞き逃したときに
+    // 最初から辿り直すことになる。ここまで出たものは全部そのまま残す
+    $('listening-lead').textContent = at > 0
+      ? '前のところも、🔊 を押せばもう一度聞けます。' : '';
+    for (let i = 0; i <= at; i++) {
+      body.appendChild(lnTurnBox(turns[i], roles, i === at));
+    }
     $('listening-next').textContent = '次へ';
+    // 描いたあとに動かす。先に動かすと、増えた行のぶんだけ下が隠れる
+    requestAnimationFrame(() => window.scrollTo(0, document.body.scrollHeight));
     return;
   }
 
@@ -8328,6 +8364,19 @@ function listeningNext() {
   ln.replays = 0;
   ln.revealed = false;
   renderListening();
+}
+
+/**
+ * 聞き取りの再生を、その場で止める。
+ * **次の発話へ進むのも止める。**画面はそのまま残すので、
+ * 戻ってきたら「聞く」からやり直せる。
+ */
+function lnHalt() {
+  lnToken += 1;
+  const next = $('listening-next');
+  const rep = $('listening-replay');
+  if (next) { next.disabled = false; next.textContent = '聞く'; }
+  if (rep) rep.disabled = false;
 }
 
 function listeningBack() {
@@ -9950,7 +9999,18 @@ function wire() {
   // 別のアプリへ切り替えたとき、音を鳴らしっぱなしにしない。
   // 戻ってきたら、スピーカーを押せばそのまま続けられる。
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') { audio.stop(); return; }
+    if (document.visibilityState === 'hidden') {
+      // **ドライブ学習だけは止めない。**画面を消したまま聞き続けるための
+      // 機能なので、ここで止めると、こちらの都合で機能そのものを壊す。
+      // (iOS が実際に鳴らし続けてくれるかは別の話。社長の実機確認待ち)
+      if (driveState && !driveState.stopped) return;
+      // 聞き取りは画面を見ながらの練習。**いま鳴っている音だけでなく、
+      // 次の音へ進むのも止める。**止めないと、裏に回したあとも
+      // 発話が1つずつ流れ続ける (2026-09-02、実際にそうなっていた)
+      lnHalt();
+      audio.stop();
+      return;
+    }
     // 画面を消している間はタイマーが止まる。戻ってきたら今の時刻で描き直す
     if (currentScreen === 'summary') paintRelearnNote();
     if (currentScreen === 'sheet' && sheetRepaint) sheetRepaint();
