@@ -73,10 +73,14 @@ jobs:
                       back = tok.decode(tok(t, add_special_tokens=False)["input_ids"])
                   except Exception as ex:
                       print(f"  {name}: 文字を入れられない ({type(ex).__name__})"); return None
+                  # **大文字が小文字になるのは「落ちた」ではない。**
+                  # 2026-09-02、これを数え違えて Б Э Т Н Х も落ちていると出た。
+                  # mms-tts の入口は小文字にそろえるだけで、字は捨てていない
+                  b = back.lower()
                   for ch in set(t):
                       if ch.isspace(): continue
                       seen += t.count(ch)
-                      if ch not in back: lost[ch] = lost.get(ch, 0) + t.count(ch)
+                      if ch.lower() not in b: lost[ch] = lost.get(ch, 0) + t.count(ch)
               n = sum(lost.values())
               print(f"  {name}: 受け取り率 {100*(seen-n)/max(seen,1):.1f}%  "
                     + ("落ちた字なし" if not lost else
@@ -105,6 +109,15 @@ jobs:
                   tk = (SpeechT5Tokenizer.from_pretrained(MID)
                         if any(f.startswith("spm_char") or f == "tokenizer_config.json" for f in files)
                         else SpeechT5Tokenizer.from_pretrained("microsoft/speecht5_tts"))
+                  # この repo は added_tokens.json だけ持っている。
+                  # **土台の入口はキリル文字をほぼ受け取れない (受け取り率 1.1%)** ので、
+                  # 足された字を入れてから測り直す。入れても駄目なら、そこで終わり。
+                  if "added_tokens.json" in files:
+                      from huggingface_hub import hf_hub_download
+                      ext = json.load(open(hf_hub_download(MID, "added_tokens.json"), encoding="utf-8"))
+                      add = [k for k in ext if k not in tk.get_vocab()]
+                      print(f"  足されている字: {len(add)}個  {''.join(sorted(add))[:80]}")
+                      if add: tk.add_tokens(add)
                   proc = SpeechT5Processor(feature_extractor=SpeechT5FeatureExtractor(),
                                            tokenizer=tk)
                   print("  processor: 土台 microsoft/speecht5_tts の入口を借りた")
@@ -113,6 +126,12 @@ jobs:
                   print("  **文字を落とすので、音を作っても意味が変わる。ここで止める。**")
                   raise RuntimeError("文字を受け取れない")
               m = SpeechT5ForTextToSpeech.from_pretrained(MID)
+              # **入口の数が合っていなければ、音は出ても別の字を読んでいる。**
+              nvoc = m.get_input_embeddings().weight.shape[0]
+              print(f"  model が持っている入口の数 {nvoc} / 入れようとしている字 {len(proc.tokenizer)}")
+              if nvoc != len(proc.tokenizer):
+                  print("  **数が合わない。別の字として読まれるので、ここで止める。**")
+                  raise RuntimeError("入口の数が合わない")
               voc = SpeechT5HifiGan.from_pretrained("microsoft/speecht5_hifigan")
               emb = load_dataset("Matthijs/cmu-arctic-xvectors", split="validation")
               sp = torch.tensor(emb[7306]["xvector"]).unsqueeze(0)
@@ -180,10 +199,11 @@ jobs:
                   t1 = t0
                   for a, b in CMAP.items(): t1 = t1.replace(a, b)
                   back = tok.decode(tok(t1, add_special_tokens=False)["input_ids"])
+                  b = back.lower()
                   for ch in set(t1):
                       if ch.isspace(): continue
                       seen2 += t1.count(ch)
-                      if ch not in back: lost2[ch] = lost2.get(ch, 0) + t1.count(ch)
+                      if ch.lower() not in b: lost2[ch] = lost2.get(ch, 0) + t1.count(ch)
               n2 = sum(lost2.values())
               print(f"  字を寄せたあと: 受け取り率 {100*(seen2-n2)/max(seen2,1):.1f}%  "
                     + ("落ちた字なし" if not lost2 else
