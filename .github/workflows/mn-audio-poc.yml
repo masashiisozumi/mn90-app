@@ -294,6 +294,94 @@ jobs:
           print("**どちらが正しい読みかは、ここでは決めない。話者に聞く。**")
           PY
 
+      - name: カフェ・空港・レストランの16件を合成する（話者確認用）
+        run: |
+          mkdir -p ab-out
+          python3 - <<'PY' 2>&1 | tee -a models.txt
+          import json, numpy as np, torch, wave, subprocess, os
+          from transformers import VitsModel, AutoTokenizer
+          # 本番140件と同じ作り方に揃える (速さ0.85 / 山を0.85 / 末尾を切らない)
+          RATE = 0.85
+          # 大文字も寄せる。文頭は必ず大文字なので、抜けると語の頭が落ちる
+          CMAP = {"\u04e9": "\u0473", "\u0448": "\u0449",
+                  "\u04e8": "\u0473", "\u0428": "\u0449"}
+          texts = json.load(open("mn-texts-extra.json", encoding="utf-8"))
+          print(f"追加の教材: {len(texts)}件")
+
+          tok = AutoTokenizer.from_pretrained("facebook/mms-tts-mon")
+          m = VitsModel.from_pretrained("facebook/mms-tts-mon"); m.eval()
+          m.speaking_rate = RATE
+          sr = m.config.sampling_rate
+
+          def synth(text, seed):
+              torch.manual_seed(seed)
+              with torch.no_grad():
+                  w = m(**tok(text, return_tensors="pt")).waveform.squeeze().numpy()
+              peak = float(np.max(np.abs(w))) or 1.0
+              w = w / peak * 0.85
+              nz = np.where(np.abs(w) > 0.003)[0]
+              if len(nz):
+                  w = w[max(0, nz[0]-int(sr*0.06)):min(len(w), nz[-1]+int(sr*0.18))]
+              return w
+
+          def valid(w):
+              if w is None or len(w) == 0: return False, "空"
+              if not np.all(np.isfinite(w)): return False, "NaN が混ざっている"
+              sec = len(w)/sr
+              if sec < 0.15: return False, f"短すぎる ({sec:.2f}秒)"
+              rms = float(np.sqrt(np.mean(w**2)))
+              if rms < 0.005: return False, f"ほぼ無音 (rms {rms:.4f})"
+              if float(np.max(np.abs(w))) > 1.5: return False, "振り切れている"
+              return True, f"{sec:.2f}秒"
+
+          def save(w, n):
+              raw = f"ab-out/{n}.wav"
+              with wave.open(raw, "w") as f:
+                  f.setnchannels(1); f.setsampwidth(2); f.setframerate(sr)
+                  f.writeframes((np.clip(w, -1, 1)*32767).astype("<i2").tobytes())
+              subprocess.run(["ffmpeg","-y","-loglevel","error","-i",raw,"-codec:a",
+                              "libmp3lame","-b:a","48k","-ac","1","-ar","24000",
+                              f"ab-out/{n}.mp3"], check=True)
+              os.remove(raw)
+
+          # набор全体の「1文字あたり何秒か」で浮いたものを見つけ、種を変えて作り直す
+          def nchars(t): return len([c for c in t if c.isalpha()])
+          waves, used = {}, {}
+          for i, (cid, rec) in enumerate(sorted(texts.items())):
+              t = rec["mn"]
+              for a, b in CMAP.items(): t = t.replace(a, b)
+              used[cid] = t
+              waves[cid] = synth(t, 7100 + i)
+          rate = lambda c: (len(waves[c])/sr) / max(1, nchars(used[c]))
+          for attempt in range(1, 5):
+              rs = sorted(rate(c) for c in waves)
+              med = rs[len(rs)//2]
+              bad = [c for c in waves if rate(c) > med*2.0 or rate(c) < med/2.0]
+              if not bad:
+                  print(f"浮いたものなし ({attempt}回目で安定 / 1文字 {med:.3f}秒)"); break
+              print(f"{attempt}回目: 浮いたもの {len(bad)}件 → 作り直す")
+              for c in bad:
+                  best, bd = waves[c], abs(rate(c)-med)
+                  for k in range(4):
+                      w2 = synth(used[c], 91000 + attempt*100 + k*7 + len(c))
+                      d = abs((len(w2)/sr)/max(1, nchars(used[c])) - med)
+                      if d < bd: best, bd = w2, d
+                  waves[c] = best
+
+          ok = 0
+          idx = {}
+          for cid in sorted(waves):
+              g, why = valid(waves[cid])
+              print(f"  {cid:20s} {'○' if g else '×'} {why}")
+              if g:
+                  save(waves[cid], f"{cid}__talk"); ok += 1
+                  idx[cid] = {"file": f"{cid}__talk.mp3", "mn": texts[cid]["mn"],
+                              "ttsText": used[cid], "rev": texts[cid]["rev"]}
+          json.dump(idx, open("ab-out/extra-index.json", "w"), ensure_ascii=False, indent=1)
+          print(f"音になった: {ok}/{len(texts)}")
+          print("**このモンゴル語はまだ話者の確認を受けていない。本番へは出さない。**")
+          PY
+
       - name: 結果を置く
         run: |
           git config user.name "mn90-audio-bot"
@@ -305,7 +393,7 @@ jobs:
           git archive origin/audio-ab ab-out 2>/dev/null | tar -x -C "$tmp" 2>/dev/null || true
           [ -d "$tmp/ab-out" ] && cp -n "$tmp"/ab-out/* ab-out/ 2>/dev/null || true
           git checkout -B audio-ab
-          for f in ab-out models.txt; do [ -e "$f" ] && git add -f "$f"; done
+          for f in ab-out models.txt mn-texts-extra.json; do [ -e "$f" ] && git add -f "$f"; done
           git commit -q -m "設定違いの比較音源と、モデルの中身の記録" || echo "変更なし"
           git push -f origin audio-ab
           echo "pushed to audio-ab"

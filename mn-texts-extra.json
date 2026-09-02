@@ -1,0 +1,66 @@
+{
+ "d_cafe_what_have": {
+  "mn": "Юу авах вэ?",
+  "rev": 1
+ },
+ "d_cafe_one_coffee": {
+  "mn": "Нэг кофе өгнө үү",
+  "rev": 1
+ },
+ "d_cafe_sugar": {
+  "mn": "Чихэртэй юу?",
+  "rev": 1
+ },
+ "d_cafe_no_thanks": {
+  "mn": "Үгүй, хэрэггүй",
+  "rev": 1
+ },
+ "d_cafe_takeaway": {
+  "mn": "Авч явна",
+  "rev": 1
+ },
+ "d_air_passport": {
+  "mn": "Паспортоо өгнө үү",
+  "rev": 1
+ },
+ "d_air_here_it_is": {
+  "mn": "Энд байна",
+  "rev": 1
+ },
+ "d_air_any_bags": {
+  "mn": "Тээш байгаа юу?",
+  "rev": 1
+ },
+ "d_air_one_bag": {
+  "mn": "Тийм, нэг ширхэг байна",
+  "rev": 1
+ },
+ "d_air_gate_number": {
+  "mn": "Арван хоёрдугаар хаалга",
+  "rev": 1
+ },
+ "d_res_how_many": {
+  "mn": "Хэдүүлээ вэ?",
+  "rev": 1
+ },
+ "d_res_two_people": {
+  "mn": "Хоёр хүн",
+  "rev": 1
+ },
+ "d_res_order_what": {
+  "mn": "Юу захиалах вэ?",
+  "rev": 1
+ },
+ "d_res_this_one": {
+  "mn": "Үүнийг өгнө үү",
+  "rev": 1
+ },
+ "d_res_drink_what": {
+  "mn": "Юу уух вэ?",
+  "rev": 1
+ },
+ "d_res_water_please": {
+  "mn": "Ус өгнө үү",
+  "rev": 1
+ }
+}
