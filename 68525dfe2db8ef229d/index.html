@@ -4838,30 +4838,57 @@ function buildCategory(cat, { dialogues = [], lineOf = () => null, hasAudio = ()
 const SPOKEN_SECONDS_EACH = 2.4;
 /** これだけの長さは持たせる。**途中で終わらせない** */
 const FILL_MINUTES = 60;
+/** 見積りより多めに作る。多いぶんは止めるまで流れるだけで、害が無い */
+const FILL_MARGIN = 1.4;
 
-function playlist(items, { tempo = DEFAULT_TEMPO, order = DEFAULT_ORDER,
-  minutes = FILL_MINUTES } = {}) {
+/**
+ * 1件ぶんの手順。**その場の設定で作る。**
+ *
+ * ここを1件ずつ呼ぶことで、流している最中に順番や速さを変えても
+ * **いま鳴っているものは切らず、次の1件から新しい設定になる。**
+ * 並び全体を先に作ってしまうと、設定を変えたときに作り直すしかなくなり、
+ * 頭から流し直すことになる (2026-09-02、実際にそうなっていた)。
+ */
+function pairFor(item, { tempo = DEFAULT_TEMPO, order = DEFAULT_ORDER } = {}) {
   const t = TEMPOS.includes(tempo) ? tempo : DEFAULT_TEMPO;
   const o = ORDERS.includes(order) ? order : DEFAULT_ORDER;
+  if (!item || !item.mn) return [];
+  const ja = { kind: 'ja', id: item.id, text: sayableJa(item.ja) };
+  const mn = { kind: 'mn', id: item.id, text: item.mn };
+  const first = o === 'mn_ja' ? mn : ja;
+  const second = o === 'mn_ja' ? ja : mn;
+  return [
+    first,
+    { kind: 'gap', ms: AFTER_FIRST_MS[t] + extra(first.text) },
+    second,
+    { kind: 'gap', ms: AFTER_PAIR_MS[t] + extra(second.text) },
+  ];
+}
+
+/**
+ * 並びを先に全部作る。**画面はこれを使わない** (画面は1件ずつ作って流し続ける)。
+ * 検査と机上の試しのためのもの。
+ *
+ * @param {object} opt
+ *   @param {(id:string)=>number} [opt.secondsOf] 1件の音の長さ。分かるなら渡す
+ */
+function playlist(items, { tempo = DEFAULT_TEMPO, order = DEFAULT_ORDER,
+  minutes = FILL_MINUTES, secondsOf = null } = {}) {
+  const t = TEMPOS.includes(tempo) ? tempo : DEFAULT_TEMPO;
   const usable = items.filter(x => x && x.mn);
   const out = [];
   if (!usable.length) return out;
-  // 1周ぶんの見積り (間 + 鳴っている時間)
-  const perLap = usable.reduce((a, it) =>
-    a + (AFTER_FIRST_MS[t] + AFTER_PAIR_MS[t] + extra(it.ja) + extra(it.mn)) / 1000
-      + SPOKEN_SECONDS_EACH, 0);
-  const loops = Math.max(2, Math.ceil((minutes * 60) / Math.max(1, perLap)));
+  // 1周ぶんの見積り (間 + 鳴っている時間)。
+  // **短めに見積もって、多めに作る。**足りないと途中で終わる
+  const perLap = usable.reduce((a, it) => {
+    const spoken = secondsOf ? Math.max(0.3, Number(secondsOf(it.id)) || SPOKEN_SECONDS_EACH)
+      : SPOKEN_SECONDS_EACH;
+    return a + (AFTER_FIRST_MS[t] + AFTER_PAIR_MS[t] + extra(it.ja) + extra(it.mn)) / 1000
+      + spoken;
+  }, 0);
+  const loops = Math.max(2, Math.ceil((minutes * 60 * FILL_MARGIN) / Math.max(1, perLap)));
   for (let n = 0; n < Math.max(1, loops); n++) {
-    for (const it of usable) {
-      const ja = { kind: 'ja', id: it.id, text: sayableJa(it.ja) };
-      const mn = { kind: 'mn', id: it.id, text: it.mn };
-      const first = o === 'mn_ja' ? mn : ja;
-      const second = o === 'mn_ja' ? ja : mn;
-      out.push(first);
-      out.push({ kind: 'gap', ms: AFTER_FIRST_MS[t] + extra(first.text) });
-      out.push(second);
-      out.push({ kind: 'gap', ms: AFTER_PAIR_MS[t] + extra(second.text) });
-    }
+    for (const it of usable) out.push(...pairFor(it, { tempo, order }));
   }
   return out;
 }
@@ -4870,7 +4897,7 @@ function playlist(items, { tempo = DEFAULT_TEMPO, order = DEFAULT_ORDER,
 function affectsSrs() { return false; }
 
 
-__m["engine/study.js"] = { TEMPOS, DEFAULT_TEMPO, ORDERS, DEFAULT_ORDER, AFTER_FIRST_MS, AFTER_PAIR_MS, AFTER_JA_MS, AFTER_MN_MS, FILL_MINUTES, buildCategory, playlist, affectsSrs, sayableJa };
+__m["engine/study.js"] = { TEMPOS, DEFAULT_TEMPO, ORDERS, DEFAULT_ORDER, AFTER_FIRST_MS, AFTER_PAIR_MS, AFTER_JA_MS, AFTER_MN_MS, FILL_MINUTES, buildCategory, playlist, pairFor, affectsSrs, sayableJa };
 })();
 
 // ===== engine/listening.js =====
@@ -6689,7 +6716,24 @@ const THEMES = [
   { id: 'dark', label: '暗い' },
 ];
 
-const DEFAULTS = { fontSize: 'normal', theme: 'system', readingHint: 'on' };
+/**
+ * 聞き流しの並べ方と速さ。**学習の記録ではない。**
+ *
+ * 社長:「モンゴル語→日本語かな？やはり」「速度遅いかな」。
+ * 毎回選び直させると操作が増えるので、最後に選んだものを覚えておく。
+ * **既定は モンゴル語が先 / はやい。**読めなくても既定で動く。
+ */
+const STUDY_ORDERS = [
+  { id: 'mn_ja', label: 'モンゴル語 → 日本語' },
+  { id: 'ja_mn', label: '日本語 → モンゴル語' },
+];
+const STUDY_TEMPOS = [
+  { id: 'fast', label: 'はやい' },
+  { id: 'slow', label: 'ゆっくり' },
+];
+
+const DEFAULTS = { fontSize: 'normal', theme: 'system', readingHint: 'on',
+  studyOrder: 'mn_ja', studyTempo: 'fast' };
 
 function createSettings(backend, root) {
   function load() {
@@ -6698,6 +6742,8 @@ function createSettings(backend, root) {
       if (!raw) return { ...DEFAULTS };
       const p = JSON.parse(raw);
       return {
+        studyOrder: STUDY_ORDERS.some(o => o.id === p.studyOrder) ? p.studyOrder : DEFAULTS.studyOrder,
+        studyTempo: STUDY_TEMPOS.some(o => o.id === p.studyTempo) ? p.studyTempo : DEFAULTS.studyTempo,
         fontSize: FONT_SIZES.some(f => f.id === p.fontSize) ? p.fontSize : DEFAULTS.fontSize,
         theme: THEMES.some(t => t.id === p.theme) ? p.theme : DEFAULTS.theme,
         readingHint: READING_HINTS.some(r => r.id === p.readingHint) ? p.readingHint : DEFAULTS.readingHint,
@@ -6723,17 +6769,20 @@ function createSettings(backend, root) {
     if (key === 'fontSize' && !FONT_SIZES.some(f => f.id === value)) return current;
     if (key === 'readingHint' && !READING_HINTS.some(r => r.id === value)) return current;
     if (key === 'theme' && !THEMES.some(t => t.id === value)) return current;
+    if (key === 'studyOrder' && !STUDY_ORDERS.some(o => o.id === value)) return current;
+    if (key === 'studyTempo' && !STUDY_TEMPOS.some(o => o.id === value)) return current;
     current = { ...current, [key]: value };
     try { backend.setItem(KEY, JSON.stringify(current)); } catch (e) { /* 保存できなくても表示は変わる */ }
     apply();
     return current;
   }
 
-  return { get: () => ({ ...current }), set, apply, FONT_SIZES, THEMES, READING_HINTS, KEY };
+  return { get: () => ({ ...current }), set, apply,
+    FONT_SIZES, THEMES, READING_HINTS, STUDY_ORDERS, STUDY_TEMPOS, KEY };
 }
 
 
-__m["app/settings.js"] = { createSettings, FONT_SIZES, THEMES, READING_HINTS, DEFAULTS, KEY };
+__m["app/settings.js"] = { createSettings, FONT_SIZES, THEMES, READING_HINTS, STUDY_ORDERS, STUDY_TEMPOS, DEFAULTS, KEY };
 })();
 
 // ===== app/diagnostics.js =====
@@ -8575,6 +8624,7 @@ function paintStudyCats() {
 }
 
 function openStudy(id) {
+  loadStudyPrefs();
   const cats = studyCategories();
   studyCat = cats.find(c => c.id === id) || null;
   if (!studyCat) { showNotice('いま出せるものがありません'); return; }
@@ -8613,7 +8663,9 @@ function paintStudyOpts() {
     for (const [v, label] of opts) {
       box.appendChild(el('button', {
         class: 'opt', attrs: { type: 'button', 'aria-pressed': String(get() === v) },
-        on: { click: () => { set(v); paintStudyOpts(); if (studyState && !studyState.stopped) restartStudy(); } },
+        // **流している最中でも押せる。**いま鳴っているものは切らない。
+        // 次の1件から新しい設定になる (作り直して頭から流し直さない)
+        on: { click: () => { set(v); paintStudyOpts(); saveStudyPrefs(); } },
       }, [
         el('span', { class: 'opt-mark', text: get() === v ? '✓' : '' }),
         el('span', { text: label }),
@@ -8622,10 +8674,22 @@ function paintStudyOpts() {
   }
 }
 
-/** 順番や速さを変えたときに、流し直す */
-function restartStudy() {
-  stopStudy(true);
-  startStudy();
+/**
+ * 最後に選んだ順番と速さを覚えておく。
+ *
+ * **学習の記録 (mn90:state) には1文字も足さない。**
+ * 見た目の設定と同じ入れ物 (display) に置く。移し替えは要らない —
+ * 無ければ既定 (モンゴル語が先 / はやい) で動く。
+ */
+function saveStudyPrefs() {
+  display.set('studyOrder', studyOrder);
+  display.set('studyTempo', studyTempo);
+}
+
+function loadStudyPrefs() {
+  const d = display.get();
+  if (study.ORDERS.includes(d.studyOrder)) studyOrder = d.studyOrder;
+  if (study.TEMPOS.includes(d.studyTempo)) studyTempo = d.studyTempo;
 }
 
 function paintStudyList() {
@@ -8643,7 +8707,8 @@ function paintStudyList() {
       paintReading(rr, it.id, r);
       body.appendChild(rr);
     }
-    const row = el('div', { class: 'si' }, [body]);
+    // どの教材の行かを残す。**検査が「頭へ戻っていないか」を見るために要る**
+    const row = el('div', { class: 'si', attrs: { 'data-id': it.id } }, [body]);
     // **音のボタンは、正式な音声があるときだけ。**代用の声で読ませない
     if (it.audio) {
       row.appendChild(el('button', {
@@ -8664,10 +8729,13 @@ function startStudy() {
   audio.stop();
   studySession += 1;
   studyToken += 1;
-  studyState = { id: studySession,
-    steps: study.playlist(studyCat.items, { order: studyOrder, tempo: studyTempo }),
-    at: 0, timer: null, stopped: false };
-  if (!studyState.steps.length) { studyState = null; showNotice('流せるものがありません'); return; }
+  // **並び全体を先に作らない。**1件ぶんずつ、そのときの設定で作る。
+  // こうすると、流している最中に順番や速さを変えても、
+  // いま鳴っているものを切らずに、次の1件から新しい設定になる
+  if (!studyCat.items.length) { showNotice('流せるものがありません'); return; }
+  studyState = { id: studySession, i: 0, steps: [], si: 0,
+    timer: null, stopped: false, played: 0, loops: 0 };
+  studyState.steps = study.pairFor(studyCat.items[0], { order: studyOrder, tempo: studyTempo });
   track('study_play');
   $('study-now').hidden = false;
   $('study-play').hidden = true;
@@ -8675,9 +8743,21 @@ function startStudy() {
   runStudy();
 }
 
+/** 次の1件へ進む。**一周したら、そのまま頭へ戻る。**知らせも間も足さない */
+function nextStudyPair() {
+  const items = studyCat.items;
+  studyState.i = (studyState.i + 1) % items.length;
+  if (studyState.i === 0) studyState.loops += 1;
+  // **ここで初めて設定を読む。**流している最中に変えたぶんは、ここから効く
+  studyState.steps = study.pairFor(items[studyState.i],
+    { order: studyOrder, tempo: studyTempo });
+  studyState.si = 0;
+}
+
 async function runStudy() {
   if (!studyState || studyState.stopped) return;
-  const st = studyState.steps[studyState.at];
+  if (studyState.si >= studyState.steps.length) { nextStudyPair(); }
+  const st = studyState.steps[studyState.si];
   if (!st) { stopStudy(); return; }
   const mine = ++studyToken;
   const session = studyState.id;
@@ -8685,7 +8765,7 @@ async function runStudy() {
     && !studyState.stopped && studyState.id === session;
 
   if (st.kind === 'gap') {
-    studyState.timer = setTimeout(() => { if (alive()) { studyState.at += 1; runStudy(); } }, st.ms);
+    studyState.timer = setTimeout(() => { if (alive()) { studyState.si += 1; runStudy(); } }, st.ms);
     return;
   }
   const line = lineOf(st.id);
@@ -8699,7 +8779,8 @@ async function runStudy() {
   if (st.kind === 'ja') await narration.speak(st.text || '');
   else await audio.playToEnd(st.id, { manual: false });
   if (!alive()) return;
-  studyState.at += 1;
+  studyState.played += 1;
+  studyState.si += 1;
   runStudy();
 }
 
