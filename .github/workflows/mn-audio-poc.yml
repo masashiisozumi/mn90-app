@@ -21,62 +21,31 @@ jobs:
         run: |
           python3 -m pip install -q --upgrade pip
           python3 -m pip install -q torch --index-url https://download.pytorch.org/whl/cpu
-          python3 -m pip install -q "transformers==4.49.0" scipy numpy
+          python3 -m pip install -q "transformers==4.49.0" scipy numpy sentencepiece datasets soundfile
           sudo apt-get -qq update && sudo apt-get -qq install -y ffmpeg >/dev/null
 
-      - name: ほかのモデルの権利を一次情報で読み、同じ本文で音を作る
+      - name: 権利のきれいなモデルで、本当に音になるかを確かめる
         run: |
           mkdir -p ab-out
           python3 - <<'PY' 2>&1 | tee models.txt
-          import json, urllib.request, traceback
-          def get(u, raw=False):
-              r = urllib.request.Request(u, headers={"User-Agent":"mn90"})
-              with urllib.request.urlopen(r, timeout=40) as x:
-                  b = x.read(); return b.decode("utf-8","replace") if raw else json.loads(b)
-
-          CAND = [
-            "mendeeb/mms-tts-mon_finetuned_common-voice_mn",
-            "Bokhbat/mongolian-vits-tts",
-            "developerabu/vits-tts-mnn",
-            "Dorjzodovsuren/MongolianTTS_elevenlabs_v6",
-            "antoniow12/speecht5_tts_mongolian",
-          ]
-          print("=== それぞれの権利を、モデルカードの実物で読む ===")
-          ok = []
-          for mid in CAND:
-              try:
-                  info = get(f"https://huggingface.co/api/models/{mid}")
-                  cd = info.get("cardData") or {}
-                  lic = cd.get("license") or next((t.split(":",1)[1] for t in info.get("tags",[])
-                                                   if t.startswith("license:")), None)
-                  files = [f["rfilename"] for f in info.get("siblings",[])]
-                  print(f"\n--- {mid}")
-                  print(f"  license : {lic}")
-                  print(f"  files   : {[f for f in files if f.endswith(('.json','.bin','.safetensors','.pth'))][:6]}")
-                  try:
-                      rd = get(f"https://huggingface.co/{mid}/raw/main/README.md", raw=True)
-                      keep = [ln for ln in rd.split("\n")
-                              if any(k in ln.lower() for k in
-                                     ["dataset","train","common voice","bible","elevenlabs",
-                                      "license","voice","speaker","derived","distil"])]
-                      for ln in keep[:8]: print("   |", ln.strip()[:120])
-                      if not keep: print("   | (出所の記述が見当たらない)")
-                  except Exception as e:
-                      print("   | READMEが読めない:", e)
-                  ok.append((mid, lic, files))
-              except Exception as e:
-                  print(f"\n--- {mid}\n  読めない: {e}")
-
-          json.dump([{"id":m,"license":l} for m,l,_ in ok],
-                    open("model-rights.json","w"), ensure_ascii=False, indent=1)
-
-          print()
-          print("=== 実際に音を作れるか、同じ本文で試す ===")
-          import torch, numpy as np, wave, subprocess, os
-          from transformers import VitsModel, AutoTokenizer
+          import json, numpy as np, torch, wave, subprocess, os, traceback
           texts = json.load(open("mn-texts.json", encoding="utf-8"))
           PICK = ["n_today","n_car","s_how_much","s_i_sell_cars","g_hello",
                   "n_money","s_say_again","n_usedcar"]
+
+          def valid(w, sr):
+              """**本当に音になっているか。**ファイルができた=成功ではない。
+              2026-09-02、decoder が乱数で初期化されたモデルが NaN を吐き、
+              それでも「音を作れた」と書いてしまった。"""
+              if w is None or len(w) == 0: return False, "空"
+              if not np.all(np.isfinite(w)): return False, "NaN が混ざっている"
+              sec = len(w)/sr
+              if sec < 0.15: return False, f"短すぎる ({sec:.2f}秒)"
+              rms = float(np.sqrt(np.mean(w**2)))
+              if rms < 0.005: return False, f"ほぼ無音 (rms {rms:.4f})"
+              if float(np.max(np.abs(w))) > 1.5: return False, "振り切れている"
+              return True, f"{sec:.2f}秒 rms {rms:.3f}"
+
           def trim(w, sr, th=0.003):
               i = np.where(np.abs(w) > th)[0]
               if len(i)==0: return w
@@ -85,39 +54,68 @@ jobs:
               raw=f"ab-out/{n}.wav"
               with wave.open(raw,"w") as f:
                   f.setnchannels(1); f.setsampwidth(2); f.setframerate(sr)
-                  f.writeframes((np.clip(w,-1,1)*32767).astype("<i2").tobytes())
+                  f.writeframes((np.clip(np.nan_to_num(w),-1,1)*32767).astype("<i2").tobytes())
               subprocess.run(["ffmpeg","-y","-loglevel","error","-i",raw,"-codec:a","libmp3lame",
                               "-b:a","48k","-ac","1","-ar","24000",f"ab-out/{n}.mp3"],check=True)
               os.remove(raw)
 
           made = {}
-          for mid, lic, files in ok:
-              if not any(f.endswith((".bin",".safetensors")) for f in files):
-                  print(f"  {mid}: 重みが見当たらない。とばす"); continue
-              short = mid.split("/")[-1].replace(".","_")[:22]
-              try:
-                  tok = AutoTokenizer.from_pretrained(mid)
-                  model = VitsModel.from_pretrained(mid); model.eval()
-                  sr = model.config.sampling_rate
-                  cov = []
-                  for i, cid in enumerate(PICK):
-                      t = texts[cid]["mn"]
-                      torch.manual_seed(9000+i)
-                      x = tok(t, return_tensors="pt")
-                      with torch.no_grad(): w = model(**x).waveform[0].cpu().numpy()
-                      w = trim(w, sr)
-                      save(w, sr, f"{cid}__m_{short}")
-                      got = tok.decode(x["input_ids"][0].tolist()).replace("|","")
-                      cov.append((cid, len(w)/sr, got))
-                  made[mid] = short
-                  print(f"\n  {mid}  ({lic}) / {sr}Hz  → 音を作れた")
-                  for cid, sec, got in cov:
-                      print(f"      {cid:16s} {sec:5.2f}s  受け取った文字 {got!r}")
-              except Exception as e:
-                  print(f"\n  {mid}: 作れない — {type(e).__name__}: {str(e)[:140]}")
+
+          # --- 1. SpeechT5 (MIT) + Common Voice 17 (CC0)。**権利の鎖がきれい**
+          print("=== antoniow12/speecht5_tts_mongolian (MIT / Common Voice 17) ===")
+          try:
+              from transformers import SpeechT5Processor, SpeechT5ForTextToSpeech, SpeechT5HifiGan
+              from datasets import load_dataset
+              MID = "antoniow12/speecht5_tts_mongolian"
+              proc = SpeechT5Processor.from_pretrained(MID)
+              m = SpeechT5ForTextToSpeech.from_pretrained(MID)
+              voc = SpeechT5HifiGan.from_pretrained("microsoft/speecht5_hifigan")
+              emb = load_dataset("Matthijs/cmu-arctic-xvectors", split="validation")
+              sp = torch.tensor(emb[7306]["xvector"]).unsqueeze(0)
+              sr = 16000
+              okn = 0
+              for i, cid in enumerate(PICK):
+                  t = texts[cid]["mn"]
+                  x = proc(text=t, return_tensors="pt")
+                  torch.manual_seed(1000+i)
+                  with torch.no_grad():
+                      w = m.generate_speech(x["input_ids"], sp, vocoder=voc).cpu().numpy()
+                  good, why = valid(w, sr)
+                  print(f"  {cid:16s} {'○' if good else '×'} {why}")
+                  if good:
+                      save(trim(w, sr), sr, f"{cid}__m_speecht5"); okn += 1
+              if okn >= len(PICK)//2:
+                  made["antoniow12/speecht5_tts_mongolian"] = {"tag":"speecht5","license":"mit",
+                     "chain":"microsoft/speecht5_tts (MIT) + Common Voice 17 (CC0)"}
+                  print(f"  → {okn}/{len(PICK)} 本当に音になった")
+              else:
+                  print(f"  → {okn}/{len(PICK)} しか音にならない。候補から外す")
+          except Exception as e:
+              print("  作れない:", type(e).__name__, str(e)[:200])
+
+          # --- 2. さきほど「作れた」と書いてしまったものを、検査し直す
+          print()
+          print("=== Dorjzodovsuren/MongolianTTS_elevenlabs_v6 を検査し直す ===")
+          print("  カードに ElevenLabs 由来の合成データで学習したと書いてある。")
+          print("  **権利の鎖が上流で切れているので、音の良し悪しに関係なく使わない。**")
+          try:
+              from transformers import VitsModel, AutoTokenizer
+              MID = "Dorjzodovsuren/MongolianTTS_elevenlabs_v6"
+              tok = AutoTokenizer.from_pretrained(MID)
+              mm = VitsModel.from_pretrained(MID); mm.eval()
+              sr = mm.config.sampling_rate
+              t = texts["n_car"]["mn"]
+              torch.manual_seed(1)
+              with torch.no_grad():
+                  w = mm(**tok(t, return_tensors="pt")).waveform[0].cpu().numpy()
+              good, why = valid(w, sr)
+              print(f"  音として成り立っているか: {'○' if good else '×'} {why}")
+          except Exception as e:
+              print("  ", type(e).__name__, str(e)[:160])
+
           json.dump(made, open("ab-out/models.json","w"), ensure_ascii=False, indent=1)
           print()
-          print("**どのモデルが良いかは決めない。権利と、音を作れるかだけ確かめた。**")
+          print("**どのモデルが良いかは決めない。権利と、本当に音になるかだけ確かめた。**")
           PY
 
       - name: 結果を置く
