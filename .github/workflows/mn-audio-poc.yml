@@ -197,10 +197,89 @@ jobs:
           print("**どのモデルが良いかは決めない。権利と、本当に音になるかだけ確かめた。**")
           PY
 
+      - name: 字を落としている21件を、いまの音と寄せた音の両方で作る
+        run: |
+          mkdir -p ab-out
+          python3 - <<'PY' 2>&1 | tee -a models.txt
+          import json, numpy as np, torch, wave, subprocess, os
+          from transformers import VitsModel, AutoTokenizer
+
+          # **本番と同じ作り方に揃える。**違う作り方で比べたら、
+          # 何を比べているのか分からなくなる。
+          # (mongolian-90/audio/synth-workflow.yml と同じ: 速さ0.85 / 山を0.85に揃える /
+          #  静かな末尾を切り落とさない)
+          RATE = 0.85
+          CMAP = {"\u04e9": "\u0473", "\u0448": "\u0449"}
+          texts = json.load(open("mn-texts.json", encoding="utf-8"))
+          target = sorted(c for c, e in texts.items()
+                          if any(ch in e["mn"] for ch in CMAP))
+          print(f"字が落ちている教材: {len(target)}件")
+
+          tok = AutoTokenizer.from_pretrained("facebook/mms-tts-mon")
+          m = VitsModel.from_pretrained("facebook/mms-tts-mon"); m.eval()
+          m.speaking_rate = RATE
+          sr = m.config.sampling_rate
+
+          def synth(text, seed):
+              torch.manual_seed(seed)
+              with torch.no_grad():
+                  w = m(**tok(text, return_tensors="pt")).waveform.squeeze().numpy()
+              peak = float(np.max(np.abs(w))) or 1.0
+              w = w / peak * 0.85
+              nz = np.where(np.abs(w) > 0.003)[0]
+              if len(nz):
+                  w = w[max(0, nz[0]-int(sr*0.06)):min(len(w), nz[-1]+int(sr*0.18))]
+              return w
+
+          def valid(w):
+              if w is None or len(w) == 0: return False, "空"
+              if not np.all(np.isfinite(w)): return False, "NaN が混ざっている"
+              sec = len(w)/sr
+              if sec < 0.15: return False, f"短すぎる ({sec:.2f}秒)"
+              rms = float(np.sqrt(np.mean(w**2)))
+              if rms < 0.005: return False, f"ほぼ無音 (rms {rms:.4f})"
+              if float(np.max(np.abs(w))) > 1.5: return False, "振り切れている"
+              return True, f"{sec:.2f}秒"
+
+          def save(w, n):
+              raw = f"ab-out/{n}.wav"
+              with wave.open(raw, "w") as f:
+                  f.setnchannels(1); f.setsampwidth(2); f.setframerate(sr)
+                  f.writeframes((np.clip(w, -1, 1)*32767).astype("<i2").tobytes())
+              subprocess.run(["ffmpeg","-y","-loglevel","error","-i",raw,"-codec:a",
+                              "libmp3lame","-b:a","48k","-ac","1","-ar","24000",
+                              f"ab-out/{n}.mp3"], check=True)
+              os.remove(raw)
+
+          made = 0
+          for i, cid in enumerate(target):
+              t0 = texts[cid]["mn"]
+              t1 = t0
+              for a, b in CMAP.items(): t1 = t1.replace(a, b)
+              # **種を揃える。**乱数の当たり外れではなく、字の違いだけを比べたいので
+              seed = 4200 + i
+              w0, w1 = synth(t0, seed), synth(t1, seed)
+              g0, why0 = valid(w0); g1, why1 = valid(w1)
+              print(f"  {cid:18s} いま {'○' if g0 else '×'} {why0:14s} "
+                    f"寄せた {'○' if g1 else '×'} {why1}")
+              # **片方でも音として成り立っていなければ、組にしない。**
+              # 壊れた音と比べたら、寄せたほうが良く聞こえるに決まっている
+              if g0 and g1:
+                  save(w0, f"{cid}__v1_now"); save(w1, f"{cid}__v6_charmap"); made += 1
+          print(f"聞き比べに出せる組: {made}/{len(target)}")
+          print("**どちらが正しい読みかは、ここでは決めない。話者に聞く。**")
+          PY
+
       - name: 結果を置く
         run: |
           git config user.name "mn90-audio-bot"
           git config user.email "noreply@github.com"
+          git fetch -q origin audio-ab || true
+          # **前の run で置いた音を消さない。**force push で毎回消えていた。
+          # 今あるものを優先し (cp -n)、無いものだけ前回のを足す
+          tmp=$(mktemp -d)
+          git archive origin/audio-ab ab-out 2>/dev/null | tar -x -C "$tmp" 2>/dev/null || true
+          [ -d "$tmp/ab-out" ] && cp -n "$tmp"/ab-out/* ab-out/ 2>/dev/null || true
           git checkout -B audio-ab
           for f in ab-out models.txt; do [ -e "$f" ] && git add -f "$f"; done
           git commit -q -m "設定違いの比較音源と、モデルの中身の記録" || echo "変更なし"
