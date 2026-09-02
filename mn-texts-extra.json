@@ -62,5 +62,17 @@
  "d_res_water_please": {
   "mn": "Ус өгнө үү",
   "rev": 1
+ },
+ "d_shop_welcome": {
+  "mn": "Тавтай морилно уу",
+  "rev": 1
+ },
+ "d_shop_here_you_are": {
+  "mn": "Энэ байна",
+  "rev": 1
+ },
+ "d_shop_come_again": {
+  "mn": "Дахин ирээрэй",
+  "rev": 1
  }
 }
