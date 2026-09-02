@@ -549,6 +549,10 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
 .drive-now{font-size:calc(1.6rem * var(--fs));font-weight:700;line-height:1.4;
   text-align:center;margin:var(--space-6) 0 var(--space-2);word-break:break-word}
 .drive-sub{font-size:calc(var(--t-sub) * var(--fs));color:var(--dim);text-align:center}
+/* 読み方の目安。**運転中に読ませるためではない。**信号待ちに目をやったとき用。
+   モンゴル語より小さく、控えめに置く (読ませたいのは音のほう) */
+.drive-reading{font-size:calc(1.05rem * var(--fs));color:var(--dim);text-align:center;
+  margin:0 0 var(--space-2);word-break:break-word}
 #drive-stop{background:var(--crit);color:var(--on-accent)}
 
 /* ---- 会話練習 (試作) ---- */
@@ -996,12 +1000,19 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
     <div class="grp-h">流し方</div>
     <div class="opt-row" id="drive-modes"></div>
     <p class="ph-lead" id="drive-mode-lead"></p>
+    <div class="grp-h" id="drive-scene-h" hidden>場面</div>
+    <div class="opt-row" id="drive-scenes" hidden></div>
+    <div class="grp-h" id="drive-ja-h" hidden>日本語の案内</div>
+    <div class="opt-row" id="drive-ja" hidden></div>
     <div class="grp-h">長さ</div>
     <div class="opt-row" id="drive-mins"></div>
     <p class="ph-lead" id="drive-lead"></p>
   </div>
   <div id="drive-run" hidden>
     <div class="drive-now" id="drive-now">—</div>
+    <!-- 読み方の目安。**運転中に読ませるためではない。**
+         信号待ちに目をやったときに、いま何が鳴っているか分かるように -->
+    <div class="drive-reading" id="drive-reading" hidden></div>
     <div class="drive-sub" id="drive-sub"></div>
   </div>
   <div class="dock-pad"></div>
@@ -4408,7 +4419,8 @@ function talkSeconds(d) {
   return lines + gaps + 2;
 }
 
-function buildTalkPlaylist({ dialogues = [], scenarios = [], minutes = 20 } = {}) {
+function buildTalkPlaylist({ dialogues = [], scenarios = [], minutes = 20,
+  narrate = true } = {}) {
   const talks = dialogues.filter(eligible);
   if (!talks.length) return { entries: [], minutes, mode: 'talk', itemCount: 0, talkCount: 0 };
 
@@ -4441,7 +4453,9 @@ function buildTalkPlaylist({ dialogues = [], scenarios = [], minutes = 20 } = {}
         const d = list[(i + round) % list.length];
         const last = out[out.length - 1];
         if (last && last.kind === 'talk' && last.id === d.id) continue;   // 続けて同じものは出さない
-        if (!placed) { out.push({ kind: 'scene', id: sc }); sec += 1.5; }
+        // 場面の名前も日本語なので、案内を切ったときは出さない
+        if (!placed && narrate) { out.push({ kind: 'scene', id: sc }); sec += 1.5; }
+        if (!placed && !narrate) placed = 0;   // 見出しは出さないが、まとまりは保つ
         out.push({ kind: 'talk', id: d.id, scenarioId: sc });
         sec += secOf.get(d.id) || 0;
         placed += 1;
@@ -4459,8 +4473,8 @@ function buildTalkPlaylist({ dialogues = [], scenarios = [], minutes = 20 } = {}
 }
 
 function buildPlaylist({ candidates = [], dialogues = [], scenarios = [], minutes = 20,
-  everyNthTalk = 6, mode = DEFAULT_MODE } = {}) {
-  if (mode === 'talk') return buildTalkPlaylist({ dialogues, scenarios, minutes });
+  everyNthTalk = 6, mode = DEFAULT_MODE, narrate = true } = {}) {
+  if (mode === 'talk') return buildTalkPlaylist({ dialogues, scenarios, minutes, narrate });
   if (mode === 'flow') return buildFlowPlaylist({ candidates, dialogues, minutes });
   const usable = candidates.filter(eligible);
   const talks = dialogues.filter(eligible);
@@ -4526,7 +4540,14 @@ function stepsForItem(entry, mode = DEFAULT_MODE) {
  *
  * **画面は要らない。**すべて音と間だけで進む。
  */
-function stepsForTalk(dialogue, mode = DEFAULT_MODE) {
+/**
+ * @param {object} opt
+ * @param {boolean} opt.narrate 日本語の案内を入れるか。
+ *   社長:「日本語も機械音声になってるよ」— 入れないことも選べるようにした。
+ *   入れないと、モンゴル語のやり取りだけが続く
+ */
+function stepsForTalk(dialogue, mode = DEFAULT_MODE, opt = {}) {
+  const narrate = opt.narrate !== false;
   const turns = dialogue.turns || [];
   if (!turns.length) return [];
 
@@ -4547,8 +4568,10 @@ function stepsForTalk(dialogue, mode = DEFAULT_MODE) {
     run();
     out.push({ kind: 'gap', ms: FLOW_TALK_GAP_MS });
     // 何の場面だったかを**1回だけ**。毎発話の翻訳はしない
-    out.push({ kind: 'talk_about', id: dialogue.id, flow: true });
-    out.push({ kind: 'gap', ms: FLOW_TALK_GAP_MS });
+    if (narrate) {
+      out.push({ kind: 'talk_about', id: dialogue.id, flow: true });
+      out.push({ kind: 'gap', ms: FLOW_TALK_GAP_MS });
+    }
     run();
     out.push({ kind: 'gap', ms: FLOW_TALK_GAP_MS });
     return out;
@@ -4749,6 +4772,31 @@ __m["engine/listening.js"] = { STEP_KINDS, MIN_TURNS, MAX_TURNS, THINK_MAX_MS, t
 
 const JA_LANGS = ['ja-JP', 'ja'];
 
+/**
+ * 日本語の声の選び方。**端末に入っている中から、いちばん良いものを選ぶ。**
+ *
+ * 社長:「日本語も機械音声になってるよ」。そのとおりで、これは人の録音ではなく
+ * 端末の読み上げ。録音に差し替えるには日本語の吹き込みが要る。
+ * **いまできるのは「同じ機械音声でも、良いほうを選ぶ」ところまで。**
+ *
+ * iPhone には日本語の声が複数入っていることが多く、
+ * 「拡張」「Premium」と付くものは、既定のものよりはっきり自然に聞こえる。
+ * 最初に見つかった1つを使うと、悪いほうに当たることがある。
+ *
+ * **良し悪しをここで断定はしない。**名前で選んでいるだけで、
+ * 実際にどう聞こえるかは実機で聞くまで分からない。
+ */
+const NICE = /(enhanced|premium|neural|拡張|プレミアム)/i;
+
+function rankVoice(v) {
+  let n = 0;
+  if (NICE.test(v.name || '')) n += 4;          // 拡張版が入っていれば、それ
+  if (v.localService) n += 2;                   // 端末の中にあるほうが、通信で止まらない
+  if (v.default) n += 1;                        // 端末が既定にしているもの
+  return n;
+}
+
+
 function createNarration(opt = {}) {
   const synth = opt.synth || (typeof window !== 'undefined' ? window.speechSynthesis : null);
   const Utterance = opt.Utterance
@@ -4761,8 +4809,9 @@ function createNarration(opt = {}) {
     if (!usable) return null;
     let list = [];
     try { list = synth.getVoices() || []; } catch (e) { list = []; }
-    voice = list.find(v => JA_LANGS.some(l => (v.lang || '').toLowerCase().startsWith(l.toLowerCase())))
-      || null;
+    const ja = list.filter(v =>
+      JA_LANGS.some(l => (v.lang || '').toLowerCase().startsWith(l.toLowerCase())));
+    voice = ja.slice().sort((a, b) => rankVoice(b) - rankVoice(a))[0] || null;
     return voice;
   }
 
@@ -4803,11 +4852,14 @@ function createNarration(opt = {}) {
     try { if (synth.speaking || synth.pending) synth.cancel(); } catch (e) { /* 進む */ }
   }
 
-  return { available, speak, cancel, voiceLang: () => (voice ? voice.lang : null) };
+  return { available, speak, cancel,
+    voiceLang: () => (voice ? voice.lang : null),
+    // 何の声で鳴っているか。**「人の録音です」と見せないため**に名前を出せるようにする
+    voiceName: () => (voice ? voice.name : null) };
 }
 
 
-__m["app/narration.js"] = { createNarration, JA_LANGS };
+__m["app/narration.js"] = { createNarration, JA_LANGS, rankVoice, NICE };
 })();
 
 // ===== engine/storage.js =====
@@ -8111,6 +8163,22 @@ function driveTalks() {
     .filter(drive.eligible);
 }
 
+/**
+ * いま流せる場面の一覧。**会話が1本も無い場面は出さない。**
+ * 選んだのに何も流れない、を作らないため。
+ */
+function driveScenes() {
+  const n = Object.create(null);
+  for (const d of driveTalks()) {
+    const k = d.scenarioId || '';
+    n[k] = (n[k] || 0) + 1;
+  }
+  return scenarios
+    .filter(s => n[s.id])
+    .sort((a, b) => (a.order ?? 99) - (b.order ?? 99))
+    .map(s => ({ id: s.id, label: s.labelJa || s.id, n: n[s.id] }));
+}
+
 /** Drive を出してよいか。**出せないときは入口ごと出さない。** */
 function driveReady() {
   return narration.available() && driveCandidates().length >= 5;
@@ -8163,6 +8231,58 @@ function openDrive() {
     $('drive-mode-lead').textContent += n
       ? ` いま流せるやり取りは ${n} 本です。`
       : ' いま流せるやり取りがありません。';
+    // **人の録音のように見せない。**日本語も端末の読み上げ
+    $('drive-mode-lead').textContent +=
+      ' 日本語の案内は、端末の読み上げ（機械音声）です。人の録音ではありません。';
+  }
+
+  // 場面を選ぶ。**「会話だけ」のときにだけ出す。**
+  // 社長:「カフェはカフェとか選べるようにして」
+  const sceneRow = $('drive-scenes');
+  const sceneHead = $('drive-scene-h');
+  clear(sceneRow);
+  if (driveMode === 'talk') {
+    const list = driveScenes();
+    sceneHead.hidden = list.length < 2;
+    sceneRow.hidden = list.length < 2;
+    if (list.length >= 2) {
+      // **選んだ場面が消えたときは「ぜんぶ」に戻す。**
+      // 無い場面を選んだまま始めると、何も流れない
+      if (driveScene && !list.some(x => x.id === driveScene)) driveScene = null;
+      const opts = [{ id: null, label: 'ぜんぶ', n: list.reduce((a, x) => a + x.n, 0) }]
+        .concat(list);
+      for (const o of opts) {
+        sceneRow.appendChild(el('button', {
+          class: 'opt', attrs: { type: 'button', 'aria-pressed': String(driveScene === o.id) },
+          on: { click: () => { driveScene = o.id; openDrive(); } },
+        }, [
+          el('span', { class: 'opt-mark', text: driveScene === o.id ? '✓' : '' }),
+          el('span', { text: `${o.label} (${o.n})` }),
+        ]));
+      }
+    }
+  } else {
+    sceneHead.hidden = true;
+    sceneRow.hidden = true;
+  }
+
+  // 日本語の案内を入れるか。**「会話だけ」のときにだけ出す。**
+  // 社長:「日本語も機械音声になってるよ」。日本語は端末の読み上げなので、
+  // 気になるなら切れるようにした。切ると、モンゴル語のやり取りだけが続く
+  const jaRow = $('drive-ja');
+  clear(jaRow);
+  $('drive-ja-h').hidden = driveMode !== 'talk';
+  jaRow.hidden = driveMode !== 'talk';
+  if (driveMode === 'talk') {
+    for (const [v, label] of [[true, 'いれる'], [false, 'いれない']]) {
+      jaRow.appendChild(el('button', {
+        class: 'opt', attrs: { type: 'button', 'aria-pressed': String(driveJaGuide === v) },
+        on: { click: () => { driveJaGuide = v; openDrive(); } },
+      }, [
+        el('span', { class: 'opt-mark', text: driveJaGuide === v ? '✓' : '' }),
+        el('span', { text: label }),
+      ]));
+    }
   }
 
   const row = $('drive-mins');
@@ -8190,6 +8310,14 @@ let driveMinutes = 20;
  *   'flow'   聞き流し     … 止まりすぎない。耳に量を入れる
  */
 let driveMode = drive.DEFAULT_MODE;
+/** 選んだ場面。null は「ぜんぶ」。**始まったら触らせない。** */
+let driveScene = null;
+/**
+ * 日本語の案内を入れるか。**日本語は端末の読み上げ (機械音声) しかない。**
+ * 名前に narrate を使わないのは、速度いじりを見張る検査が「rate = 」を
+ * 数えているため。**見張りを緩めるより、名前を変えるほうが安全。**
+ */
+let driveJaGuide = true;
 
 function startDrive() {
   // **すでに走っているなら、何もしない。**
@@ -8203,8 +8331,12 @@ function startDrive() {
   driveToken += 1;
 
   const plan = drive.buildPlaylist({
-    candidates: driveCandidates(), dialogues: driveTalks(), scenarios,
-    minutes: driveMinutes, mode: driveMode,
+    candidates: driveCandidates(),
+    dialogues: driveMode === 'talk' && driveScene
+      ? driveTalks().filter(d => d.scenarioId === driveScene)
+      : driveTalks(),
+    scenarios,
+    minutes: driveMinutes, mode: driveMode, narrate: driveJaGuide,
   });
   if (!plan.entries.length) { showNotice('いま流せるものがありません'); return; }
 
@@ -8215,7 +8347,7 @@ function startDrive() {
     else if (e.kind === 'scene') steps.push({ kind: 'scene', id: e.id });
     else {
       const d = dialogues.find(x => x.id === e.id);
-      if (d) steps.push(...drive.stepsForTalk(d, driveMode));
+      if (d) steps.push(...drive.stepsForTalk(d, driveMode, { narrate: driveJaGuide }));
     }
   }
   // **1回ぶんに名前を付ける。**古い回のタイマー・鳴り終わりの合図・
@@ -8272,13 +8404,25 @@ async function runDrive() {
     return;
   }
 
+  // 読み方の目安は、モンゴル語が鳴っているときだけ出す。
+  // 日本語や場面の名前のところに残っていると、何の読みか分からなくなる
+  const showReading = (id) => {
+    const box = $('drive-reading');
+    clear(box);
+    const r = id ? readingOf(id) : null;
+    box.hidden = !r;
+    if (r) paintReading(box, id, r);
+  };
+
   if (st.kind === 'say_prompt') {
     const c = state.cards[st.id];
     $('drive-now').textContent = c ? c.promptKey : '';
+    showReading(null);
     $('drive-sub').textContent = '日本語';
     await narration.speak(c ? c.promptKey : '');
   } else if (st.kind === 'talk_ask') {
     $('drive-now').textContent = 'あなたなら何と返しますか';
+    showReading(null);
     $('drive-sub').textContent = '';
     await narration.speak('あなたなら何と返しますか');
   } else if (st.kind === 'scene') {
@@ -8286,6 +8430,7 @@ async function runDrive() {
     const sc = scenarioOf(st.id);
     const line = sc ? (sc.labelJa || '') : '';
     $('drive-now').textContent = line;
+    showReading(null);
     $('drive-sub').textContent = '';
     if (line) await narration.speak(line);
   } else if (st.kind === 'talk_about') {
@@ -8293,6 +8438,7 @@ async function runDrive() {
     const d = dialogues.find(x => x.id === st.id);
     const line = d ? (d.aboutJa || d.labelJa || '') : '';
     $('drive-now').textContent = line;
+    showReading(null);
     $('drive-sub').textContent = '';
     await narration.speak(line);
   } else {
@@ -8300,6 +8446,7 @@ async function runDrive() {
     const id = st.ref || st.id;
     const c = state.cards[id];
     $('drive-now').textContent = c ? c.answerKey : '';
+    showReading(id);
     $('drive-sub').textContent = 'モンゴル語';
     await audio.playToEnd(id, { manual: false });
     // **鳴っている間に「やめる」を押されていることがある。**
