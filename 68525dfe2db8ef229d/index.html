@@ -993,6 +993,9 @@ button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
   <div class="head"><span class="brand" id="drive-title">ドライブ学習</span></div>
   <p class="drive-warn" id="drive-warn"></p>
   <div id="drive-setup">
+    <div class="grp-h">流し方</div>
+    <div class="opt-row" id="drive-modes"></div>
+    <p class="ph-lead" id="drive-mode-lead"></p>
     <div class="grp-h">長さ</div>
     <div class="opt-row" id="drive-mins"></div>
     <p class="ph-lead" id="drive-lead"></p>
@@ -2990,6 +2993,9 @@ const EVENTS = [
   'audio_cancelled',     // こちらから止めた (やめる・次へ・連打)
   'audio_failed',        // 鳴らせなかった
   'audio_timeout',       // 鳴り終わりの合図が来なかった
+  // --- どちらのテンポで流したか。**回数だけ**
+  'drive_recall',        // しっかり練習
+  'drive_flow',          // 聞き流し
 ];
 
 const MAX_DAYS = 60;          // 保持する日数。個人βの見直しに足りる範囲
@@ -4194,6 +4200,9 @@ const STEP_KINDS = [
   'talk_gap',       // 会話の切れ目 (無音)
   'talk_ask',       // 「あなたなら何と返しますか」
   'talk_model',     // 返し方の例を聞く
+  // --- 聞き流し (flow) で使うもの
+  'gap',            // ごく短い間 (無音)。**考えるための時間ではない**
+  'talk_about',     // その会話が何の場面だったかを1回だけ
 ];
 
 /**
@@ -4212,6 +4221,61 @@ function thinkMs(text) {
   const n = (text || '').length;
   return Math.min(THINK_MAX_MS, THINK_BASE_MS + n * THINK_PER_CHAR_MS);
 }
+
+/**
+ * ================= 2つのテンポ =================
+ *
+ * **同じ Drive の中に、目的の違う2つの流し方がある。**
+ * 一緒くたに速くすると、思い出す練習まで壊れる。
+ *
+ *   'recall' しっかり練習
+ *     日本語 → **黙って思い出す** → モンゴル語 → もう一度言う
+ *     思い出す時間が要る。**ここは速くしない。**
+ *
+ *   'flow'  聞き流し
+ *     日本語 → ごく短い間 → モンゴル語 → ごく短い間 → 次
+ *     考え込ませない。止まりすぎない。**耳に量を入れることを優先する。**
+ *     1本の音声番組のように続く感じを狙う。
+ *
+ * 速くするのは**間と説明だけ**で、モンゴル語の音そのものは
+ * 1倍速のまま触らない (不自然に速い音を覚えても現地で通じない)。
+ */
+const MODES = ['recall', 'flow'];
+const DEFAULT_MODE = 'recall';
+
+/**
+ * 聞き流しの間 (ミリ秒)。
+ *
+ * **短文なのに長く止まらないこと**が要点。文の長さに合わせて伸ばすが、
+ * 上限を低く抑える。数字は UX を見ながら動かす前提の目安。
+ *
+ *   日本語 → モンゴル語   0.4〜1.0 秒
+ *   モンゴル語 → 次       0.6〜1.3 秒
+ */
+const FLOW_AFTER_JA_MIN_MS = 400;
+const FLOW_AFTER_JA_MAX_MS = 1000;
+const FLOW_AFTER_MN_MIN_MS = 600;
+const FLOW_AFTER_MN_MAX_MS = 1300;
+const FLOW_PER_CHAR_MS = 22;
+
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+/** 日本語のあとの間。長い文ほど少しだけ長く。 */
+function flowAfterJaMs(text) {
+  return Math.round(clamp(FLOW_AFTER_JA_MIN_MS + (text || '').length * FLOW_PER_CHAR_MS,
+    FLOW_AFTER_JA_MIN_MS, FLOW_AFTER_JA_MAX_MS));
+}
+
+/** モンゴル語のあと、次へ移るまでの間。切れ目が耳で分かる程度に置く。 */
+function flowAfterMnMs(text) {
+  return Math.round(clamp(FLOW_AFTER_MN_MIN_MS + (text || '').length * FLOW_PER_CHAR_MS,
+    FLOW_AFTER_MN_MIN_MS, FLOW_AFTER_MN_MAX_MS));
+}
+
+/** 会話の発話と発話のあいだ。**会話は会話として続ける。** */
+const FLOW_TURN_GAP_MS = 420;
+/** 会話1本を聞き終えてから、意味を出すまで。 */
+const FLOW_TALK_GAP_MS = 900;
 
 /**
  * Drive に入れてよい項目か。**音の関門はここ1か所。**
@@ -4233,7 +4297,73 @@ function eligible(item) {
  * @param {object[]} opt.dialogues  { id, tier, turns }
  * @param {number}   opt.minutes    予定の長さ (null なら上限なし)
  */
-function buildPlaylist({ candidates = [], dialogues = [], minutes = 20, everyNthTalk = 6 } = {}) {
+/**
+ * 聞き流しの並び。
+ *
+ * **単文を大量に並べない。**4〜6語 → 短い会話 → 4〜6語 → 別の会話、と混ぜる。
+ * 耳で流れを追えるよう、**近い内容をある程度まとめる** (毎回でたらめにしない)。
+ *
+ * 大事な表現は、セッションの中でもう一度出てよい。ただし
+ * **同じものを続けて出さない。**数分ぶん離れてから出す。
+ * これは覚え具合とは無関係で、耳に触れる回数を増やすだけ。
+ */
+const FLOW_GROUP_MIN = 4;
+const FLOW_GROUP_MAX = 6;
+/** 同じ表現をもう一度出すまでに、最低これだけ他のものを挟む */
+const FLOW_REPEAT_GAP = 24;
+
+function buildFlowPlaylist({ candidates = [], dialogues = [], minutes = 20 } = {}) {
+  const usable = candidates.filter(eligible);
+  const talks = dialogues.filter(eligible);
+  // 近い内容をまとめる。弱かったもの・期日が来ているものを前に置く
+  const score = c => (c.weak ? 0 : c.due ? 1 : 2);
+  const ordered = usable
+    .map((c, i) => ({ ...c, i }))
+    .sort((a, b) => score(a) - score(b) || (a.rank ?? 0) - (b.rank ?? 0) || a.i - b.i);
+
+  // **先に「流す順」を決めてから、まとまりに切る。**
+  // 出来上がった並びへあとから差し込むと、差し込んだ場所でまとまりが
+  // 膨らんで、単文が延々続く形になる (2026-09-02、実際に13件続いた)。
+  const seq = [];
+  // もう一度出すもの: 弱かったもの・期日が来ているものだけ
+  const pending = ordered.filter(c => c.weak || c.due)
+    .map(c => ({ c, at: -1 }));
+  for (const c of ordered) {
+    seq.push(c);
+    const p = pending.find(x => x.c.id === c.id);
+    if (p) p.at = seq.length - 1;
+    // **十分に離れたものを、ここで1つだけ戻す。**
+    // 続けて出さないよう、直前と同じものは置かない
+    const ready = pending.find(x => x.at >= 0 && !x.done
+      && seq.length - x.at >= FLOW_REPEAT_GAP && x.c.id !== seq[seq.length - 1].id);
+    if (ready) { ready.done = true; seq.push({ ...ready.c, again: true }); }
+  }
+
+  const out = [];
+  let talkAt = 0;
+  let gi = 0;
+  for (let i = 0; i < seq.length;) {
+    // 4〜6語ずつ。**決めうちの1つの数にしない**と、切れ目が単調に感じる
+    const size = FLOW_GROUP_MIN + (gi % (FLOW_GROUP_MAX - FLOW_GROUP_MIN + 1));
+    for (let k = 0; k < size && i < seq.length; k++, i++) {
+      const c = seq[i];
+      out.push({ kind: 'item', id: c.id, text: c.text || '', prompt: c.prompt || '',
+        ...(c.again ? { again: true } : {}) });
+    }
+    gi += 1;
+    if (talks.length) {
+      out.push({ kind: 'talk', id: talks[talkAt % talks.length].id });
+      talkAt += 1;
+    }
+  }
+
+  return { entries: out, minutes, mode: 'flow',
+    itemCount: ordered.length, talkCount: talks.length };
+}
+
+function buildPlaylist({ candidates = [], dialogues = [], minutes = 20, everyNthTalk = 6,
+  mode = DEFAULT_MODE } = {}) {
+  if (mode === 'flow') return buildFlowPlaylist({ candidates, dialogues, minutes });
   const usable = candidates.filter(eligible);
   const talks = dialogues.filter(eligible);
 
@@ -4256,14 +4386,30 @@ function buildPlaylist({ candidates = [], dialogues = [], minutes = 20, everyNth
   if (talks.length && !out.some(x => x.kind === 'talk')) {
     out.push({ kind: 'talk', id: talks[0].id });
   }
-  return { entries: out, minutes, itemCount: ordered.length, talkCount: talks.length };
+  return { entries: out, minutes, mode: 'recall',
+    itemCount: ordered.length, talkCount: talks.length };
 }
 
 /**
  * 1項目ぶんの手順に開く。
- * 日本語を聞く → 思い出す → モンゴル語を聞く → もう一度言う。
+ *
+ *   recall (しっかり練習)
+ *     日本語を聞く → **思い出す** → モンゴル語を聞く → もう一度言う
+ *
+ *   flow (聞き流し)
+ *     日本語を聞く → ごく短い間 → モンゴル語を聞く → ごく短い間 → 次
+ *     **「もう一度言う」番を置かない。**置くと、そこで流れが止まる。
+ *     言いたければ次の間で言える。強いない。
  */
-function stepsForItem(entry) {
+function stepsForItem(entry, mode = DEFAULT_MODE) {
+  if (mode === 'flow') {
+    return [
+      { kind: 'say_prompt', id: entry.id, side: 'prompt', flow: true },
+      { kind: 'gap', ms: flowAfterJaMs(entry.prompt) },
+      { kind: 'say_answer', id: entry.id, side: 'answer', flow: true },
+      { kind: 'gap', ms: flowAfterMnMs(entry.text) },
+    ];
+  }
   const think = thinkMs(entry.text);
   return [
     { kind: 'say_prompt', id: entry.id, side: 'prompt' },
@@ -4282,9 +4428,34 @@ function stepsForItem(entry) {
  *
  * **画面は要らない。**すべて音と間だけで進む。
  */
-function stepsForTalk(dialogue) {
+function stepsForTalk(dialogue, mode = DEFAULT_MODE) {
   const turns = dialogue.turns || [];
   if (!turns.length) return [];
+
+  if (mode === 'flow') {
+    // **会話は会話として続ける。**発話と発話のあいだに説明を挟まない。
+    //   通しで聞く → 短い間 → 短い意味の確認を1回 → 短い間 → もう一度通し
+    // 1発話ごとに訳したり「次です」と言ったりしない。
+    // それをすると、会話ではなく問題集になる
+    const out = [];
+    const run = () => {
+      turns.forEach((t, i) => {
+        out.push({ kind: 'talk_line', id: dialogue.id, n: t.n, ref: t.ref,
+          speaker: t.speaker, flow: true });
+        // 最後の発話のあとは、まとまりの間で受けるので置かない
+        if (i < turns.length - 1) out.push({ kind: 'gap', ms: FLOW_TURN_GAP_MS });
+      });
+    };
+    run();
+    out.push({ kind: 'gap', ms: FLOW_TALK_GAP_MS });
+    // 何の場面だったかを**1回だけ**。毎発話の翻訳はしない
+    out.push({ kind: 'talk_about', id: dialogue.id, flow: true });
+    out.push({ kind: 'gap', ms: FLOW_TALK_GAP_MS });
+    run();
+    out.push({ kind: 'gap', ms: FLOW_TALK_GAP_MS });
+    return out;
+  }
+
   const steps = [];
   const play = () => {
     for (const t of turns) {
@@ -4331,7 +4502,7 @@ function isAllowedEvent(name) { return ALLOWED_EVENTS.includes(name); }
 function affectsSrs() { return false; }
 
 
-__m["engine/drive.js"] = { DURATIONS, STEP_KINDS, ALLOWED_EVENTS, THINK_BASE_MS, THINK_PER_CHAR_MS, THINK_MAX_MS, REPEAT_RATIO, thinkMs, eligible, buildPlaylist, stepsForItem, stepsForTalk, isAllowedEvent, affectsSrs };
+__m["engine/drive.js"] = { DURATIONS, STEP_KINDS, ALLOWED_EVENTS, MODES, DEFAULT_MODE, THINK_BASE_MS, THINK_PER_CHAR_MS, THINK_MAX_MS, REPEAT_RATIO, FLOW_AFTER_JA_MIN_MS, FLOW_AFTER_JA_MAX_MS, FLOW_AFTER_MN_MIN_MS, FLOW_AFTER_MN_MAX_MS, FLOW_TURN_GAP_MS, FLOW_TALK_GAP_MS, FLOW_GROUP_MIN, FLOW_GROUP_MAX, FLOW_REPEAT_GAP, flowAfterJaMs, flowAfterMnMs, thinkMs, eligible, buildPlaylist, stepsForItem, stepsForTalk, isAllowedEvent, affectsSrs };
 })();
 
 // ===== engine/listening.js =====
@@ -7856,14 +8027,31 @@ function openDrive() {
   $('drive-warn').textContent =
     '運転を始める前に「はじめる」を押してください。運転中は画面を操作しないでください。';
   $('drive-lead').textContent =
-    '日本語が流れます。少し間があくので、その間にモンゴル語を声に出してください。'
-    + 'そのあとモンゴル語が流れるので、もう一度言ってください。'
-    + 'ときどき会話も挟まります。覚え具合や連続日数には影響しません。'
+    'ときどき会話も挟まります。覚え具合や連続日数には影響しません。'
     // **確かめていないことを、確かめたように書かない。**
     // 画面を消したあとの音の扱いは iOS 側の話で、実機でしか分からない
     + ' iPhone の実機ではまだ確かめていません。'
     + '画面を消したあとや、他のアプリに切り替えたあとに音が止まることがあります。'
     + '最初は停車中に一度試してください。';
+  // **流し方は2つだけ。**設定を増やさない。押す場所が増えるほど、
+  // 出発前に画面を見る時間が延びる
+  const modes = $('drive-modes');
+  clear(modes);
+  for (const [key, label] of [['recall', 'しっかり練習'], ['flow', '聞き流し']]) {
+    modes.appendChild(el('button', {
+      class: 'opt', attrs: { type: 'button', 'aria-pressed': String(driveMode === key) },
+      on: { click: () => { driveMode = key; openDrive(); } },
+    }, [
+      el('span', { class: 'opt-mark', text: driveMode === key ? '✓' : '' }),
+      el('span', { text: label }),
+    ]));
+  }
+  $('drive-mode-lead').textContent = driveMode === 'flow'
+    ? '日本語のあとにモンゴル語が流れます。間は短めです。'
+      + '言えそうなら声に出してください。言えなくても、そのまま次へ進みます。'
+    : '日本語のあと、思い出すための間があきます。'
+      + 'その間にモンゴル語を声に出してください。そのあと答えが流れます。';
+
   const row = $('drive-mins');
   clear(row);
   for (const m of drive.DURATIONS) {
@@ -7883,6 +8071,12 @@ function openDrive() {
 }
 
 let driveMinutes = 20;
+/**
+ * どちらのテンポで流すか。**目的が違うので、速さを1つにまとめない。**
+ *   'recall' しっかり練習 … 思い出す時間が要る。ここは速くしない
+ *   'flow'   聞き流し     … 止まりすぎない。耳に量を入れる
+ */
+let driveMode = drive.DEFAULT_MODE;
 
 function startDrive() {
   // **すでに走っているなら、何もしない。**
@@ -7897,15 +8091,16 @@ function startDrive() {
 
   const plan = drive.buildPlaylist({
     candidates: driveCandidates(), dialogues: driveTalks(), minutes: driveMinutes,
+    mode: driveMode,
   });
   if (!plan.entries.length) { showNotice('いま流せるものがありません'); return; }
 
   const steps = [];
   for (const e of plan.entries) {
-    if (e.kind === 'item') steps.push(...drive.stepsForItem(e));
+    if (e.kind === 'item') steps.push(...drive.stepsForItem(e, driveMode));
     else {
       const d = dialogues.find(x => x.id === e.id);
-      if (d) steps.push(...drive.stepsForTalk(d));
+      if (d) steps.push(...drive.stepsForTalk(d, driveMode));
     }
   }
   // **1回ぶんに名前を付ける。**古い回のタイマー・鳴り終わりの合図・
@@ -7921,6 +8116,7 @@ function startDrive() {
   $('drive-start').hidden = true;
   $('drive-stop').hidden = false;
   $('drive-warn').textContent = '画面は見なくて大丈夫です。やめるときだけ「やめる」を押してください。';
+  track(driveMode === 'flow' ? 'drive_flow' : 'drive_recall');
   runDrive();
 }
 
@@ -7945,6 +8141,14 @@ async function runDrive() {
   const done = () => mine === driveToken && !!driveState
     && !driveState.stopped && driveState.id === session;
 
+  // 聞き流しのごく短い間。**「声に出してください」は出さない。**
+  // 考えるための時間ではないので、指示を出すと逆に急かすことになる
+  if (st.kind === 'gap') {
+    $('drive-sub').textContent = '';
+    driveState.timer = setTimeout(() => { if (done()) { driveState.at += 1; runDrive(); } }, st.ms);
+    return;
+  }
+
   if (st.kind === 'think' || st.kind === 'repeat' || st.kind === 'talk_gap') {
     $('drive-now').textContent = st.kind === 'repeat' ? 'もう一度' : '…';
     $('drive-sub').textContent = st.kind === 'talk_gap' ? '' : '声に出してください';
@@ -7961,6 +8165,13 @@ async function runDrive() {
     $('drive-now').textContent = 'あなたなら何と返しますか';
     $('drive-sub').textContent = '';
     await narration.speak('あなたなら何と返しますか');
+  } else if (st.kind === 'talk_about') {
+    // 何の場面だったかを**1回だけ。**毎発話の訳はしない
+    const d = dialogues.find(x => x.id === st.id);
+    const line = d ? (d.aboutJa || d.labelJa || '') : '';
+    $('drive-now').textContent = line;
+    $('drive-sub').textContent = '';
+    await narration.speak(line);
   } else {
     // モンゴル語側。**正式な音声のときしかここへ来ない**
     const id = st.ref || st.id;
