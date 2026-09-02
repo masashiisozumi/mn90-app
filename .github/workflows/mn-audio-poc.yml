@@ -24,253 +24,138 @@ jobs:
           python3 -m pip install -q "transformers==4.49.0" scipy numpy
           sudo apt-get -qq update && sudo apt-get -qq install -y ffmpeg >/dev/null
 
-      - name: モデルの中身を開いて見る（何を触れるのか）
+      - name: 語彙を1文字ずつ、コードポイントで書き出す
         run: |
-          python3 - <<'PY' 2>&1 | tee probe.txt
-          from transformers import VitsModel, AutoTokenizer
-          import torch, json, inspect
+          python3 - <<'PY' 2>&1 | tee vocab.txt
+          from transformers import AutoTokenizer
+          import json, urllib.request, collections
           M = "facebook/mms-tts-mon"
           tok = AutoTokenizer.from_pretrained(M)
-          model = VitsModel.from_pretrained(M)
-          c = model.config
-
-          print("=== 1. 文字をどう受け取るか ===")
-          print("tokenizer     :", type(tok).__name__)
-          print("is_uroman     :", getattr(tok, "is_uroman", None))
-          print("phonemize     :", getattr(tok, "phonemize", None))
-          print("normalize     :", getattr(tok, "normalize", None))
           v = tok.get_vocab()
-          print("語彙の数       :", len(v))
-          print("語彙           :", "".join(sorted(k for k in v if len(k) == 1))[:200])
-          print("キリル文字を持つか:", any("Ѐ" <= k <= "ӿ" for k in v))
-          print("句読点を持つか   :", {p: (p in v) for p in [".", ",", "?", "!", "-", " ", "…"]})
-
+          print(f"語彙 {len(v)}個")
+          for k, i in sorted(v.items(), key=lambda x: x[1]):
+              cp = " ".join(f"U+{ord(c):04X}" for c in k)
+              print(f"  {i:3d}  {k!r:8s} {cp}")
           print()
-          print("=== 2. 生成のときに触れるもの ===")
-          for k in ["speaking_rate", "noise_scale", "noise_scale_duration",
-                    "num_speakers", "speaker_embedding_size", "sampling_rate",
-                    "use_stochastic_duration_prediction", "depth_separable_channels"]:
-              print(f"  {k:34s}=", getattr(c, k, "(無し)"))
-          sig = inspect.signature(model.forward)
-          print("  forward の引数 :", list(sig.parameters))
-
-          print()
-          print("=== 3. 話者 ===")
-          print("num_speakers  :", getattr(c, "num_speakers", None),
-                "→", "1人だけ" if (getattr(c, "num_speakers", 1) or 1) <= 1 else "複数")
-
-          print()
-          print("=== 4. 実際に文字がどう分解されるか（既存の教材から） ===")
-          texts = json.load(open("mn-texts.json", encoding="utf-8"))
-          for cid in ["p_i", "n_today", "s_how_much", "s_i_sell_cars", "num_1000"]:
-              t = texts[cid]["mn"]
+          print("=== 正規化が何をしているか ===")
+          for t in ["Машин", "МАШИН", "машин", "Өнөөдөр", "өнөөдөр", "Маш их"]:
+              n = tok.normalize_text(t) if hasattr(tok, "normalize_text") else "(口が無い)"
               ids = tok(t, return_tensors="pt")["input_ids"][0].tolist()
-              back = tok.decode(ids)
-              print(f"  {cid:14s} {t!r}")
-              print(f"      → {len(ids)}個 / 戻すと {back!r} / 同じか: {back.replace(' ','')==t.replace(' ','')}")
+              print(f"  {t!r:14s} → 正規化 {n!r:16s} / {len(ids)}個 / 戻すと {tok.decode(ids)!r}")
 
           print()
-          print("=== 5. 句読点を足すと分解が変わるか（前処理で効くか） ===")
-          base = texts["s_how_much"]["mn"]
-          for probe in [base, base + ".", base + "?", base + " ,", base.replace(" ", ",  ")]:
-              ids = tok(probe, return_tensors="pt")["input_ids"][0].tolist()
-              print(f"  {probe!r:46s} → {len(ids)}個")
+          print("=== 教材140件の、文字の受け取り率 ===")
+          texts = json.load(open("mn-texts.json", encoding="utf-8"))
+          MAP = {"\u04e9": "\u0473", "\u0448": "\u0449"}
+          def cover(t):
+              got = tok.decode(tok(t, return_tensors="pt")["input_ids"][0].tolist())
+              a = t.lower().replace(" ", "")
+              b = got.replace(" ", "").replace("|", "")
+              return len(b), len(a)
+          lost_before = lost_after = tot = 0
+          worst = []
+          for cid, d in texts.items():
+              t = d["mn"]
+              g1, n = cover(t)
+              g2, _ = cover("".join(MAP.get(c, c) for c in t))
+              tot += n; lost_before += n - g1; lost_after += n - g2
+              if n - g1 > 0:
+                  worst.append((cid, t, n - g1, n - g2))
+          print(f"全文字 {tot} / いま落ちている {lost_before} / 置き換え後に落ちる {lost_after}")
+          print(f"受け取り率  いま {100*(tot-lost_before)/tot:.1f}%  →  置き換え後 {100*(tot-lost_after)/tot:.1f}%")
+          print(f"落ちている教材 {len(worst)}件")
+          for cid, t, a1, a2 in sorted(worst, key=lambda x: -x[2])[:12]:
+              print(f"  {cid:18s} {t!r:32s} 落ち {a1} → {a2}")
+
           print()
-          print("**注意: ここで分かるのは仕組みだけ。発音が正しいかは分からない。**")
+          print("=== ほかのモンゴル語TTSを、非商用の前提で数え直す ===")
+          def api(u):
+              r = urllib.request.Request(u, headers={"User-Agent":"mn90"})
+              with urllib.request.urlopen(r, timeout=40) as x: return json.loads(x.read())
+          seen = {}
+          for q in ["mongolian tts", "mongolian text-to-speech", "mn tts", "khadas mongolian",
+                    "mongol tts", "vits mongolian"]:
+              try:
+                  for m in api(f"https://huggingface.co/api/models?search={urllib.parse.quote(q)}&limit=40"):
+                      seen[m["id"]] = m
+              except Exception as e:
+                  print("  検索できず:", q, e)
+          import urllib.parse
+          print(f"候補 {len(seen)}件")
+          rows = []
+          for mid, m in seen.items():
+              tags = m.get("tags", [])
+              if not any("text-to-speech" in t or "tts" in t.lower() for t in tags + [mid.lower()]):
+                  continue
+              lic = next((t.split(":",1)[1] for t in tags if t.startswith("license:")), None)
+              rows.append((mid, lic, m.get("downloads", 0)))
+          rows.sort(key=lambda r: -r[2])
+          print(f"{'model':52s} {'license':16s} downloads")
+          for mid, lic, dl in rows[:25]:
+              print(f"  {mid:50s} {str(lic):16s} {dl}")
+          json.dump([{"id":r[0],"license":r[1],"downloads":r[2]} for r in rows],
+                    open("mn-tts-candidates.json","w"), ensure_ascii=False, indent=1)
           PY
 
-      - name: 同じ本文で、設定だけ変えた音を作る（比べるため）
+      - name: 置き換えた文字で、140件ぶんの受け取りを確かめて音を作る
         run: |
           mkdir -p ab-out
-          python3 - <<'PY' 2>&1 | tee variants.txt
-          from transformers import VitsModel, AutoTokenizer
-          import torch, json, numpy as np, wave, subprocess, os, hashlib
-          M = "facebook/mms-tts-mon"
-          tok = AutoTokenizer.from_pretrained(M)
-          model = VitsModel.from_pretrained(M); model.eval()
-          sr = model.config.sampling_rate
-          texts = json.load(open("mn-texts.json", encoding="utf-8"))
-
-          # **既存の教材から選ぶ。新しいモンゴル語は1文字も作らない。**
-          # 短い / 長い / 数字 / 商談 / 聞き返し を混ぜる
-          PICK = ["p_i", "n_today", "n_usedcar", "num_1000", "s_how_much",
-                  "s_i_sell_cars", "s_say_again", "s_no_accident",
-                  "s_ill_send_quote", "s_nice_to_meet"]
-
-          # 変える設定。**どれが正しいかは決めない。比べる材料を作るだけ**
-          VAR = {
-            "v1_now":      dict(rate=0.85, ns=0.667, nsd=0.8,  punct=""),
-            "v2_rate100":  dict(rate=1.00, ns=0.667, nsd=0.8,  punct=""),
-            "v3_steady":   dict(rate=0.90, ns=0.400, nsd=0.4,  punct=""),
-            "v4_period":   dict(rate=0.90, ns=0.667, nsd=0.8,  punct="."),
-            "v5_calm":     dict(rate=0.95, ns=0.300, nsd=0.3,  punct="."),
-          }
-
-          def synth(text, rate, ns, nsd, seed):
-              model.config.speaking_rate = rate
-              model.config.noise_scale = ns
-              model.config.noise_scale_duration = nsd
-              torch.manual_seed(seed)
-              x = tok(text, return_tensors="pt")
-              with torch.no_grad():
-                  w = model(**x).waveform[0].cpu().numpy()
-              return w
-
-          def trim(w, th=0.003, pad=0.06):
-              idx = np.where(np.abs(w) > th)[0]
-              if len(idx) == 0: return w
-              a = max(0, idx[0] - int(pad*sr)); b = min(len(w), idx[-1] + int(0.18*sr))
-              return w[a:b]
-
-          rows = []
-          for name, cfg in VAR.items():
-              for i, cid in enumerate(PICK):
-                  t = texts[cid]["mn"] + cfg["punct"]
-                  w = trim(synth(t, cfg["rate"], cfg["ns"], cfg["nsd"], 1234 + i))
-                  raw = f"ab-out/{cid}__{name}.wav"
-                  with wave.open(raw, "w") as f:
-                      f.setnchannels(1); f.setsampwidth(2); f.setframerate(sr)
-                      f.writeframes((np.clip(w, -1, 1) * 32767).astype("<i2").tobytes())
-                  mp3 = f"ab-out/{cid}__{name}.mp3"
-                  subprocess.run(["ffmpeg","-y","-loglevel","error","-i",raw,
-                                  "-codec:a","libmp3lame","-b:a","48k","-ac","1","-ar","24000",mp3],
-                                 check=True)
-                  os.remove(raw)
-                  rms = float(np.sqrt(np.mean(w**2))); peak = float(np.max(np.abs(w)))
-                  rows.append(dict(id=cid, variant=name, seconds=round(len(w)/sr,3),
-                                   bytes=os.path.getsize(mp3), rms=round(rms,4), peak=round(peak,4),
-                                   chars=len(texts[cid]["mn"].replace(" ","")),
-                                   sha=hashlib.sha256(open(mp3,"rb").read()).hexdigest()[:16]))
-              print(f"{name}: {len(PICK)}件")
-
-          # 会話をまとめて読ませたらどうなるか (既存19会話のうち1本)
-          import itertools
-          conv = ["g_hello", "g_hello"]     # 実際の会話の参照は下で差し替える
-          try:
-              pack = json.load(open("daily-conversation-v1.json", encoding="utf-8"))
-              d = pack["dialogues"][0]
-              conv = [t["ref"] for t in d["turns"]]
-          except Exception as e:
-              print("会話ファイルが無いので、既存の2件で代用:", e)
-          joined = " ".join(texts[c]["mn"] for c in conv if c in texts)
-          if joined:
-              for name, cfg in [("c1_joined", VAR["v1_now"]), ("c2_joined_period", VAR["v4_period"])]:
-                  w = trim(synth(joined + cfg["punct"], cfg["rate"], cfg["ns"], cfg["nsd"], 777))
-                  raw = f"ab-out/conv__{name}.wav"
-                  with wave.open(raw,"w") as f:
-                      f.setnchannels(1); f.setsampwidth(2); f.setframerate(sr)
-                      f.writeframes((np.clip(w,-1,1)*32767).astype("<i2").tobytes())
-                  subprocess.run(["ffmpeg","-y","-loglevel","error","-i",raw,
-                                  "-codec:a","libmp3lame","-b:a","48k","-ac","1","-ar","24000",
-                                  f"ab-out/conv__{name}.mp3"], check=True)
-                  os.remove(raw)
-                  print(f"{name}: 会話まとめ {len(joined)}文字 / {len(w)/sr:.2f}秒")
-              rows.append(dict(id="conv", variant="joined", note=joined[:60]))
-
-          json.dump({"model": M, "sampleRate": sr, "variants": VAR, "picks": PICK, "rows": rows},
-                    open("ab-out/index.json","w"), ensure_ascii=False, indent=1)
-
-          print()
-          print("=== 設定ごとの長さ（同じ本文で比べる） ===")
-          import collections
-          by = collections.defaultdict(dict)
-          for r in rows:
-              if "seconds" in r: by[r["id"]][r["variant"]] = r["seconds"]
-          print("id".ljust(18) + "".join(v.ljust(13) for v in VAR))
-          for cid in PICK:
-              print(cid.ljust(18) + "".join(str(by[cid].get(v,"-")).ljust(13) for v in VAR))
-          print()
-          print("**どれが良いかは、ここでは決めない。モンゴル語話者に聞いてもらう材料。**")
-          PY
-
-      - name: 落ちている文字を、語彙にある字へ置き換えて比べる
-        run: |
           python3 - <<'PY' 2>&1 | tee charmap.txt
           from transformers import VitsModel, AutoTokenizer
           import torch, json, numpy as np, wave, subprocess, os
           M = "facebook/mms-tts-mon"
-          tok = AutoTokenizer.from_pretrained(M)
-          model = VitsModel.from_pretrained(M); model.eval()
+          tok = AutoTokenizer.from_pretrained(M); model = VitsModel.from_pretrained(M); model.eval()
           sr = model.config.sampling_rate
           texts = json.load(open("mn-texts.json", encoding="utf-8"))
-          vocab = set(tok.get_vocab())
-
-          print("=== モデルが受け取れない文字を、教材から全部あげる ===")
-          import collections
-          miss = collections.Counter()
-          for cid, t in texts.items():
-              for ch in t["mn"].lower():
-                  if ch.strip() and ch not in vocab: miss[ch] += 1
-          for ch, n in miss.most_common():
-              print(f"  {ch!r} U+{ord(ch):04X}  {n}回")
-
-          # **置き換え案。どれが正しいかは決めない。比べる材料を作るだけ。**
-          #   ө U+04E9 → ѳ U+0473 (語彙にある、見た目のよく似た字)
-          #   ш U+0448 → щ U+0449 (語彙にある、いちばん近い字)
           MAP = {"\u04e9": "\u0473", "\u0448": "\u0449"}
-          def mapped(t):
-              return "".join(MAP.get(c, c) for c in t)
+          mapped = lambda t: "".join(MAP.get(c, c) for c in t)
 
-          hit = [cid for cid, t in texts.items()
-                 if any(c in t["mn"].lower() for c in MAP)]
-          print()
-          print(f"置き換えが効く教材: {len(hit)} / {len(texts)}件")
+          hit = [c for c, d in texts.items() if any(k in d["mn"].lower() for k in MAP)]
+          print(f"置き換えが効く教材 {len(hit)}件")
 
-          PICK = [c for c in ["n_car","n_today","n_tomorrow","s_thanks_much",
-                              "s_say_again","n_month","s_my_name_is","n_water",
-                              "s_i_sell_cars","g_hello"] if c in texts][:10]
-          # 足りなければ影響のあるものから補う
-          for c in hit:
-              if len(PICK) >= 10: break
-              if c not in PICK: PICK.append(c)
-
-          def synth(text, seed):
-              model.config.speaking_rate = 0.90
-              model.config.noise_scale = 0.667
-              model.config.noise_scale_duration = 0.8
+          def synth(t, seed, rate=0.90):
+              model.config.speaking_rate = rate
+              model.config.noise_scale = 0.667; model.config.noise_scale_duration = 0.8
               torch.manual_seed(seed)
-              x = tok(text, return_tensors="pt")
-              with torch.no_grad():
-                  return model(**x).waveform[0].cpu().numpy()
+              x = tok(t, return_tensors="pt")
+              with torch.no_grad(): return model(**x).waveform[0].cpu().numpy()
           def trim(w, th=0.003):
               i = np.where(np.abs(w) > th)[0]
-              if len(i) == 0: return w
+              if len(i)==0: return w
               return w[max(0,i[0]-int(0.06*sr)):min(len(w), i[-1]+int(0.18*sr))]
-          def save(w, name):
-              raw = f"ab-out/{name}.wav"
+          def save(w, n):
+              raw=f"ab-out/{n}.wav"
               with wave.open(raw,"w") as f:
                   f.setnchannels(1); f.setsampwidth(2); f.setframerate(sr)
                   f.writeframes((np.clip(w,-1,1)*32767).astype("<i2").tobytes())
               subprocess.run(["ffmpeg","-y","-loglevel","error","-i",raw,"-codec:a","libmp3lame",
-                              "-b:a","48k","-ac","1","-ar","24000",f"ab-out/{name}.mp3"], check=True)
+                              "-b:a","48k","-ac","1","-ar","24000",f"ab-out/{n}.mp3"],check=True)
               os.remove(raw)
 
+          # **仕事で使うものを優先して、落ちていた教材から選ぶ**
+          PICK = hit[:16]
           print()
-          print("id".ljust(18) + "いまの字".ljust(10) + "置き換え後".ljust(12)
-                + "モデルが受け取る文字")
+          print(f"{'id':20s}{'いま':>9s}{'置換後':>9s}   受け取る文字")
           for i, cid in enumerate(PICK):
-              t = texts[cid]["mn"]
-              m = mapped(t)
-              a = trim(synth(t, 4321+i)); b = trim(synth(m, 4321+i))
+              t = texts[cid]["mn"]; m = mapped(t)
+              a = trim(synth(t, 5000+i)); b = trim(synth(m, 5000+i))
               save(a, f"{cid}__v1_now"); save(b, f"{cid}__v6_charmap")
-              got_a = "".join(c for c in t.lower() if c in vocab or not c.strip())
-              got_b = "".join(c for c in m.lower() if c in vocab or not c.strip())
-              print(f"{cid.ljust(18)}{len(a)/sr:6.2f}秒   {len(b)/sr:6.2f}秒     "
-                    f"{got_a!r} → {got_b!r}")
-
-          json.dump({"map": {f"U+{ord(k):04X}": f"U+{ord(v):04X}" for k,v in MAP.items()},
-                     "affected": len(hit), "picked": PICK},
-                    open("ab-out/charmap.json","w"), ensure_ascii=False, indent=1)
+              g1 = tok.decode(tok(t, return_tensors="pt")["input_ids"][0].tolist()).replace("|","")
+              g2 = tok.decode(tok(m, return_tensors="pt")["input_ids"][0].tolist()).replace("|","")
+              print(f"{cid:20s}{len(a)/sr:8.2f}s{len(b)/sr:8.2f}s   {g1!r} → {g2!r}")
+          json.dump({"map":{f"U+{ord(k):04X}":f"U+{ord(v):04X}" for k,v in MAP.items()},
+                     "affected":len(hit),"picked":PICK}, open("ab-out/charmap.json","w"),
+                    ensure_ascii=False, indent=1)
           print()
           print("**どちらが良いかは決めない。モンゴル語話者に聞いてもらう。**")
           PY
 
-      - name: 結果を置く
+      - name: 結果を置く      - name: 結果を置く
         run: |
           git config user.name "mn90-audio-bot"
           git config user.email "noreply@github.com"
           git checkout -B audio-ab
-          git add -f ab-out probe.txt variants.txt
+          git add -f ab-out vocab.txt charmap.txt mn-tts-candidates.json
           git commit -q -m "設定違いの比較音源と、モデルの中身の記録" || echo "変更なし"
           git push -f origin audio-ab
           echo "pushed to audio-ab"
