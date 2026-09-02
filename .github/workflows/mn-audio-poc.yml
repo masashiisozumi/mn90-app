@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  build-audio:
+  probe:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -17,169 +17,178 @@ jobs:
         with:
           ref: audio-poc
 
-      - name: license を一次情報で再確認する
+      - name: 道具を入れる
         run: |
-          python3 - <<'PY' 2>&1 | tee license-check.txt
-          import json, urllib.request
-          def get(u, raw=False):
-              req = urllib.request.Request(u, headers={'User-Agent': 'mn90'})
-              with urllib.request.urlopen(req, timeout=40) as r:
-                  b = r.read()
-                  return b.decode('utf-8', 'replace') if raw else json.loads(b)
-          info = get("https://huggingface.co/api/models/facebook/mms-tts-mon")
-          cd = info.get("cardData") or {}
-          print("model   :", info.get("id"))
-          print("license :", cd.get("license"), "|",
-                [t for t in info.get("tags", []) if t.startswith("license:")])
-          print("pipeline:", cd.get("pipeline_tag") or [t for t in info.get("tags", []) if "text-to-speech" in t])
-          rd = get("https://huggingface.co/facebook/mms-tts-mon/raw/main/README.md", raw=True)
-          for ln in rd.split("\n")[:20]:
-              if ln.strip(): print("  |", ln[:110])
-          assert (cd.get("license") or "").lower() == "cc-by-nc-4.0", "license が想定と違う。止める"
+          python3 -m pip install -q --upgrade pip
+          python3 -m pip install -q torch --index-url https://download.pytorch.org/whl/cpu
+          python3 -m pip install -q "transformers==4.49.0" scipy numpy
+          sudo apt-get -qq update && sudo apt-get -qq install -y ffmpeg >/dev/null
+
+      - name: モデルの中身を開いて見る（何を触れるのか）
+        run: |
+          python3 - <<'PY' 2>&1 | tee probe.txt
+          from transformers import VitsModel, AutoTokenizer
+          import torch, json, inspect
+          M = "facebook/mms-tts-mon"
+          tok = AutoTokenizer.from_pretrained(M)
+          model = VitsModel.from_pretrained(M)
+          c = model.config
+
+          print("=== 1. 文字をどう受け取るか ===")
+          print("tokenizer     :", type(tok).__name__)
+          print("is_uroman     :", getattr(tok, "is_uroman", None))
+          print("phonemize     :", getattr(tok, "phonemize", None))
+          print("normalize     :", getattr(tok, "normalize", None))
+          v = tok.get_vocab()
+          print("語彙の数       :", len(v))
+          print("語彙           :", "".join(sorted(k for k in v if len(k) == 1))[:200])
+          print("キリル文字を持つか:", any("Ѐ" <= k <= "ӿ" for k in v))
+          print("句読点を持つか   :", {p: (p in v) for p in [".", ",", "?", "!", "-", " ", "…"]})
+
           print()
-          print("確認: CC BY-NC 4.0。非商用利用に限り、表示(attribution)を条件に利用できる")
+          print("=== 2. 生成のときに触れるもの ===")
+          for k in ["speaking_rate", "noise_scale", "noise_scale_duration",
+                    "num_speakers", "speaker_embedding_size", "sampling_rate",
+                    "use_stochastic_duration_prediction", "depth_separable_channels"]:
+              print(f"  {k:34s}=", getattr(c, k, "(無し)"))
+          sig = inspect.signature(model.forward)
+          print("  forward の引数 :", list(sig.parameters))
+
+          print()
+          print("=== 3. 話者 ===")
+          print("num_speakers  :", getattr(c, "num_speakers", None),
+                "→", "1人だけ" if (getattr(c, "num_speakers", 1) or 1) <= 1 else "複数")
+
+          print()
+          print("=== 4. 実際に文字がどう分解されるか（既存の教材から） ===")
+          texts = json.load(open("mn-texts.json", encoding="utf-8"))
+          for cid in ["p_i", "n_today", "s_how_much", "s_i_sell_cars", "num_1000"]:
+              t = texts[cid]["mn"]
+              ids = tok(t, return_tensors="pt")["input_ids"][0].tolist()
+              back = tok.decode(ids)
+              print(f"  {cid:14s} {t!r}")
+              print(f"      → {len(ids)}個 / 戻すと {back!r} / 同じか: {back.replace(' ','')==t.replace(' ','')}")
+
+          print()
+          print("=== 5. 句読点を足すと分解が変わるか（前処理で効くか） ===")
+          base = texts["s_how_much"]["mn"]
+          for probe in [base, base + ".", base + "?", base + " ,", base.replace(" ", ",  ")]:
+              ids = tok(probe, return_tensors="pt")["input_ids"][0].tolist()
+              print(f"  {probe!r:46s} → {len(ids)}個")
+          print()
+          print("**注意: ここで分かるのは仕組みだけ。発音が正しいかは分からない。**")
           PY
 
-      - name: 140件を合成する（浮いたものは作り直す）
+      - name: 同じ本文で、設定だけ変えた音を作る（比べるため）
         run: |
-          sudo apt-get -qq update >/dev/null 2>&1 || true
-          sudo apt-get -qq install -y ffmpeg >/dev/null 2>&1
-          pip install -q "transformers>=4.44" torch numpy 2>&1 | tail -2
-          mkdir -p audio-out
-          python3 - <<'PY' 2>&1 | tail -45 | tee synth-log.txt
-          import json, os, time, wave, subprocess, hashlib
-          import numpy as np
-          import torch
+          mkdir -p ab-out
+          python3 - <<'PY' 2>&1 | tee variants.txt
           from transformers import VitsModel, AutoTokenizer
-
-          MODEL = "facebook/mms-tts-mon"
-          # **ゆっくりめにする。**既定は学習者には速い。
-          # 1.0 が既定で、小さいほど遅い
-          RATE = 0.85
-          texts = json.load(open("mn-texts.json", encoding="utf-8"))
-          t0 = time.time()
-          tok = AutoTokenizer.from_pretrained(MODEL)
-          model = VitsModel.from_pretrained(MODEL); model.eval()
-          model.speaking_rate = RATE
+          import torch, json, numpy as np, wave, subprocess, os, hashlib
+          M = "facebook/mms-tts-mon"
+          tok = AutoTokenizer.from_pretrained(M)
+          model = VitsModel.from_pretrained(M); model.eval()
           sr = model.config.sampling_rate
-          print("model 読み込み %.1f 秒 / %d Hz / %d 件 / 速さ %.2f"
-                % (time.time() - t0, sr, len(texts), RATE))
+          texts = json.load(open("mn-texts.json", encoding="utf-8"))
 
-          def synth(text, seed):
-              # VITS は長さの決め方に乱数を使う。**たまに途中で切れた音が出る。**
-              # 種を変えれば作り直せるので、種を指定できるようにしておく
+          # **既存の教材から選ぶ。新しいモンゴル語は1文字も作らない。**
+          # 短い / 長い / 数字 / 商談 / 聞き返し を混ぜる
+          PICK = ["p_i", "n_today", "n_usedcar", "num_1000", "s_how_much",
+                  "s_i_sell_cars", "s_say_again", "s_no_accident",
+                  "s_ill_send_quote", "s_nice_to_meet"]
+
+          # 変える設定。**どれが正しいかは決めない。比べる材料を作るだけ**
+          VAR = {
+            "v1_now":      dict(rate=0.85, ns=0.667, nsd=0.8,  punct=""),
+            "v2_rate100":  dict(rate=1.00, ns=0.667, nsd=0.8,  punct=""),
+            "v3_steady":   dict(rate=0.90, ns=0.400, nsd=0.4,  punct=""),
+            "v4_period":   dict(rate=0.90, ns=0.667, nsd=0.8,  punct="."),
+            "v5_calm":     dict(rate=0.95, ns=0.300, nsd=0.3,  punct="."),
+          }
+
+          def synth(text, rate, ns, nsd, seed):
+              model.config.speaking_rate = rate
+              model.config.noise_scale = ns
+              model.config.noise_scale_duration = nsd
               torch.manual_seed(seed)
+              x = tok(text, return_tensors="pt")
               with torch.no_grad():
-                  w = model(**tok(text, return_tensors="pt")).waveform.squeeze().numpy()
-              peak = float(np.max(np.abs(w))) or 1.0
-              w = w / peak * 0.85
-              nz = np.where(np.abs(w) > 0.003)[0]     # 静かな末尾を切り落とさない
-              if len(nz):
-                  a = max(0, nz[0] - int(sr * 0.06)); b = min(len(w), nz[-1] + int(sr * 0.18))
-                  w = w[a:b]
+                  w = model(**x).waveform[0].cpu().numpy()
               return w
 
-          chars = {cid: len(rec["mn"].replace(" ", "")) for cid, rec in texts.items()}
-          waves = {}
-          t1 = time.time()
-          for i, (cid, rec) in enumerate(sorted(texts.items())):
-              waves[cid] = synth(rec["mn"], 1234 + i)
-              if (i + 1) % 50 == 0: print("  %d 件" % (i + 1))
-
-          def rate_of(cid):
-              return (len(waves[cid]) / sr) / max(1, chars[cid])
-
-          # набор全体の「1文字あたり何秒か」を基準に、浮いたものを探して作り直す
-          TOL = 2.0
-          retried = {}
-          for attempt in range(1, 7):
-              rates = sorted(rate_of(c) for c in waves)
-              med = rates[len(rates) // 2]
-              bad = [c for c in waves if rate_of(c) > med * TOL or rate_of(c) < med / TOL]
-              if not bad:
-                  print("作り直しが要るものは無し (%d 回目で安定)" % attempt); break
-              print("%d 回目: 浮いているもの %d 件 → 作り直す" % (attempt, len(bad)))
-              for c in bad:
-                  best = waves[c]; bestd = abs(rate_of(c) - med)
-                  for k in range(4):
-                      w2 = synth(texts[c]["mn"], 90000 + attempt * 1000 + k * 7 + len(c))
-                      d = abs((len(w2) / sr) / max(1, chars[c]) - med)
-                      if d < bestd: best, bestd = w2, d
-                  waves[c] = best
-                  retried[c] = retried.get(c, 0) + 1
-          else:
-              print("注意: 何度作り直しても浮いたままのものが残った")
+          def trim(w, th=0.003, pad=0.06):
+              idx = np.where(np.abs(w) > th)[0]
+              if len(idx) == 0: return w
+              a = max(0, idx[0] - int(pad*sr)); b = min(len(w), idx[-1] + int(0.18*sr))
+              return w[a:b]
 
           rows = []
-          for cid in sorted(waves):
-              w = waves[cid]
-              raw = "audio-out/%s.wav" % cid
-              with wave.open(raw, "w") as f:
-                  f.setnchannels(1); f.setsampwidth(2); f.setframerate(sr)
-                  f.writeframes((np.clip(w, -1, 1) * 32767).astype("<i2").tobytes())
-              mp3 = "audio-out/%s.mp3" % cid
-              subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", raw,
-                              "-codec:a", "libmp3lame", "-b:a", "48k", "-ac", "1", "-ar", "24000", mp3],
-                             check=True)
-              os.remove(raw)
-              rows.append({"id": cid, "bytes": os.path.getsize(mp3),
-                           "sha256": hashlib.sha256(open(mp3, "rb").read()).hexdigest(),
-                           "duration": round(len(w) / sr, 3),
-                           "contentRevision": texts[cid]["rev"]})
-          dt = time.time() - t1
-          total = sum(r["bytes"] for r in rows)
-          fin = sorted((len(waves[c]) / sr) / max(1, chars[c]) for c in waves)
-          print("合成 %d 件 / %.1f 秒 / 合計 %.2f MB" % (len(rows), dt, total / 1e6))
-          print("長さ 最短 %.2f 秒 / 最長 %.2f 秒"
-                % (min(r["duration"] for r in rows), max(r["duration"] for r in rows)))
-          print("1文字あたり 最短 %.3f 秒 / 中央 %.3f 秒 / 最長 %.3f 秒"
-                % (fin[0], fin[len(fin) // 2], fin[-1]))
-          print("作り直した件数: %d" % len(retried))
-          json.dump({"model": MODEL, "license": "cc-by-nc-4.0", "sampleRate": sr,
-                     "format": "mp3", "bitrateKbps": 48, "speakingRate": RATE,
-                     "generatedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-                     "synthSeconds": round(dt, 1), "totalBytes": total,
-                     "retried": retried, "items": rows},
-                    open("audio-out/index.json", "w"), ensure_ascii=False, indent=1)
+          for name, cfg in VAR.items():
+              for i, cid in enumerate(PICK):
+                  t = texts[cid]["mn"] + cfg["punct"]
+                  w = trim(synth(t, cfg["rate"], cfg["ns"], cfg["nsd"], 1234 + i))
+                  raw = f"ab-out/{cid}__{name}.wav"
+                  with wave.open(raw, "w") as f:
+                      f.setnchannels(1); f.setsampwidth(2); f.setframerate(sr)
+                      f.writeframes((np.clip(w, -1, 1) * 32767).astype("<i2").tobytes())
+                  mp3 = f"ab-out/{cid}__{name}.mp3"
+                  subprocess.run(["ffmpeg","-y","-loglevel","error","-i",raw,
+                                  "-codec:a","libmp3lame","-b:a","48k","-ac","1","-ar","24000",mp3],
+                                 check=True)
+                  os.remove(raw)
+                  rms = float(np.sqrt(np.mean(w**2))); peak = float(np.max(np.abs(w)))
+                  rows.append(dict(id=cid, variant=name, seconds=round(len(w)/sr,3),
+                                   bytes=os.path.getsize(mp3), rms=round(rms,4), peak=round(peak,4),
+                                   chars=len(texts[cid]["mn"].replace(" ","")),
+                                   sha=hashlib.sha256(open(mp3,"rb").read()).hexdigest()[:16]))
+              print(f"{name}: {len(PICK)}件")
+
+          # 会話をまとめて読ませたらどうなるか (既存19会話のうち1本)
+          import itertools
+          conv = ["g_hello", "g_hello"]     # 実際の会話の参照は下で差し替える
+          try:
+              pack = json.load(open("daily-conversation-v1.json", encoding="utf-8"))
+              d = pack["dialogues"][0]
+              conv = [t["ref"] for t in d["turns"]]
+          except Exception as e:
+              print("会話ファイルが無いので、既存の2件で代用:", e)
+          joined = " ".join(texts[c]["mn"] for c in conv if c in texts)
+          if joined:
+              for name, cfg in [("c1_joined", VAR["v1_now"]), ("c2_joined_period", VAR["v4_period"])]:
+                  w = trim(synth(joined + cfg["punct"], cfg["rate"], cfg["ns"], cfg["nsd"], 777))
+                  raw = f"ab-out/conv__{name}.wav"
+                  with wave.open(raw,"w") as f:
+                      f.setnchannels(1); f.setsampwidth(2); f.setframerate(sr)
+                      f.writeframes((np.clip(w,-1,1)*32767).astype("<i2").tobytes())
+                  subprocess.run(["ffmpeg","-y","-loglevel","error","-i",raw,
+                                  "-codec:a","libmp3lame","-b:a","48k","-ac","1","-ar","24000",
+                                  f"ab-out/conv__{name}.mp3"], check=True)
+                  os.remove(raw)
+                  print(f"{name}: 会話まとめ {len(joined)}文字 / {len(w)/sr:.2f}秒")
+              rows.append(dict(id="conv", variant="joined", note=joined[:60]))
+
+          json.dump({"model": M, "sampleRate": sr, "variants": VAR, "picks": PICK, "rows": rows},
+                    open("ab-out/index.json","w"), ensure_ascii=False, indent=1)
+
+          print()
+          print("=== 設定ごとの長さ（同じ本文で比べる） ===")
+          import collections
+          by = collections.defaultdict(dict)
+          for r in rows:
+              if "seconds" in r: by[r["id"]][r["variant"]] = r["seconds"]
+          print("id".ljust(18) + "".join(v.ljust(13) for v in VAR))
+          for cid in PICK:
+              print(cid.ljust(18) + "".join(str(by[cid].get(v,"-")).ljust(13) for v in VAR))
+          print()
+          print("**どれが良いかは、ここでは決めない。モンゴル語話者に聞いてもらう材料。**")
           PY
 
-      - name: 中身をあらためて検査する
-        run: |
-          python3 - <<'PY' 2>&1 | tail -25 | tee quality-log.txt
-          import json, os, subprocess
-          idx = json.load(open("audio-out/index.json"))
-          bad = []
-          for r in idx["items"]:
-              p = "audio-out/%s.mp3" % r["id"]
-              if not os.path.exists(p) or os.path.getsize(p) < 512:
-                  bad.append((r["id"], "小さすぎる")); continue
-              head = open(p, "rb").read(4)
-              if not (head[:3] == b"ID3" or (head[0] == 0xFF and (head[1] & 0xE0) == 0xE0)):
-                  bad.append((r["id"], "mp3として読めない"))
-              if r["duration"] < 0.25: bad.append((r["id"], "短すぎる"))
-              if r["duration"] > 20: bad.append((r["id"], "長すぎる"))
-          texts = json.load(open("mn-texts.json", encoding="utf-8"))
-          rates = []
-          for r in idx["items"]:
-              c = len(texts[r["id"]]["mn"].replace(" ", ""))
-              if c: rates.append((r["duration"] / c, r["id"]))
-          rates.sort()
-          med = rates[len(rates) // 2][0]
-          for v, cid in rates:
-              if v > med * 2.0 or v < med / 2.0:
-                  bad.append((cid, "набор全体から浮いている (1文字 %.3f 秒 / 目安 %.3f 秒)" % (v, med)))
-          print("検査 %d 件 / 問題 %d 件" % (len(idx["items"]), len(bad)))
-          for b in bad[:20]: print("  !", b)
-          print("合計 %.2f MB / 平均 %.1f KB"
-                % (idx["totalBytes"] / 1e6, idx["totalBytes"] / len(idx["items"]) / 1e3))
-          PY
-
-      - name: 生成した音声をブランチへ置く
+      - name: 結果を置く
         run: |
           git config user.name "mn90-audio-bot"
           git config user.email "noreply@github.com"
-          git checkout -B audio-assets
-          git add -f audio-out license-check.txt synth-log.txt quality-log.txt
-          git commit -q -m "facebook/mms-tts-mon で 140件を合成 (CC BY-NC 4.0 / 非商用)" || echo "変更なし"
-          git push -f origin audio-assets
-          echo "pushed to audio-assets"
+          git checkout -B audio-ab
+          git add -f ab-out probe.txt variants.txt
+          git commit -q -m "設定違いの比較音源と、モデルの中身の記録" || echo "変更なし"
+          git push -f origin audio-ab
+          echo "pushed to audio-ab"
