@@ -183,7 +183,9 @@ jobs:
               from transformers import VitsModel, AutoTokenizer
               tok = AutoTokenizer.from_pretrained("facebook/mms-tts-mon")
               reception(tok, "mms-tts-mon そのまま")
-              CMAP = {"\u04e9": "\u0473", "\u0448": "\u0449"}
+              # 大文字も寄せる。文頭は必ず大文字なので、抜けると語の頭が落ちる
+              CMAP = {"\u04e9": "\u0473", "\u0448": "\u0449",
+                      "\u04e8": "\u0473", "\u0428": "\u0449"}
               class Mapped:
                   def __init__(self, t): self.t = t
                   def __call__(self, s, **kw):
@@ -229,7 +231,9 @@ jobs:
           # (mongolian-90/audio/synth-workflow.yml と同じ: 速さ0.85 / 山を0.85に揃える /
           #  静かな末尾を切り落とさない)
           RATE = 0.85
-          CMAP = {"\u04e9": "\u0473", "\u0448": "\u0449"}
+          # 大文字も寄せる。文頭は必ず大文字なので、抜けると語の頭が落ちる
+          CMAP = {"\u04e9": "\u0473", "\u0448": "\u0449",
+                  "\u04e8": "\u0473", "\u0428": "\u0449"}
           texts = json.load(open("mn-texts.json", encoding="utf-8"))
           target = sorted(c for c, e in texts.items()
                           if any(ch in e["mn"] for ch in CMAP))
